@@ -1004,8 +1004,8 @@ class CertificateServiceTest extends TestCase
         $adminResponse->assertStatus(200);
         $adminResponse->assertSee('SURAT KETERANGAN');
         $adminResponse->assertSee('PEMERINTAH KALURAHAN PURWOBINANGUN');
-        $adminResponse->assertSee('R. Heri Suasana');
-        $adminResponse->assertSee('Lurah Purwobinangun');
+        $adminResponse->assertDontSee('R. Heri Suasana');
+        $adminResponse->assertDontSee('Lurah Purwobinangun');
         $adminResponse->assertSee('Mohon Akta Kelahiran untuk ANANDA PUTRI');
         $adminResponse->assertSee('Dinas Kependudukan dan Catatan Sipil');
 

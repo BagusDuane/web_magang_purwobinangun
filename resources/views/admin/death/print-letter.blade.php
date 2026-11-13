@@ -555,15 +555,12 @@
         <div class="section-block pt-4 flex justify-end text-[10pt]">
             <div class="text-left w-72 pr-4">
                 <p>Sleman, {{ $death->created_at ? $death->created_at->translatedFormat('d F Y') : date('d F Y') }}</p>
-                <p class="mt-1">Mengetahui</p>
-                <p>a.n Lurah</p>
-                <p>Kaur Tata Laksana</p>
                 
                 <!-- Ruang tanda tangan & cap stempel -->
                 <div class="h-24"></div>
 
-                <p class="font-bold underline text-[10.5pt]">
-                    {{ $death->officer_name ?: 'Teguh Kurniawan, S.Pi.' }}
+                <p class="font-medium text-[10.5pt]">
+                    ( .................................................... )
                 </p>
             </div>
         </div>

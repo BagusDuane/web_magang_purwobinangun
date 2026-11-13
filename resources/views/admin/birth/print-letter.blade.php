@@ -132,12 +132,12 @@
                     <tr>
                         <td class="w-36 align-top">Nama</td>
                         <td class="w-4 align-top">:</td>
-                        <td class="align-top font-bold">R. Heri Suasana</td>
+                        <td class="align-top font-medium">...................................................</td>
                     </tr>
                     <tr>
                         <td class="w-36 align-top">Jabatan</td>
                         <td class="w-4 align-top">:</td>
-                        <td class="align-top">Lurah Purwobinangun</td>
+                        <td class="align-top font-medium">...................................................</td>
                     </tr>
                 </table>
             </div>
@@ -223,20 +223,18 @@
                 </p>
             </div>
 
-            <!-- Tanda Tangan Lurah Purwobinangun -->
+            <!-- Tanda Tangan Pengesahan -->
             <div class="pt-6 flex justify-end">
                 <div class="text-left w-72 pr-2">
                     <p>
                         Purwobinangun, {{ $birth->created_at ? $birth->created_at->translatedFormat('d F Y') : \Carbon\Carbon::now()->translatedFormat('d F Y') }}
                     </p>
-                    <p class="mt-0.5">
-                        Lurah Purwobinangun
-                    </p>
                     
+                    <!-- Ruang tanda tangan & cap stempel -->
                     <div class="h-24"></div>
 
                     <p class="font-medium">
-                        R. Heri Suasana
+                        ( .................................................... )
                     </p>
                 </div>
             </div>
