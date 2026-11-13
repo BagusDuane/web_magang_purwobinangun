@@ -1,0 +1,269 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class BirthCertificate extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'registration_no',
+        'family_card_no',
+        'child_name',
+        'child_nik',
+        'gender',
+        'birth_place',
+        'birth_date',
+        'birth_day',
+        'birth_time',
+        'birth_type',
+        'birth_order',
+        'birth_helper',
+        'birth_place_type',
+        'weight_kg',
+        'weight_gram',
+        'length_cm',
+        'father_nik',
+        'father_name',
+        'father_birth_date',
+        'father_age',
+        'father_job',
+        'father_address',
+        'father_rt',
+        'father_rw',
+        'father_village',
+        'father_district',
+        'father_city',
+        'father_province',
+        'father_citizenship',
+        'father_nationality',
+        'mother_nik',
+        'mother_name',
+        'mother_birth_date',
+        'mother_age',
+        'mother_job',
+        'mother_address',
+        'mother_rt',
+        'mother_rw',
+        'mother_village',
+        'mother_district',
+        'mother_city',
+        'mother_province',
+        'mother_citizenship',
+        'mother_nationality',
+        'marriage_date',
+        'applicant_nik',
+        'applicant_name',
+        'applicant_birth_date',
+        'applicant_age',
+        'applicant_gender',
+        'applicant_job',
+        'applicant_phone',
+        'applicant_relation',
+        'address',
+        'padukuhan',
+        'rt',
+        'rw',
+        'applicant_village',
+        'applicant_district',
+        'applicant_city',
+        'applicant_province',
+        'witness_1_nik',
+        'witness_1_name',
+        'witness_1_birth_date',
+        'witness_1_age',
+        'witness_1_gender',
+        'witness_1_job',
+        'witness_1_address',
+        'witness_1_rt',
+        'witness_1_rw',
+        'witness_1_village',
+        'witness_1_district',
+        'witness_1_city',
+        'witness_1_province',
+        'witness_2_nik',
+        'witness_2_name',
+        'witness_2_birth_date',
+        'witness_2_age',
+        'witness_2_gender',
+        'witness_2_job',
+        'witness_2_address',
+        'witness_2_rt',
+        'witness_2_rw',
+        'witness_2_village',
+        'witness_2_district',
+        'witness_2_city',
+        'witness_2_province',
+        'doc_birth_cert',
+        'doc_family_card',
+        'doc_marriage_cert',
+        'doc_parents_ktp',
+        'doc_witness_ktp',
+        'applicant_signature',
+        'status',
+        'is_archived',
+        'rejection_note',
+        'processed_by',
+    ];
+
+    protected $casts = [
+        'birth_date' => 'date',
+        'father_birth_date' => 'date',
+        'mother_birth_date' => 'date',
+        'applicant_birth_date' => 'date',
+        'marriage_date' => 'date',
+        'witness_1_birth_date' => 'date',
+        'witness_2_birth_date' => 'date',
+        'is_archived' => 'boolean',
+    ];
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public static function generateRegistrationNo(): string
+    {
+        $prefix = 'AKL-' . date('Ymd');
+        $lastRecord = self::where('registration_no', 'like', $prefix . '%')
+            ->orderBy('id', 'desc')
+            ->first();
+
+        if ($lastRecord) {
+            $lastNumber = (int) substr($lastRecord->registration_no, -4);
+            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+        } else {
+            $newNumber = '0001';
+        }
+
+        return $prefix . '-' . $newNumber;
+    }
+
+    public function getStatusLabelAttribute(): string
+    {
+        return match ($this->status) {
+            'pending' => 'Menunggu Verifikasi',
+            'in_process', 'verified' => 'Sedang Diproses',
+            'revision' => 'Revisi Berkas',
+            'rejected' => 'Dibatalkan',
+            'ready_for_pickup', 'completed' => 'Siap diambil',
+            'picked_up' => 'Sudah diambil',
+            'archived' => 'Diarsipkan',
+            default => 'Diajukan',
+        };
+    }
+
+    public function getStatusBadgeClassAttribute(): string
+    {
+        return match ($this->status) {
+            'pending' => 'bg-amber-100 text-amber-800 border-amber-300',
+            'in_process', 'verified' => 'bg-blue-100 text-blue-800 border-blue-300',
+            'revision' => 'bg-orange-100 text-orange-800 border-orange-300',
+            'rejected' => 'bg-rose-100 text-rose-800 border-rose-300',
+            'ready_for_pickup', 'completed' => 'bg-emerald-100 text-emerald-800 border-emerald-300',
+            'picked_up', 'archived' => 'bg-slate-100 text-slate-800 border-slate-300',
+            default => 'bg-gray-100 text-gray-800 border-gray-300',
+        };
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === 'pending';
+    }
+
+    public function isInProcess(): bool
+    {
+        return in_array($this->status, ['in_process', 'verified']);
+    }
+
+    public function isRevision(): bool
+    {
+        return $this->status === 'revision';
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === 'rejected';
+    }
+
+    public function isReadyForPickup(): bool
+    {
+        return in_array($this->status, ['ready_for_pickup', 'completed']);
+    }
+
+    public function isPickedUp(): bool
+    {
+        return in_array($this->status, ['picked_up', 'archived']);
+    }
+
+    public function isArchived(): bool
+    {
+        return $this->is_archived || in_array($this->status, ['picked_up', 'archived']);
+    }
+
+    public function getApplicantEmailAttribute(): ?string
+    {
+        if ($this->user?->email) {
+            return $this->user->email;
+        }
+
+        if ($this->applicant_nik) {
+            $email = User::where('nik', $this->applicant_nik)->value('email');
+            if ($email) {
+                return $email;
+            }
+        }
+
+        if ($this->family_card_no) {
+            return User::where('family_card_no', $this->family_card_no)->whereNotNull('email')->value('email');
+        }
+
+        return null;
+    }
+
+    public function getApplicantPhoneAttribute(): ?string
+    {
+        if ($this->user?->phone) {
+            return $this->user->phone;
+        }
+
+        if ($this->applicant_nik) {
+            $phone = User::where('nik', $this->applicant_nik)->value('phone');
+            if ($phone) {
+                return $phone;
+            }
+        }
+
+        return $this->attributes['applicant_phone'] ?? null;
+    }
+
+    public function getCertificateTypeAttribute(): string
+    {
+        return 'birth';
+    }
+
+    public function getCertificateTypeNameAttribute(): string
+    {
+        return 'Akte Kelahiran';
+    }
+
+    public function getSubjectNameAttribute(): string
+    {
+        return $this->child_name ?? '-';
+    }
+
+    public function getEventDateAttribute()
+    {
+        return $this->birth_date;
+    }
+
+    public function getEventPlaceAttribute(): ?string
+    {
+        return $this->birth_place_type ?? $this->birth_place;
+    }
+}

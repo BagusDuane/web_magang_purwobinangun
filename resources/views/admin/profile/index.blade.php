@@ -1,0 +1,194 @@
+@extends('layouts.admin')
+
+@section('title', 'Pengaturan Profil Admin')
+@section('page_title', 'Pengaturan Profil Akun Petugas')
+@section('hide_page_subtitle', true)
+
+@section('content')
+<div class="max-w-5xl mx-auto space-y-6">
+
+    <!-- Header Card -->
+    <div class="rounded-2xl shadow-sm relative overflow-hidden text-white p-6 sm:p-7" style="background: linear-gradient(135deg, #065b65 0%, #0b7c89 100%); background-color: #065b65;">
+        <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div class="flex items-center gap-4">
+                <div class="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-inner shrink-0" style="background-color: rgba(255, 255, 255, 0.15); border: 1px solid rgba(255, 255, 255, 0.25);">
+                    <i class="fa-solid fa-user-shield text-3xl text-teal-200"></i>
+                </div>
+                <div>
+                    <div class="flex flex-wrap items-center gap-2 mb-1">
+                        <span class="text-[11px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-md" style="background-color: rgba(255, 255, 255, 0.2); color: #ffffff;">
+                            Petugas Pelayanan Kalurahan
+                        </span>
+                        <span class="text-xs px-2.5 py-0.5 rounded-full font-bold" style="background-color: rgba(94, 234, 212, 0.25); color: #ccfbf1; border: 1px solid rgba(94, 234, 212, 0.4);">
+                            Administrator
+                        </span>
+                    </div>
+                    <h2 class="text-xl sm:text-2xl font-black text-white tracking-tight">{{ $admin->name }}</h2>
+                    <div class="text-xs sm:text-sm text-teal-50/90 mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                        <span class="inline-flex items-center gap-2 font-medium text-white">
+                            <i class="fa-solid fa-envelope text-teal-300"></i> {{ $admin->email }} <span class="text-[10px] opacity-75 font-normal">(Login Admin)</span>
+                        </span>
+                        <span class="text-teal-200/70 hidden sm:inline px-1.5 font-bold">•</span>
+                        <span class="inline-flex items-center gap-2 font-medium text-white">
+                            <i class="fa-solid fa-phone text-teal-300"></i> {{ $admin->phone ?: 'Belum diatur' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Decorative background elements -->
+        <div class="absolute -right-8 -bottom-12 w-48 h-48 rounded-full blur-2xl pointer-events-none" style="background-color: rgba(255, 255, 255, 0.08);"></div>
+    </div>
+
+    <!-- Forms Grid: Profil & Kata Sandi -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left: Form Edit Profil Akun Admin -->
+        <div class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-xs p-6">
+            <div class="pb-4 mb-5 border-b border-slate-100 flex items-center justify-between">
+                <div>
+                    <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                        <i class="fa-solid fa-user-pen text-[#0b7c89]"></i> Data Akun Petugas
+                    </h3>
+                </div>
+            </div>
+
+            <form action="{{ route('admin.profile.update') }}" method="POST" class="space-y-4">
+                @csrf
+                @method('PUT')
+
+                <div>
+                    <label for="name" class="block text-xs font-bold text-slate-700 mb-1">
+                        Nama Lengkap Petugas / Administrator <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative" style="position: relative;">
+                        <input type="text" name="name" id="name" value="{{ old('name', $admin->name) }}" required
+                            class="w-full text-xs rounded-xl border {{ $errors->has('name') ? 'border-rose-400 bg-rose-50/20' : 'border-slate-300' }} focus:outline-none focus:ring-2 focus:ring-[#0b7c89]/20 focus:border-[#0b7c89] transition"
+                            style="padding-left: 1rem; padding-right: 2.75rem; padding-top: 0.625rem; padding-bottom: 0.625rem;">
+                        <span class="text-slate-400 pointer-events-none flex items-center justify-center" style="position: absolute; right: 0.85rem; top: 50%; transform: translateY(-50%);">
+                            <i class="fa-regular fa-user text-xs"></i>
+                        </span>
+                    </div>
+                    @error('name')
+                        <p class="text-rose-600 text-[11px] mt-1 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="email" class="block text-xs font-bold text-slate-700 mb-1">
+                        Alamat Email Login Admin <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative" style="position: relative;">
+                        <input type="email" name="email" id="email" value="{{ old('email', $admin->email) }}" required
+                            class="w-full text-xs rounded-xl border {{ $errors->has('email') ? 'border-rose-400 bg-rose-50/20' : 'border-slate-300' }} focus:outline-none focus:ring-2 focus:ring-[#0b7c89]/20 focus:border-[#0b7c89] transition"
+                            style="padding-left: 1rem; padding-right: 2.75rem; padding-top: 0.625rem; padding-bottom: 0.625rem;">
+                        <span class="text-slate-400 pointer-events-none flex items-center justify-center" style="position: absolute; right: 0.85rem; top: 50%; transform: translateY(-50%);">
+                            <i class="fa-regular fa-envelope text-xs"></i>
+                        </span>
+                    </div>
+                    @error('email')
+                        <p class="text-rose-600 text-[11px] mt-1 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="phone" class="block text-xs font-bold text-slate-700 mb-1">
+                        Nomor HP / Telepon Petugas <span class="text-slate-400 font-normal">(Opsional)</span>
+                    </label>
+                    <div class="relative" style="position: relative;">
+                        <input type="text" name="phone" id="phone" value="{{ old('phone', $admin->phone) }}" placeholder="Contoh: 081234567890"
+                            class="w-full text-xs rounded-xl border {{ $errors->has('phone') ? 'border-rose-400 bg-rose-50/20' : 'border-slate-300' }} focus:outline-none focus:ring-2 focus:ring-[#0b7c89]/20 focus:border-[#0b7c89] transition"
+                            style="padding-left: 1rem; padding-right: 2.75rem; padding-top: 0.625rem; padding-bottom: 0.625rem;">
+                        <span class="text-slate-400 pointer-events-none flex items-center justify-center" style="position: absolute; right: 0.85rem; top: 50%; transform: translateY(-50%);">
+                            <i class="fa-solid fa-phone text-xs"></i>
+                        </span>
+                    </div>
+                    @error('phone')
+                        <p class="text-rose-600 text-[11px] mt-1 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div class="pt-3">
+                    <button type="submit" class="w-full sm:w-auto bg-[#0b7c89] hover:bg-[#08636e] active:bg-[#065059] text-white font-bold text-xs py-2.5 px-6 rounded-xl shadow-sm hover:shadow transition flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        <span>Simpan Perubahan Akun</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Right: Form Ubah Password -->
+        <div class="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-xs p-6">
+            <div class="pb-4 mb-5 border-b border-slate-100">
+                <h3 class="font-bold text-slate-800 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-key text-amber-500"></i> Perbarui Kata Sandi
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5">Ubah kata sandi akun admin untuk keamanan login</p>
+            </div>
+
+            <form action="{{ route('admin.profile.password') }}" method="POST" class="space-y-4">
+                @csrf
+                @method('PUT')
+
+                <div>
+                    <label for="current_password" class="block text-xs font-bold text-slate-700 mb-1">
+                        Kata Sandi Saat Ini <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative" style="position: relative;">
+                        <input type="password" name="current_password" id="current_password" required
+                            class="w-full text-xs rounded-xl border {{ $errors->has('current_password') ? 'border-rose-400 bg-rose-50/20' : 'border-slate-300' }} focus:outline-none focus:ring-2 focus:ring-[#0b7c89]/20 focus:border-[#0b7c89] transition"
+                            style="padding-left: 1rem; padding-right: 2.75rem; padding-top: 0.625rem; padding-bottom: 0.625rem;">
+                        <span class="text-slate-400 pointer-events-none flex items-center justify-center" style="position: absolute; right: 0.85rem; top: 50%; transform: translateY(-50%);">
+                            <i class="fa-solid fa-lock text-xs"></i>
+                        </span>
+                    </div>
+                    @error('current_password')
+                        <p class="text-rose-600 text-[11px] mt-1 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="new_password" class="block text-xs font-bold text-slate-700 mb-1">
+                        Kata Sandi Baru <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative" style="position: relative;">
+                        <input type="password" name="password" id="new_password" required minlength="6" placeholder="Minimal 6 karakter"
+                            class="w-full text-xs rounded-xl border {{ $errors->has('password') ? 'border-rose-400 bg-rose-50/20' : 'border-slate-300' }} focus:outline-none focus:ring-2 focus:ring-[#0b7c89]/20 focus:border-[#0b7c89] transition"
+                            style="padding-left: 1rem; padding-right: 2.75rem; padding-top: 0.625rem; padding-bottom: 0.625rem;">
+                        <span class="text-slate-400 pointer-events-none flex items-center justify-center" style="position: absolute; right: 0.85rem; top: 50%; transform: translateY(-50%);">
+                            <i class="fa-solid fa-key text-xs"></i>
+                        </span>
+                    </div>
+                    @error('password')
+                        <p class="text-rose-600 text-[11px] mt-1 font-medium">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label for="password_confirmation" class="block text-xs font-bold text-slate-700 mb-1">
+                        Konfirmasi Kata Sandi Baru <span class="text-rose-500">*</span>
+                    </label>
+                    <div class="relative" style="position: relative;">
+                        <input type="password" name="password_confirmation" id="password_confirmation" required minlength="6" placeholder="Ketik ulang kata sandi baru"
+                            class="w-full text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#0b7c89]/20 focus:border-[#0b7c89] transition"
+                            style="padding-left: 1rem; padding-right: 2.75rem; padding-top: 0.625rem; padding-bottom: 0.625rem;">
+                        <span class="text-slate-400 pointer-events-none flex items-center justify-center" style="position: absolute; right: 0.85rem; top: 50%; transform: translateY(-50%);">
+                            <i class="fa-solid fa-shield-check text-xs"></i>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="pt-3">
+                    <button type="submit" class="w-full bg-slate-800 hover:bg-slate-900 active:bg-black text-white font-bold text-xs py-2.5 px-6 rounded-xl shadow-sm hover:shadow transition flex items-center justify-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-shield-check"></i>
+                        <span>Perbarui Kata Sandi</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+</div>
+@endsection

@@ -1,0 +1,428 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
+use App\Models\BirthCertificate;
+use App\Models\DeathCertificate;
+use App\Models\ProfileUpdateRequest;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
+
+class AdminCitizenController extends Controller
+{
+    public function index(Request $request)
+    {
+        $status = $request->input('status');
+        $search = $request->input('search');
+
+        $query = User::where('role', 'warga')->where('status', '!=', 'archived');
+
+        if ($status && in_array($status, ['pending', 'active', 'rejected'])) {
+            $query->where('status', $status);
+        }
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('nik', 'like', "%{$search}%")
+                  ->orWhere('family_card_no', 'like', "%{$search}%")
+                  ->orWhere('name', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%")
+                  ->orWhere('address', 'like', "%{$search}%");
+            });
+        }
+
+        $citizens = $query->latest()->paginate(10)->withQueryString();
+
+        $stats = [
+            'total' => User::where('role', 'warga')->where('status', '!=', 'archived')->count(),
+            'pending' => User::where('role', 'warga')->where('status', 'pending')->count(),
+            'active' => User::where('role', 'warga')->where('status', 'active')->count(),
+            'rejected' => User::where('role', 'warga')->where('status', 'rejected')->count(),
+            'archived' => User::where('role', 'warga')->where('status', 'archived')->count(),
+        ];
+
+        return view('admin.citizens.index', compact('citizens', 'status', 'search', 'stats'));
+    }
+
+    public function show(User $citizen)
+    {
+        if (!$citizen->isWarga()) {
+            abort(404);
+        }
+
+        // Ambil riwayat pengajuan berdasarkan Nomor KK warga ini
+        $birthSubmissions = BirthCertificate::where('family_card_no', $citizen->family_card_no)->latest()->get();
+        $deathSubmissions = DeathCertificate::where('family_card_no', $citizen->family_card_no)->latest()->get();
+
+        // Cari anggota keluarga lain yang terdaftar dalam satu KK
+        $familyMembers = User::where('role', 'warga')
+            ->where('family_card_no', $citizen->family_card_no)
+            ->where('id', '!=', $citizen->id)
+            ->get();
+
+        $citizen->load('familyMembers');
+        $pendingProfileRequest = $citizen->latestPendingProfileRequest();
+
+        return view('admin.citizens.show', compact('citizen', 'birthSubmissions', 'deathSubmissions', 'familyMembers', 'pendingProfileRequest'));
+    }
+
+    public function edit(User $citizen)
+    {
+        if (!$citizen->isWarga()) {
+            abort(404);
+        }
+
+        return view('admin.citizens.edit', compact('citizen'));
+    }
+
+    public function update(Request $request, User $citizen)
+    {
+        if (!$citizen->isWarga()) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'nik' => [
+                'required',
+                'digits:16',
+                Rule::unique('users', 'nik')->ignore($citizen->id),
+            ],
+            'family_card_no' => 'required|digits:16',
+            'name' => 'required|string|max:255',
+            'birth_place' => 'required|string|max:150',
+            'birth_date' => 'required|date',
+            'gender' => 'required|in:L,P',
+            'family_relationship' => 'nullable|string|max:100',
+            'phone' => 'required|string|max:20',
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($citizen->id),
+            ],
+            'address' => 'required|string|max:500',
+            'rt' => 'required|string|max:5',
+            'rw' => 'required|string|max:5',
+            'status' => 'required|in:active,pending,rejected,archived',
+            'admin_note' => 'required|string|max:1000',
+            'rejection_reason' => 'nullable|string|max:1000',
+            'password' => 'nullable|string|min:6',
+        ], [
+            'nik.required' => 'NIK wajib diisi.',
+            'nik.digits' => 'NIK harus berupa 16 digit angka.',
+            'nik.unique' => 'NIK sudah digunakan oleh akun lain.',
+            'family_card_no.required' => 'Nomor KK wajib diisi.',
+            'family_card_no.digits' => 'Nomor KK harus berupa 16 digit angka.',
+            'name.required' => 'Nama lengkap wajib diisi.',
+            'birth_place.required' => 'Tempat lahir wajib diisi.',
+            'birth_date.required' => 'Tanggal lahir wajib diisi.',
+            'gender.required' => 'Jenis kelamin wajib dipilih.',
+            'phone.required' => 'Nomor HP / WhatsApp wajib diisi.',
+            'email.required' => 'Alamat email wajib diisi.',
+            'email.email' => 'Format email tidak valid.',
+            'email.unique' => 'Alamat email sudah digunakan oleh akun lain.',
+            'address.required' => 'Alamat lengkap wajib diisi.',
+            'rt.required' => 'RT wajib diisi.',
+            'rw.required' => 'RW wajib diisi.',
+            'status.required' => 'Status akun wajib dipilih.',
+            'admin_note.required' => 'Catatan perubahan data warga wajib diisi oleh admin sebagai penjelasan alasan/rincian perubahan.',
+            'password.min' => 'Password minimal terdiri dari 6 karakter jika ingin diubah.',
+        ]);
+
+        $adminName = Auth::user()->name;
+
+        $updateData = [
+            'nik' => $validated['nik'],
+            'family_card_no' => $validated['family_card_no'],
+            'name' => $validated['name'],
+            'birth_place' => $validated['birth_place'],
+            'birth_date' => $validated['birth_date'],
+            'gender' => $validated['gender'],
+            'family_relationship' => $validated['family_relationship'] ?? ($citizen->family_relationship ?: 'Kepala Keluarga'),
+            'phone' => $validated['phone'],
+            'email' => $validated['email'],
+            'address' => $validated['address'],
+            'rt' => $validated['rt'],
+            'rw' => $validated['rw'],
+            'status' => $validated['status'],
+            'rejection_reason' => $validated['status'] === 'rejected' ? ($validated['rejection_reason'] ?? $citizen->rejection_reason) : null,
+        ];
+
+        if (!empty($validated['password'])) {
+            $updateData['password'] = Hash::make($validated['password']);
+        }
+
+        DB::transaction(function () use ($citizen, $updateData, $validated, $adminName) {
+            $citizen->update($updateData);
+
+            // Selesaikan/setujui permohonan perubahan data yang masih pending sebelumnya jika ada
+            ProfileUpdateRequest::where('user_id', $citizen->id)
+                ->where('status', 'pending')
+                ->update([
+                    'status' => 'approved',
+                    'admin_notes' => $validated['admin_note'],
+                    'processed_by' => $adminName,
+                    'processed_at' => now(),
+                ]);
+
+            // Buat catatan riwayat perubahan data resmi oleh admin agar notifikasi langsung tampil di profil warga
+            ProfileUpdateRequest::create([
+                'user_id' => $citizen->id,
+                'nik' => $validated['nik'],
+                'family_card_no' => $validated['family_card_no'],
+                'name' => $validated['name'],
+                'birth_place' => $validated['birth_place'],
+                'birth_date' => $validated['birth_date'],
+                'gender' => $validated['gender'],
+                'family_relationship' => $updateData['family_relationship'],
+                'doc_family_card' => $citizen->doc_family_card,
+                'address' => $validated['address'],
+                'rt' => $validated['rt'],
+                'rw' => $validated['rw'],
+                'phone' => $validated['phone'],
+                'email' => $validated['email'],
+                'family_members_data' => $citizen->familyMembers ? $citizen->familyMembers->map(fn($m) => [
+                    'family_card_no' => $m->family_card_no,
+                    'nik' => $m->nik,
+                    'name' => $m->name,
+                    'birth_place' => $m->birth_place,
+                    'birth_date' => $m->birth_date ? $m->birth_date->format('Y-m-d') : null,
+                    'gender' => $m->gender,
+                    'family_relationship' => $m->family_relationship,
+                ])->toArray() : null,
+                'status' => 'approved',
+                'admin_notes' => $validated['admin_note'],
+                'processed_by' => $adminName,
+                'processed_at' => now(),
+            ]);
+
+            // Sinkronisasi nama & kontak pemohon pada pengajuan akte terkait
+            BirthCertificate::where(function ($q) use ($citizen) {
+                $q->where('user_id', $citizen->id)
+                  ->orWhere('applicant_nik', $citizen->nik);
+            })->update([
+                'applicant_phone' => $citizen->phone,
+                'applicant_name' => $citizen->name,
+            ]);
+
+            DeathCertificate::where(function ($q) use ($citizen) {
+                $q->where('user_id', $citizen->id)
+                  ->orWhere('applicant_nik', $citizen->nik);
+            })->update([
+                'applicant_phone' => $citizen->phone,
+                'applicant_name' => $citizen->name,
+            ]);
+
+            // Pastikan timestamp updated_at warga diperbarui
+            $citizen->touch();
+        });
+
+        ActivityLog::record([
+            'user_id' => Auth::id(),
+            'user_name' => Auth::user()->name,
+            'user_role' => 'admin',
+            'action_type' => 'update',
+            'module' => 'citizen',
+            'title' => 'Pembaruan Data Warga oleh Admin',
+            'description' => 'Pembaruan data profil akun warga.',
+            'reference_no' => $citizen->nik,
+            'subject_type' => User::class,
+            'subject_id' => $citizen->id,
+        ]);
+
+        if ($validated['status'] === 'archived') {
+            return redirect()->route('admin.citizens.index')
+                ->with('success', 'Data akun warga (' . $citizen->name . ') berhasil diperbarui dan dipindahkan ke arsip.');
+        }
+
+        return redirect()->route('admin.citizens.show', $citizen)
+            ->with('success', 'Data warga (' . $citizen->name . ') berhasil diperbarui.');
+    }
+
+    public function verify(Request $request, User $citizen)
+    {
+        if (!$citizen->isWarga()) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'action' => 'required|in:approve,reject,archive,delete',
+            'rejection_reason' => 'required_if:action,reject,delete|nullable|string|max:1000',
+        ], [
+            'rejection_reason.required_if' => 'Alasan atau catatan penolakan/penghapusan akun wajib diisi.',
+        ]);
+
+        $verifierName = Auth::user()->name;
+
+        if ($validated['action'] === 'approve') {
+            $citizen->status = 'active';
+            $citizen->rejection_reason = null;
+            $citizen->verified_at = now();
+            $citizen->verified_by = $verifierName;
+            $citizen->save();
+
+            ActivityLog::record([
+                'user_id' => Auth::id(),
+                'user_name' => $verifierName,
+                'user_role' => 'admin',
+                'action_type' => 'approve',
+                'module' => 'citizen',
+                'title' => 'Verifikasi Akun Warga Disetujui',
+                'description' => 'Persetujuan dan pengaktifan akun warga.',
+                'reference_no' => $citizen->nik,
+                'subject_type' => User::class,
+                'subject_id' => $citizen->id,
+            ]);
+
+            $message = 'Akun warga (' . $citizen->name . ') berhasil diverifikasi dan diaktifkan! Pemberitahuan telah ditampilkan di portal notifikasi warga.';
+
+            return redirect()->route('admin.citizens.show', $citizen)
+                ->with('success', $message);
+        } elseif ($validated['action'] === 'archive') {
+            $citizen->status = 'archived';
+            $citizen->verified_at = now();
+            $citizen->verified_by = $verifierName;
+            $citizen->save();
+
+            ActivityLog::record([
+                'user_id' => Auth::id(),
+                'user_name' => $verifierName,
+                'user_role' => 'admin',
+                'action_type' => 'archive',
+                'module' => 'citizen',
+                'title' => 'Pengarsipan Akun Warga',
+                'description' => 'Pengarsipan akun warga ke arsip database.',
+                'reference_no' => $citizen->nik,
+                'subject_type' => User::class,
+                'subject_id' => $citizen->id,
+            ]);
+
+            return redirect()->route('admin.citizens.index')
+                ->with('success', 'Data akun warga (' . $citizen->name . ') telah berhasil diarsipkan.');
+        } elseif ($validated['action'] === 'delete') {
+            // Guard: Akun yang dihapus tidak boleh memiliki pengajuan aktif
+            if ($citizen->hasActiveApplications()) {
+                return back()->with('error', 'Akun warga (' . $citizen->name . ') tidak dapat dihapus karena masih memiliki permohonan akta atau perubahan data yang sedang aktif/berjalan. Harap selesaikan atau batalkan permohonan tersebut terlebih dahulu.');
+            }
+
+            // Simpan riwayat ke arsip database agar data NIK, berkas KK, dan permohonan tetap aman
+            $citizen->status = 'archived';
+            $citizen->rejection_reason = $validated['rejection_reason'];
+            $citizen->verified_at = now();
+            $citizen->verified_by = $verifierName;
+            $citizen->save();
+
+            ActivityLog::record([
+                'user_id' => Auth::id(),
+                'user_name' => $verifierName,
+                'user_role' => 'admin',
+                'action_type' => 'delete',
+                'module' => 'citizen',
+                'title' => 'Penghapusan Akun Warga (Masuk Arsip)',
+                'description' => 'Penghapusan akun warga dan pemindahan ke arsip.' . (!empty($validated['rejection_reason']) ? ' Alasan: ' . $validated['rejection_reason'] : ''),
+                'reference_no' => $citizen->nik,
+                'subject_type' => User::class,
+                'subject_id' => $citizen->id,
+            ]);
+
+            $message = 'Akun warga (' . $citizen->name . ') telah berhasil dihapus dari daftar aktif dan seluruh riwayat datanya telah disimpan ke dalam Arsip Database.';
+
+            return redirect()->route('admin.citizens.index')
+                ->with('success', $message);
+        } else {
+            // Penolakan pendaftaran akun baru
+            $wasActive = $citizen->isActive();
+            if ($wasActive && $citizen->hasActiveApplications()) {
+                return back()->with('error', 'Akun warga (' . $citizen->name . ') tidak dapat dinonaktifkan/dihapus karena masih memiliki permohonan akta aktif.');
+            }
+
+            $citizen->status = 'rejected';
+            $citizen->rejection_reason = $validated['rejection_reason'];
+            $citizen->verified_at = now();
+            $citizen->verified_by = $verifierName;
+            $citizen->save();
+
+            ActivityLog::record([
+                'user_id' => Auth::id(),
+                'user_name' => $verifierName,
+                'user_role' => 'admin',
+                'action_type' => 'reject',
+                'module' => 'citizen',
+                'title' => 'Penolakan Pendaftaran Akun Warga',
+                'description' => 'Penolakan pendaftaran akun warga.' . (!empty($validated['rejection_reason']) ? ' Alasan: ' . $validated['rejection_reason'] : ''),
+                'reference_no' => $citizen->nik,
+                'subject_type' => User::class,
+                'subject_id' => $citizen->id,
+            ]);
+
+            $message = $wasActive
+                ? 'Akun warga (' . $citizen->name . ') telah dinonaktifkan.'
+                : 'Pendaftaran akun warga (' . $citizen->name . ') telah ditolak dengan catatan yang diberikan.';
+
+            return redirect()->route('admin.citizens.show', $citizen)
+                ->with('success', $message);
+        }
+    }
+
+    public function destroy(User $citizen)
+    {
+        if (!$citizen->isWarga()) {
+            abort(404);
+        }
+
+        if ($citizen->hasActiveApplications()) {
+            return back()->with('error', 'Akun warga (' . $citizen->name . ') tidak dapat dihapus permanen karena masih memiliki permohonan akta atau data yang sedang berjalan.');
+        }
+
+        $citizenName = $citizen->name;
+        $citizenNik = $citizen->nik;
+
+        DB::transaction(function () use ($citizen) {
+            // Hapus file dokumen kartu keluarga fisik jika tersimpan di disk
+            if ($citizen->doc_family_card && Storage::disk('public')->exists($citizen->doc_family_card)) {
+                Storage::disk('public')->delete($citizen->doc_family_card);
+            }
+
+            // Hapus berkas pendukung pada permohonan perubahan data jika ada
+            foreach ($citizen->profileUpdateRequests as $req) {
+                if ($req->doc_family_card && Storage::disk('public')->exists($req->doc_family_card)) {
+                    Storage::disk('public')->delete($req->doc_family_card);
+                }
+            }
+
+            // Hapus relasi
+            $citizen->familyMembers()->delete();
+            $citizen->profileUpdateRequests()->delete();
+
+            // Lepaskan relasi user_id pada permohonan akte (tetap simpan data akte dengan user_id null)
+            BirthCertificate::where('user_id', $citizen->id)->update(['user_id' => null]);
+            DeathCertificate::where('user_id', $citizen->id)->update(['user_id' => null]);
+
+            // Hapus akun user
+            $citizen->delete();
+        });
+
+        ActivityLog::record([
+            'user_id' => Auth::id(),
+            'user_name' => Auth::user()->name,
+            'user_role' => 'admin',
+            'action_type' => 'delete',
+            'module' => 'citizen',
+            'title' => 'Penghapusan Permanen Akun Warga',
+            'description' => 'Penghapusan permanen akun warga dari database arsip.',
+            'reference_no' => $citizenNik,
+            'subject_type' => null,
+            'subject_id' => null,
+        ]);
+
+        return redirect()->route('admin.archive.index', ['tab' => 'citizens'])
+            ->with('success', 'Akun warga (' . $citizenName . ') telah berhasil dihapus secara permanen.');
+    }
+}

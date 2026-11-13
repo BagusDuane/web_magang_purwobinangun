@@ -1,0 +1,428 @@
+/**
+ * Website Notification Center (Warga & Admin)
+ * Handles notification dropdown, unread tracking, delete items, clear all, category filtering,
+ * sound alerts on new incoming citizen submissions, and background feed polling.
+ */
+
+function setupNotificationPanel(options) {
+    const {
+        prefix,
+        storagePrefix,
+        filterKeys,
+        activeBtnClasses,
+        inactiveBtnClasses,
+        clickHandlerName,
+        deleteHandlerName,
+    } = options;
+
+    const container = document.getElementById(`${prefix}-notif-container`);
+    const btn = document.getElementById(`${prefix}-notif-btn`);
+    const dropdown = document.getElementById(`${prefix}-notif-dropdown`);
+    const closeBtn = document.getElementById(`${prefix}-btn-close-notif-dropdown`) || document.getElementById('btn-close-notif-dropdown');
+    const markAllReadBtn = document.getElementById(`${prefix}-btn-mark-all-read`) || document.getElementById('btn-mark-all-read');
+    const clearAllBtn = document.getElementById(`${prefix}-btn-clear-all-notifs`) || document.getElementById('btn-clear-all-notifs');
+    const badge = document.getElementById(`${prefix}-notif-badge`);
+    const ping = document.getElementById(`${prefix}-notif-ping`);
+    const notifList = document.getElementById(`${prefix}-notif-list`);
+    const emptyState = document.getElementById(`${prefix}-notif-empty`);
+
+    if (!container || !btn || !dropdown || !notifList) {
+        return;
+    }
+
+    const userId = notifList.dataset.userId || 'default';
+    const storageKeyRead = `${storagePrefix}_read_notifs_${userId}`;
+    const storageKeyDeleted = `${storagePrefix}_deleted_notifs_${userId}`;
+    const storageKeyKnown = `${storagePrefix}_known_notifs_${userId}`;
+    const lastPlayedKey = `${storagePrefix}_last_sound_played`;
+
+    const soundUrl = notifList.dataset.soundUrl || options.soundUrl;
+    const feedUrl = notifList.dataset.feedUrl || options.feedUrl;
+
+    let notifAudio = null;
+    let audioUnlocked = false;
+
+    if (soundUrl) {
+        try {
+            notifAudio = new Audio(soundUrl);
+            notifAudio.preload = 'auto';
+
+            const unlockAudio = () => {
+                if (audioUnlocked || !notifAudio) return;
+                notifAudio.play().then(() => {
+                    notifAudio.pause();
+                    notifAudio.currentTime = 0;
+                    audioUnlocked = true;
+                }).catch(() => {});
+                document.removeEventListener('click', unlockAudio);
+                document.removeEventListener('keydown', unlockAudio);
+            };
+
+            document.addEventListener('click', unlockAudio, { once: true });
+            document.addEventListener('keydown', unlockAudio, { once: true });
+        } catch (e) {
+            // Audio not supported or blocked
+        }
+    }
+
+    function playSound() {
+        if (!notifAudio) return;
+        const now = Date.now();
+        const lastPlayed = parseInt(localStorage.getItem(lastPlayedKey) || '0', 10);
+        if (now - lastPlayed < 2000) {
+            return; // debounce echo between multiple tabs
+        }
+        localStorage.setItem(lastPlayedKey, now.toString());
+
+        try {
+            notifAudio.currentTime = 0;
+            const playPromise = notifAudio.play();
+            if (playPromise !== undefined && typeof playPromise.catch === 'function') {
+                playPromise.catch(() => {
+                    // Autoplay policy may defer until user gesture
+                });
+            }
+        } catch (e) {
+            // ignore
+        }
+    }
+
+    function readStorage(key) {
+        try {
+            const raw = localStorage.getItem(key);
+            return raw ? JSON.parse(raw) : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    function writeStorage(key, ids) {
+        try {
+            localStorage.setItem(key, JSON.stringify(ids));
+        } catch (e) {
+            // Ignore quota errors
+        }
+    }
+
+    function updateNotifUI() {
+        const readIds = new Set(readStorage(storageKeyRead));
+        const deletedIds = new Set(readStorage(storageKeyDeleted));
+        const items = notifList.querySelectorAll('.notif-item');
+
+        let unreadCount = 0;
+        let totalRemaining = 0;
+        const typeCounts = Object.fromEntries(filterKeys.map(k => [k, 0]));
+
+        items.forEach(item => {
+            const id = item.dataset.notifId;
+            const type = item.dataset.notifType;
+
+            if (deletedIds.has(id)) {
+                item.remove();
+                return;
+            }
+
+            totalRemaining++;
+            if (Object.prototype.hasOwnProperty.call(typeCounts, type)) {
+                typeCounts[type]++;
+            }
+
+            const isRead = readIds.has(id);
+            const dot = item.querySelector('.notif-unread-dot');
+
+            if (isRead) {
+                item.classList.add('notif-read', 'is-read');
+                item.classList.remove('notif-unread');
+                if (dot) {
+                    dot.classList.add('hidden', 'opacity-0');
+                    dot.classList.remove('block');
+                }
+            } else {
+                item.classList.remove('notif-read', 'is-read');
+                item.classList.add('notif-unread');
+                if (dot) {
+                    dot.classList.remove('hidden', 'opacity-0');
+                    dot.classList.add('block');
+                }
+                unreadCount++;
+            }
+        });
+
+        if (badge) {
+            if (unreadCount > 0) {
+                badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                badge.classList.remove('hidden');
+                if (ping) ping.classList.remove('hidden');
+            } else {
+                badge.textContent = '0';
+                badge.classList.add('hidden');
+                if (ping) ping.classList.add('hidden');
+            }
+        }
+
+        const filterCountAll = dropdown.querySelector('.notif-filter-count[data-filter-type="all"]');
+        if (filterCountAll) filterCountAll.textContent = totalRemaining;
+
+        filterKeys.forEach(key => {
+            const el = dropdown.querySelector(`.notif-filter-count[data-filter-type="${key}"]`);
+            if (el) el.textContent = typeCounts[key];
+        });
+
+        if (emptyState) {
+            emptyState.classList.toggle('hidden', totalRemaining > 0);
+        }
+    }
+
+    function toggleDropdown(show) {
+        const isHidden = dropdown.classList.contains('hidden');
+        const shouldShow = typeof show === 'boolean' ? show : isHidden;
+        dropdown.classList.toggle('hidden', !shouldShow);
+        btn.setAttribute('aria-expanded', shouldShow ? 'true' : 'false');
+    }
+
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleDropdown();
+    });
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleDropdown(false);
+        });
+    }
+
+    document.addEventListener('click', (e) => {
+        if (!container.contains(e.target)) {
+            toggleDropdown(false);
+        }
+    });
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !dropdown.classList.contains('hidden')) {
+            toggleDropdown(false);
+        }
+    });
+
+    if (markAllReadBtn) {
+        markAllReadBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const items = notifList.querySelectorAll('.notif-item');
+            const allIds = Array.from(items).map(item => item.dataset.notifId).filter(Boolean);
+            const currentRead = new Set(readStorage(storageKeyRead));
+            allIds.forEach(id => currentRead.add(id));
+            writeStorage(storageKeyRead, Array.from(currentRead));
+            updateNotifUI();
+        });
+    }
+
+    if (clearAllBtn) {
+        clearAllBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (!confirm('Apakah Anda yakin ingin menghapus semua daftar notifikasi yang masuk?')) {
+                return;
+            }
+            const items = notifList.querySelectorAll('.notif-item');
+            const allIds = Array.from(items).map(item => item.dataset.notifId).filter(Boolean);
+            const currentDeleted = new Set(readStorage(storageKeyDeleted));
+            allIds.forEach(id => currentDeleted.add(id));
+            writeStorage(storageKeyDeleted, Array.from(currentDeleted));
+
+            items.forEach(item => {
+                item.style.transition = 'all 0.25s ease-out';
+                item.style.opacity = '0';
+                item.style.transform = 'translateX(20px)';
+            });
+
+            setTimeout(() => {
+                items.forEach(item => item.remove());
+                updateNotifUI();
+            }, 250);
+        });
+    }
+
+    const filterBtns = dropdown.querySelectorAll('.notif-filter-btn');
+    filterBtns.forEach(fBtn => {
+        fBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const filter = fBtn.dataset.filter;
+
+            filterBtns.forEach(b => {
+                b.classList.remove(...activeBtnClasses);
+                b.classList.add(...inactiveBtnClasses);
+            });
+            fBtn.classList.remove(...inactiveBtnClasses);
+            fBtn.classList.add(...activeBtnClasses);
+
+            const items = notifList.querySelectorAll('.notif-item');
+            let visibleCount = 0;
+
+            items.forEach(item => {
+                const match = filter === 'all' || item.dataset.notifType === filter;
+                item.classList.toggle('hidden', !match);
+                if (match) visibleCount++;
+            });
+
+            let emptyMsg = notifList.querySelector('.filter-empty-msg');
+            if (visibleCount === 0 && items.length > 0) {
+                if (!emptyMsg) {
+                    emptyMsg = document.createElement('div');
+                    emptyMsg.className = 'filter-empty-msg p-6 text-center text-xs text-slate-500';
+                    emptyMsg.innerHTML = '<i class="fa-solid fa-filter-circle-xmark text-2xl text-slate-400 mb-2 block"></i>Tidak ada notifikasi pada kategori ini.';
+                    notifList.appendChild(emptyMsg);
+                }
+                emptyMsg.classList.remove('hidden');
+            } else if (emptyMsg) {
+                emptyMsg.classList.add('hidden');
+            }
+        });
+    });
+
+    updateNotifUI();
+
+    // Inspect existing items on page load
+    if (soundUrl) {
+        const domItems = notifList.querySelectorAll('.notif-item');
+        const domIds = Array.from(domItems).map(item => item.dataset.notifId).filter(Boolean);
+        const storedKnown = readStorage(storageKeyKnown);
+
+        if (!Array.isArray(storedKnown) || storedKnown.length === 0) {
+            writeStorage(storageKeyKnown, domIds);
+        } else {
+            const newlyAdded = domIds.filter(id => !storedKnown.includes(id));
+            if (newlyAdded.length > 0) {
+                playSound();
+                const combined = Array.from(new Set([...storedKnown, ...domIds]));
+                writeStorage(storageKeyKnown, combined);
+            }
+        }
+    }
+
+    // Periodic feed polling for background real-time updates
+    if (feedUrl) {
+        let isPolling = false;
+
+        async function checkNotificationFeed() {
+            if (isPolling) return;
+            isPolling = true;
+
+            try {
+                const response = await fetch(feedUrl, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    isPolling = false;
+                    return;
+                }
+
+                const data = await response.json();
+                const incomingNotifications = data.notifications || [];
+                const incomingIds = incomingNotifications.map(n => n.id).filter(Boolean);
+
+                const currentKnown = new Set(readStorage(storageKeyKnown));
+                const freshNotifIds = incomingIds.filter(id => !currentKnown.has(id));
+
+                if (freshNotifIds.length > 0) {
+                    playSound();
+                    freshNotifIds.forEach(id => currentKnown.add(id));
+                    writeStorage(storageKeyKnown, Array.from(currentKnown));
+
+                    if (data.html) {
+                        notifList.innerHTML = data.html;
+                        updateNotifUI();
+                    }
+                } else if (data.html) {
+                    // Check if list count or items changed
+                    const domItems = notifList.querySelectorAll('.notif-item');
+                    const domIds = Array.from(domItems).map(i => i.dataset.notifId).filter(Boolean);
+                    if (domIds.length !== incomingIds.length || domIds.some((id, idx) => id !== incomingIds[idx])) {
+                        notifList.innerHTML = data.html;
+                        updateNotifUI();
+                    }
+                }
+            } catch (err) {
+                // Ignore network errors during polling
+            } finally {
+                isPolling = false;
+            }
+        }
+
+        window.setInterval(checkNotificationFeed, 10000);
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                checkNotificationFeed();
+            }
+        });
+    }
+
+    window[clickHandlerName] = function(id, url) {
+        if (id) {
+            const currentRead = new Set(readStorage(storageKeyRead));
+            currentRead.add(id);
+            writeStorage(storageKeyRead, Array.from(currentRead));
+            updateNotifUI();
+        }
+        if (url) {
+            window.location.href = url;
+        }
+    };
+
+    window[deleteHandlerName] = function(id, event) {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+        if (!id) return;
+
+        const currentDeleted = new Set(readStorage(storageKeyDeleted));
+        currentDeleted.add(id);
+        writeStorage(storageKeyDeleted, Array.from(currentDeleted));
+
+        const item = notifList.querySelector(`.notif-item[data-notif-id="${id}"]`);
+        if (item) {
+            item.style.transition = 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)';
+            item.style.opacity = '0';
+            item.style.transform = 'translateX(24px)';
+            item.style.maxHeight = '0px';
+            item.style.paddingTop = '0px';
+            item.style.paddingBottom = '0px';
+            item.style.margin = '0px';
+            item.style.overflow = 'hidden';
+
+            setTimeout(() => {
+                item.remove();
+                updateNotifUI();
+            }, 250);
+        } else {
+            updateNotifUI();
+        }
+    };
+}
+
+export function initWargaNotifications() {
+    setupNotificationPanel({
+        prefix: 'warga',
+        storagePrefix: 'purwobinangun_warga',
+        filterKeys: ['akte', 'profile', 'account'],
+        activeBtnClasses: ['bg-[#095b8c]', 'text-white'],
+        inactiveBtnClasses: ['bg-slate-200', 'text-slate-700'],
+        clickHandlerName: 'handleNotificationClick',
+        deleteHandlerName: 'deleteNotification',
+    });
+
+    setupNotificationPanel({
+        prefix: 'admin',
+        storagePrefix: 'purwobinangun_admin',
+        filterKeys: ['akte', 'citizen', 'profile'],
+        activeBtnClasses: ['bg-[#065b65]', 'text-white'],
+        inactiveBtnClasses: ['bg-slate-200', 'text-slate-700'],
+        clickHandlerName: 'handleAdminNotificationClick',
+        deleteHandlerName: 'deleteAdminNotification',
+        soundUrl: '/sounds/notif_new.mp3',
+    });
+}
