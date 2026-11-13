@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Surat Keterangan Kematian - {{ $death->deceased_name }} - {{ $death->registration_no }}</title>
     
-    <!-- Google Fonts for Arial/Sans Body and Javanese Script -->
+    <!-- Google Fonts for Serif Body and Javanese Script -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Javanese:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Javanese:wght@400;700&family=Tinos:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <!-- html2pdf for direct A4 PDF download -->
@@ -18,7 +18,7 @@
 
     <style>
         body {
-            font-family: Arial, Helvetica, 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Times New Roman', Times, 'Tinos', 'Bookman Old Style', serif;
             color: #000;
             background-color: #f1f5f9;
         }
