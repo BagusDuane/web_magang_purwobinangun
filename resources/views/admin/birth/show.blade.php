@@ -183,18 +183,36 @@
                     
                     @php
                         $docs = [
-                            'Surat Keterangan Lahir (RS/Bidan)' => $birth->doc_birth_cert,
-                            'Kartu Keluarga (KK)' => $birth->doc_family_card,
-                            'Buku Nikah / Akta Perkawinan' => $birth->doc_marriage_cert,
-                            'KTP Kedua Orang Tua' => $birth->doc_parents_ktp,
-                            'Surat Pengantar RT/RW' => $birth->doc_witness_ktp,
+                            'Surat Keterangan Lahir (RS/Bidan)' => [
+                                'field' => 'doc_birth_cert',
+                                'path' => $birth->doc_birth_cert,
+                            ],
+                            'Kartu Keluarga (KK)' => [
+                                'field' => 'doc_family_card',
+                                'path' => $birth->doc_family_card,
+                            ],
+                            'Buku Nikah / Akta Perkawinan' => [
+                                'field' => 'doc_marriage_cert',
+                                'path' => $birth->doc_marriage_cert,
+                            ],
+                            'KTP Kedua Orang Tua' => [
+                                'field' => 'doc_parents_ktp',
+                                'path' => $birth->doc_parents_ktp,
+                            ],
+                            'Surat Pengantar RT/RW' => [
+                                'field' => 'doc_witness_ktp',
+                                'path' => $birth->doc_witness_ktp,
+                            ],
                         ];
                     @endphp
 
-                    @foreach($docs as $title => $path)
+                    @foreach($docs as $title => $doc)
                         @php
+                            $path = $doc['path'];
+                            $field = $doc['field'];
                             $isPdf = $path ? \Illuminate\Support\Str::endsWith(strtolower($path), '.pdf') : false;
-                            $docUrl = $path ? (\Illuminate\Support\Str::startsWith($path, 'http') || \Illuminate\Support\Str::startsWith($path, 'storage/') ? asset($path) : asset('storage/' . $path)) : '';
+                            $viewUrl = $path ? route('admin.birth.attachment.view', ['birth' => $birth, 'field' => $field]) : '';
+                            $downloadUrl = $path ? route('admin.birth.attachment.download', ['birth' => $birth, 'field' => $field]) : '';
                         @endphp
                         <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-center justify-between">
                             <div class="mr-2 overflow-hidden">
@@ -203,10 +221,13 @@
                             </div>
                             @if($path)
                                 <div class="flex items-center gap-1.5 shrink-0">
-                                    <button type="button" onclick="previewAttachment('{{ $docUrl }}', '{{ addslashes($title) }}', {{ $isPdf ? 'true' : 'false' }});" class="bg-[#059cb8] hover:bg-[#095b8c] text-white font-bold text-[10px] px-2.5 py-1 rounded transition flex items-center gap-1 shadow-2xs cursor-pointer" title="Pratinjau Dokumen">
+                                    <button type="button" onclick="previewAttachment('{{ $viewUrl }}', '{{ $downloadUrl }}', '{{ addslashes($title) }}', {{ $isPdf ? 'true' : 'false' }});" class="bg-[#059cb8] hover:bg-[#095b8c] text-white font-bold text-[10px] px-2.5 py-1.5 rounded transition flex items-center gap-1 shadow-2xs cursor-pointer" title="Pratinjau Dokumen">
                                         <i class="fa-solid fa-eye"></i> Lihat
                                     </button>
-                                    <a href="{{ $docUrl }}" target="_blank" class="bg-slate-800 hover:bg-slate-900 text-white font-bold text-[10px] px-2 py-1 rounded transition flex items-center gap-1 shadow-2xs" title="Buka di Tab Baru">
+                                    <a href="{{ $downloadUrl }}" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] px-2.5 py-1.5 rounded transition flex items-center gap-1 shadow-2xs" title="Unduh Berkas ke Komputer">
+                                        <i class="fa-solid fa-download"></i> Unduh
+                                    </a>
+                                    <a href="{{ $viewUrl }}" target="_blank" class="bg-slate-800 hover:bg-slate-900 text-white font-bold text-[10px] px-2 py-1.5 rounded transition flex items-center gap-1 shadow-2xs" title="Buka di Tab Baru">
                                         <i class="fa-solid fa-arrow-up-right-from-square"></i>
                                     </a>
                                 </div>
@@ -333,35 +354,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const noteJsError = document.getElementById('noteJsError');
     const openModalSubmitBtn = document.getElementById('openModalSubmitBtn');
 
-    if (!statusForm || !statusSelect || !rejectionNote) return;
+    if (statusForm && statusSelect && rejectionNote) {
+        const initialStatus = statusSelect.value;
+        const initialNote = @json((string) $birth->rejection_note).trim();
 
-    const initialStatus = statusSelect.value;
-    const initialNote = @json((string) $birth->rejection_note).trim();
-
-    function validateNoteChange() {
-        const currentStatus = statusSelect.value;
-        const currentNote = rejectionNote.value.trim();
-        const isStatusChanged = (currentStatus !== initialStatus);
-        const isNoteUnchanged = (initialNote !== '' && currentNote === initialNote);
-
-        if (isStatusChanged && isNoteUnchanged) {
-            if (statusChangeWarning) statusChangeWarning.classList.remove('hidden');
-            return false;
-        } else {
-            if (statusChangeWarning) statusChangeWarning.classList.add('hidden');
-            if (noteJsError) noteJsError.classList.add('hidden');
-            rejectionNote.classList.remove('border-rose-500', 'ring-2', 'ring-rose-400');
-            return true;
-        }
-    }
-
-    statusSelect.addEventListener('change', validateNoteChange);
-    rejectionNote.addEventListener('input', validateNoteChange);
-
-    if (openModalSubmitBtn) {
-        openModalSubmitBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-
+        function validateNoteChange() {
             const currentStatus = statusSelect.value;
             const currentNote = rejectionNote.value.trim();
             const isStatusChanged = (currentStatus !== initialStatus);
@@ -369,26 +366,50 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (isStatusChanged && isNoteUnchanged) {
                 if (statusChangeWarning) statusChangeWarning.classList.remove('hidden');
-                if (noteJsError) {
-                    noteJsError.textContent = 'Peringatan: Status pengajuan telah diubah, silakan perbarui Catatan Verifikator / Pesan terlebih dahulu.';
-                    noteJsError.classList.remove('hidden');
+                return false;
+            } else {
+                if (statusChangeWarning) statusChangeWarning.classList.add('hidden');
+                if (noteJsError) noteJsError.classList.add('hidden');
+                rejectionNote.classList.remove('border-rose-500', 'ring-2', 'ring-rose-400');
+                return true;
+            }
+        }
+
+        statusSelect.addEventListener('change', validateNoteChange);
+        rejectionNote.addEventListener('input', validateNoteChange);
+
+        if (openModalSubmitBtn) {
+            openModalSubmitBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+
+                const currentStatus = statusSelect.value;
+                const currentNote = rejectionNote.value.trim();
+                const isStatusChanged = (currentStatus !== initialStatus);
+                const isNoteUnchanged = (initialNote !== '' && currentNote === initialNote);
+
+                if (isStatusChanged && isNoteUnchanged) {
+                    if (statusChangeWarning) statusChangeWarning.classList.remove('hidden');
+                    if (noteJsError) {
+                        noteJsError.textContent = 'Peringatan: Status pengajuan telah diubah, silakan perbarui Catatan Verifikator / Pesan terlebih dahulu.';
+                        noteJsError.classList.remove('hidden');
+                    }
+                    rejectionNote.classList.add('border-rose-500', 'ring-2', 'ring-rose-400');
+                    rejectionNote.focus();
+                    alert('Peringatan: Status pengajuan telah diubah tetapi pesan/catatan verifikator masih belum diganti. Silakan ubah catatan terlebih dahulu sebelum menyimpan.');
+                    return;
                 }
-                rejectionNote.classList.add('border-rose-500', 'ring-2', 'ring-rose-400');
-                rejectionNote.focus();
-                alert('Peringatan: Status pengajuan telah diubah tetapi pesan/catatan verifikator masih belum diganti. Silakan ubah catatan terlebih dahulu sebelum menyimpan.');
-                return;
-            }
 
-            if (currentNote.length < 3) {
-                rejectionNote.focus();
-                rejectionNote.reportValidity();
-                return;
-            }
+                if (currentNote.length < 3) {
+                    rejectionNote.focus();
+                    rejectionNote.reportValidity();
+                    return;
+                }
 
-            openModalSubmitBtn.disabled = true;
-            openModalSubmitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Menyimpan...';
-            statusForm.submit();
-        });
+                openModalSubmitBtn.disabled = true;
+                openModalSubmitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Menyimpan...';
+                statusForm.submit();
+            });
+        }
     }
 
     // Modal Preview Lampiran Interaktif
@@ -407,7 +428,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalPreviewSubtitle = document.getElementById('modal-preview-subtitle');
     const modalFileInfo = document.getElementById('modal-file-info');
     const modalBtnOpenTab = document.getElementById('modal-btn-open-tab');
+    const modalBtnDownload = document.getElementById('modal-btn-download');
+    const modalFooterDownload = document.getElementById('modal-footer-download');
     const modalPdfDownload = document.getElementById('modal-pdf-download');
+    const modalPdfFallbackDownload = document.getElementById('modal-pdf-fallback-download');
+    const modalPdfFallbackTab = document.getElementById('modal-pdf-fallback-tab');
     const btnCloseModalDoc = document.getElementById('btn-close-modal-doc');
     const btnCloseModalDocFooter = document.getElementById('btn-close-modal-doc-footer');
 
@@ -503,28 +528,32 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    window.previewAttachment = function(url, title, isPdf) {
-        if (!modalPreviewDoc || !url) return;
+    window.previewAttachment = function(viewUrl, downloadUrl, title, isPdf) {
+        if (!modalPreviewDoc || !viewUrl) return;
         resetPanZoom();
 
         if (modalPreviewTitle) modalPreviewTitle.textContent = title || 'Pratinjau Berkas Lampiran';
         if (modalFileInfo) modalFileInfo.textContent = title + (isPdf ? ' (Format PDF)' : ' (Format Gambar)');
-        if (modalBtnOpenTab) modalBtnOpenTab.href = url;
-        if (modalPdfDownload) modalPdfDownload.href = url;
+        if (modalBtnOpenTab) modalBtnOpenTab.href = viewUrl;
+        if (modalBtnDownload) modalBtnDownload.href = downloadUrl || viewUrl;
+        if (modalPdfDownload) modalPdfDownload.href = viewUrl;
+        if (modalFooterDownload) modalFooterDownload.href = downloadUrl || viewUrl;
+        if (modalPdfFallbackDownload) modalPdfFallbackDownload.href = downloadUrl || viewUrl;
+        if (modalPdfFallbackTab) modalPdfFallbackTab.href = viewUrl;
 
         if (isPdf) {
             if (modalImgContainer) modalImgContainer.classList.add('hidden');
             if (modalZoomControls) modalZoomControls.classList.add('hidden');
             if (modalPdfContainer) modalPdfContainer.classList.remove('hidden');
-            if (modalPdfFrame) modalPdfFrame.src = url;
-            if (modalPreviewSubtitle) modalPreviewSubtitle.textContent = 'Dokumen berformat PDF';
+            if (modalPdfFrame) modalPdfFrame.src = viewUrl;
+            if (modalPreviewSubtitle) modalPreviewSubtitle.textContent = 'Dokumen berformat PDF • Dapat dilihat dan diunduh langsung';
         } else {
             if (modalPdfContainer) modalPdfContainer.classList.add('hidden');
             if (modalPdfFrame) modalPdfFrame.src = 'about:blank';
             if (modalImgContainer) modalImgContainer.classList.remove('hidden');
             if (modalZoomControls) modalZoomControls.classList.remove('hidden');
             if (modalPreviewImg) {
-                modalPreviewImg.src = url;
+                modalPreviewImg.src = viewUrl;
             }
             if (modalPreviewSubtitle) modalPreviewSubtitle.textContent = 'Scroll untuk Zoom • Drag untuk Menggeser Posisi';
         }
@@ -590,6 +619,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     </button>
                 </div>
 
+                <!-- Tombol Unduh Header -->
+                <a id="modal-btn-download" href="#" class="w-8 h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center transition cursor-pointer shadow-xs" title="Unduh Berkas ke Komputer">
+                    <i class="fa-solid fa-download text-xs"></i>
+                </a>
+
                 <a id="modal-btn-open-tab" href="#" target="_blank" class="w-8 h-8 rounded-lg bg-white/15 hover:bg-white/30 text-teal-100 hover:text-white flex items-center justify-center transition cursor-pointer" title="Buka di Tab Baru">
                     <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
                 </a>
@@ -615,6 +649,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
             <!-- PDF Container -->
             <div id="modal-pdf-container" class="hidden w-full h-full flex flex-col bg-slate-900">
+                <div class="px-4 py-2 bg-slate-800/90 border-b border-slate-700 flex items-center justify-between text-xs text-slate-300 shrink-0">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-file-pdf text-rose-400"></i> Dokumen PDF Terlampir</span>
+                    <div class="flex items-center gap-2">
+                        <a id="modal-pdf-fallback-download" href="#" class="text-[11px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-3 py-1 rounded-lg transition flex items-center gap-1 shadow-2xs">
+                            <i class="fa-solid fa-download"></i> Unduh PDF
+                        </a>
+                        <a id="modal-pdf-fallback-tab" href="#" target="_blank" class="text-[11px] font-bold text-white bg-slate-700 hover:bg-slate-600 px-3 py-1 rounded-lg transition flex items-center gap-1">
+                            <i class="fa-solid fa-arrow-up-right-from-square"></i> Buka Layar Penuh
+                        </a>
+                    </div>
+                </div>
                 <iframe id="modal-pdf-frame" src="" class="w-full h-full flex-1 border-0 bg-slate-800"></iframe>
             </div>
         </div>
@@ -626,6 +671,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span class="text-xs text-slate-700 truncate font-medium" id="modal-file-info">-</span>
             </div>
             <div class="flex items-center gap-2">
+                <a id="modal-footer-download" href="#" class="text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-2xs">
+                    <i class="fa-solid fa-download text-xs"></i> Unduh Berkas
+                </a>
                 <a id="modal-pdf-download" href="#" target="_blank" class="text-xs font-semibold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-300 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 shadow-2xs">
                     <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i> Tab Baru
                 </a>

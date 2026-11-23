@@ -1530,6 +1530,22 @@
     }
 
     btnFinalSend.addEventListener('click', function () {
+        // Cek total ukuran berkas agar tidak melebihi post_max_size server (7 MB)
+        let totalFileSizeBytes = 0;
+        const deathFileInputs = deathForm.querySelectorAll('input[type="file"]');
+        deathFileInputs.forEach(input => {
+            if (input.files && input.files[0]) {
+                totalFileSizeBytes += input.files[0].size;
+            }
+        });
+        if (totalFileSizeBytes > 7 * 1024 * 1024) {
+            const totalMB = (totalFileSizeBytes / (1024 * 1024)).toFixed(2);
+            alert(`Total ukuran berkas yang diunggah (${totalMB} MB) melebihi batas maksimal server (7 MB total). Mohon kurangi atau kompres ukuran berkas Anda sebelum mengirimkan.`);
+            closeConfirmModal();
+            setStep(5);
+            return;
+        }
+
         btnFinalSend.disabled = true;
         btnFinalSend.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengirimkan...';
         try {

@@ -2386,6 +2386,17 @@ document.addEventListener('DOMContentLoaded', function () {
         input.addEventListener('change', async function () {
             if (this.files && this.files.length > 0) {
                 const file = this.files[0];
+                if (file.size > 3 * 1024 * 1024) {
+                    const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                    alert(`Ukuran file "${file.name}" (${sizeMB} MB) melebihi batas maksimal 3 MB. Silakan pilih file dengan ukuran lebih kecil.`);
+                    this.value = '';
+                    const cardKey = this.getAttribute('data-card');
+                    const placeholder = document.getElementById(`placeholder-${cardKey}`);
+                    const previewBox = document.getElementById(`preview-box-${cardKey}`);
+                    if (placeholder) placeholder.classList.remove('hidden');
+                    if (previewBox) previewBox.classList.add('hidden');
+                    return;
+                }
                 updateFilePreview(this, file);
                 await saveFileToDB(this.id, file);
                 saveFormDraft();
@@ -3901,8 +3912,36 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    let isSubmitting = false;
+
+    // Pemetaan field validasi ke langkah form wizard (1-5)
+    const birthFieldStepMap = {
+        child_name: 1, child_nik: 1, gender: 1, birth_place: 1, birth_place_type: 1, birth_place_other: 1,
+        birth_date: 1, birth_day: 1, birth_time: 1, birth_order: 1, birth_type: 1, birth_type_custom: 1,
+        birth_helper: 1, birth_helper_other: 1, weight_gram: 1, weight_kg: 1, length_cm: 1,
+        father_nik: 2, father_name: 2, father_birth_date: 2, father_age: 2, father_job: 2,
+        father_address: 2, father_rt: 2, father_rw: 2, father_village: 2, father_district: 2,
+        father_city: 2, father_province: 2, father_citizenship: 2, father_nationality: 2,
+        mother_nik: 2, mother_name: 2, mother_birth_date: 2, mother_age: 2, mother_job: 2,
+        mother_address: 2, mother_rt: 2, mother_rw: 2, mother_village: 2, mother_district: 2,
+        mother_city: 2, mother_province: 2, mother_citizenship: 2, mother_nationality: 2, marriage_date: 2,
+        applicant_name: 3, applicant_nik: 3, applicant_birth_date: 3, applicant_age: 3, applicant_gender: 3,
+        applicant_job: 3, address: 3, applicant_phone: 3, applicant_relation: 3, padukuhan: 3,
+        rt: 3, rw: 3, applicant_village: 3, applicant_district: 3, applicant_city: 3, applicant_province: 3,
+        witness_1_nik: 4, witness_1_name: 4, witness_1_birth_date: 4, witness_1_age: 4, witness_1_gender: 4,
+        witness_1_job: 4, witness_1_address: 4, witness_1_rt: 4, witness_1_rw: 4, witness_1_village: 4,
+        witness_1_district: 4, witness_1_city: 4, witness_1_province: 4,
+        witness_2_nik: 4, witness_2_name: 4, witness_2_birth_date: 4, witness_2_age: 4, witness_2_gender: 4,
+        witness_2_job: 4, witness_2_address: 4, witness_2_rt: 4, witness_2_rw: 4, witness_2_village: 4,
+        witness_2_district: 4, witness_2_city: 4, witness_2_province: 4,
+        doc_parents_ktp: 5, doc_family_card: 5, doc_birth_cert: 5, doc_marriage_cert: 5, doc_witness_ktp: 5,
+        applicant_signature: 5, declaration_check: 5
+    };
+
     // Form Submission Function
     function executeFormSubmission() {
+        if (isSubmitting) return;
+
         if (!validateStep1()) { setStep(1); return; }
         if (!validateStep2()) { setStep(2); return; }
         if (!validateStep3()) { setStep(3); return; }
@@ -3919,32 +3958,66 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        // Validasi total ukuran berkas agar tidak melebihi post_max_size server (7 MB)
+        let totalFileSizeBytes = 0;
+        const fileInputs = [docKtp, docKk, docLahir, docNikah, docPengantar];
+        for (const fInput of fileInputs) {
+            if (fInput && fInput.files && fInput.files[0]) {
+                totalFileSizeBytes += fInput.files[0].size;
+            }
+        }
+        if (totalFileSizeBytes > 7 * 1024 * 1024) {
+            const totalMB = (totalFileSizeBytes / (1024 * 1024)).toFixed(2);
+            alert(`Total ukuran berkas yang diunggah (${totalMB} MB) melebihi batas maksimal server (7 MB total). Mohon kurangi atau kompres ukuran berkas Anda sebelum mengirimkan.`);
+            setStep(5);
+            return;
+        }
+
         hideModal(previewModal);
 
         const submitBtn = document.getElementById('btn-submit-final');
         const submitText = document.getElementById('btn-submit-text');
         
+        isSubmitting = true;
         if (submitBtn) submitBtn.disabled = true;
-        if (submitText) submitText.classList.add('opacity-75');
+        if (submitText) {
+            submitText.classList.add('opacity-75');
+            submitText.textContent = 'Mengirimkan Permohonan...';
+        }
+        if (btnConfirmSubmit) {
+            btnConfirmSubmit.disabled = true;
+            btnConfirmSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs text-teal-200"></i><span>Mengirimkan...</span>';
+        }
 
         const formData = new FormData(form);
+        const csrfToken = form.querySelector('input[name="_token"]')?.value || '';
 
         fetch(form.action, {
             method: 'POST',
             body: formData,
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
             }
         })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(err => { throw err; });
+        .then(async response => {
+            const contentType = response.headers.get('content-type') || '';
+            let data = null;
+            if (contentType.includes('application/json')) {
+                data = await response.json();
+            } else {
+                const text = await response.text();
+                data = { message: text };
             }
-            return response.json();
+
+            if (!response.ok) {
+                return Promise.reject({ status: response.status, data: data });
+            }
+            return data;
         })
         .then(data => {
-            if (data.success) {
+            if (data && data.success) {
                 try {
                     localStorage.removeItem(DRAFT_KEY);
                     localStorage.removeItem('purwobinangun_birth_form_draft');
@@ -3990,18 +4063,46 @@ document.addEventListener('DOMContentLoaded', function () {
                 showModal(successModal);
             }
         })
-        .catch(error => {
-            console.error("Submission error:", error);
-            if (submitBtn) submitBtn.disabled = false;
-            if (submitText) submitText.classList.remove('opacity-75');
+        .catch(err => {
+            console.error("Submission error:", err);
+            isSubmitting = false;
 
-            if (error.errors) {
-                const firstKey = Object.keys(error.errors)[0];
-                alert('Terdapat kesalahan pengisian data: ' + error.errors[firstKey][0]);
-            } else {
-                alert('Terjadi kendala saat mengirim permohonan. Formulir akan dikirimkan secara langsung.');
-                form.submit();
+            if (submitBtn) submitBtn.disabled = false;
+            if (submitText) {
+                submitText.classList.remove('opacity-75');
+                submitText.textContent = 'Kirim Pengajuan Akte Kelahiran';
             }
+            if (btnConfirmSubmit) {
+                btnConfirmSubmit.disabled = false;
+                btnConfirmSubmit.innerHTML = '<i class="fa-solid fa-paper-plane text-xs text-teal-200"></i><span>Konfirmasi & Kirim Permohonan</span>';
+            }
+
+            if (err.status === 419) {
+                alert('Sesi pengajuan Anda telah berakhir. Halaman akan dimuat ulang agar sesi dapat diperbarui.');
+                window.location.reload();
+                return;
+            }
+
+            if (err.status === 422 && err.data?.errors) {
+                const firstKey = Object.keys(err.data.errors)[0];
+                const errorMsg = err.data.errors[firstKey][0];
+                const targetStep = birthFieldStepMap[firstKey] || 1;
+                setStep(targetStep);
+                alert('Terdapat kesalahan pengisian data: ' + errorMsg);
+                const targetInput = document.getElementById(firstKey) || document.querySelector(`[name="${firstKey}"]`);
+                if (targetInput && typeof targetInput.focus === 'function') {
+                    targetInput.focus();
+                }
+                return;
+            }
+
+            if (err.status === 403) {
+                alert('Akses Ditolak: ' + (err.data?.message || 'Anda tidak berhak melakukan pengajuan ini.'));
+                return;
+            }
+
+            const errorDetail = err.data?.message || (err.message && !err.message.startsWith('<!') ? err.message : null);
+            alert('Gagal mengirimkan permohonan. ' + (errorDetail ? errorDetail : 'Terjadi kendala jaringan atau server. Silakan periksa koneksi Anda dan coba kirim kembali.'));
         });
     }
 

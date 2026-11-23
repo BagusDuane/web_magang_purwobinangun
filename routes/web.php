@@ -110,6 +110,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/{birth}', [AdminBirthController::class, 'show'])->name('show');
             Route::put('/{birth}/status', [AdminBirthController::class, 'updateStatus'])->name('update_status');
             Route::get('/{birth}/cetak-surat', [AdminBirthController::class, 'printLetter'])->name('print_letter');
+            Route::get('/{birth}/berkas/{field}', [AdminBirthController::class, 'viewAttachment'])->name('attachment.view');
+            Route::get('/{birth}/unduh/{field}', [AdminBirthController::class, 'downloadAttachment'])->name('attachment.download');
         });
 
         // Kelola Akte Kematian
@@ -118,6 +120,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/{death}', [AdminDeathController::class, 'show'])->name('show');
             Route::put('/{death}/status', [AdminDeathController::class, 'updateStatus'])->name('update_status');
             Route::get('/{death}/cetak-surat', [AdminDeathController::class, 'printLetter'])->name('print_letter');
+            Route::get('/{death}/berkas/{field}', [AdminDeathController::class, 'viewAttachment'])->name('attachment.view');
+            Route::get('/{death}/unduh/{field}', [AdminDeathController::class, 'downloadAttachment'])->name('attachment.download');
         });
 
         // Kelola & Verifikasi Akun Warga

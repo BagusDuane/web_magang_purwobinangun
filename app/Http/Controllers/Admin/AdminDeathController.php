@@ -108,4 +108,120 @@ class AdminDeathController extends Controller
     {
         return view('admin.death.print-letter', compact('death'));
     }
+
+    public function viewAttachment(DeathCertificate $death, string $field)
+    {
+        $allowed = [
+            'doc_death_statement',
+            'doc_rt_rw_statement',
+            'doc_family_card',
+            'doc_deceased_ktp',
+            'doc_heir_family_card',
+            'doc_heir_ktp',
+            'doc_applicant_ktp',
+        ];
+
+        if (!in_array($field, $allowed)) {
+            abort(404, 'Jenis berkas lampiran tidak valid.');
+        }
+
+        $path = $death->$field;
+        if (!$path && $field === 'doc_heir_ktp') {
+            $path = $death->doc_applicant_ktp;
+        }
+        if (!$path) {
+            abort(404, 'Berkas belum diunggah.');
+        }
+
+        $filePath = $this->resolveFilePath($path);
+        if (!$filePath || !file_exists($filePath)) {
+            abort(404, 'Berkas fisik lampiran tidak ditemukan pada server.');
+        }
+
+        $mime = null;
+        if (function_exists('mime_content_type')) {
+            $mime = @mime_content_type($filePath);
+        }
+        if (!$mime || $mime === 'application/x-empty') {
+            $mime = match (strtolower(pathinfo($filePath, PATHINFO_EXTENSION))) {
+                'pdf' => 'application/pdf',
+                'jpg', 'jpeg' => 'image/jpeg',
+                'png' => 'image/png',
+                default => 'application/octet-stream',
+            };
+        }
+
+        return response()->file($filePath, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="' . basename($filePath) . '"',
+            'Cache-Control' => 'no-cache, private',
+        ]);
+    }
+
+    public function downloadAttachment(DeathCertificate $death, string $field)
+    {
+        $allowed = [
+            'doc_death_statement',
+            'doc_rt_rw_statement',
+            'doc_family_card',
+            'doc_deceased_ktp',
+            'doc_heir_family_card',
+            'doc_heir_ktp',
+            'doc_applicant_ktp',
+        ];
+
+        if (!in_array($field, $allowed)) {
+            abort(404, 'Jenis berkas lampiran tidak valid.');
+        }
+
+        $path = $death->$field;
+        if (!$path && $field === 'doc_heir_ktp') {
+            $path = $death->doc_applicant_ktp;
+        }
+        if (!$path) {
+            abort(404, 'Berkas belum diunggah.');
+        }
+
+        $filePath = $this->resolveFilePath($path);
+        if (!$filePath || !file_exists($filePath)) {
+            abort(404, 'Berkas fisik lampiran tidak ditemukan pada server.');
+        }
+
+        $labels = [
+            'doc_death_statement' => 'Surat_Kematian',
+            'doc_rt_rw_statement' => 'Surat_Pengantar_RTRW',
+            'doc_family_card' => 'Kartu_Keluarga',
+            'doc_deceased_ktp' => 'KTP_Almarhum',
+            'doc_heir_family_card' => 'KK_Ahli_Waris',
+            'doc_heir_ktp' => 'KTP_Ahli_Waris',
+            'doc_applicant_ktp' => 'KTP_Pelapor',
+        ];
+
+        $label = $labels[$field] ?? 'Berkas_Lampiran';
+        $ext = pathinfo($filePath, PATHINFO_EXTENSION);
+        $filename = $label . '_' . $death->registration_no . ($ext ? '.' . $ext : '');
+
+        return response()->download($filePath, $filename);
+    }
+
+    protected function resolveFilePath(string $path): ?string
+    {
+        $cleanPath = ltrim(preg_replace('#^(public/|storage/)#', '', $path), '/\\');
+
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
+            return \Illuminate\Support\Facades\Storage::disk('public')->path($cleanPath);
+        }
+
+        $storageAppPublic = storage_path('app/public/' . $cleanPath);
+        if (file_exists($storageAppPublic)) {
+            return $storageAppPublic;
+        }
+
+        $publicStorage = public_path('storage/' . $cleanPath);
+        if (file_exists($publicStorage)) {
+            return $publicStorage;
+        }
+
+        return null;
+    }
 }

@@ -108,4 +108,111 @@ class AdminBirthController extends Controller
     {
         return view('admin.birth.print-letter', compact('birth'));
     }
+
+    public function viewAttachment(BirthCertificate $birth, string $field)
+    {
+        $allowed = [
+            'doc_birth_cert',
+            'doc_family_card',
+            'doc_marriage_cert',
+            'doc_parents_ktp',
+            'doc_witness_ktp',
+            'applicant_signature',
+        ];
+
+        if (!in_array($field, $allowed)) {
+            abort(404, 'Jenis berkas lampiran tidak valid.');
+        }
+
+        $path = $birth->$field;
+        if (!$path) {
+            abort(404, 'Berkas belum diunggah.');
+        }
+
+        $filePath = $this->resolveFilePath($path);
+        if (!$filePath || !file_exists($filePath)) {
+            abort(404, 'Berkas fisik lampiran tidak ditemukan pada server.');
+        }
+
+        $mime = null;
+        if (function_exists('mime_content_type')) {
+            $mime = @mime_content_type($filePath);
+        }
+        if (!$mime || $mime === 'application/x-empty') {
+            $mime = match (strtolower(pathinfo($filePath, PATHINFO_EXTENSION))) {
+                'pdf' => 'application/pdf',
+                'jpg', 'jpeg' => 'image/jpeg',
+                'png' => 'image/png',
+                default => 'application/octet-stream',
+            };
+        }
+
+        return response()->file($filePath, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="' . basename($filePath) . '"',
+            'Cache-Control' => 'no-cache, private',
+        ]);
+    }
+
+    public function downloadAttachment(BirthCertificate $birth, string $field)
+    {
+        $allowed = [
+            'doc_birth_cert',
+            'doc_family_card',
+            'doc_marriage_cert',
+            'doc_parents_ktp',
+            'doc_witness_ktp',
+            'applicant_signature',
+        ];
+
+        if (!in_array($field, $allowed)) {
+            abort(404, 'Jenis berkas lampiran tidak valid.');
+        }
+
+        $path = $birth->$field;
+        if (!$path) {
+            abort(404, 'Berkas belum diunggah.');
+        }
+
+        $filePath = $this->resolveFilePath($path);
+        if (!$filePath || !file_exists($filePath)) {
+            abort(404, 'Berkas fisik lampiran tidak ditemukan pada server.');
+        }
+
+        $labels = [
+            'doc_birth_cert' => 'Surat_Keterangan_Lahir',
+            'doc_family_card' => 'Kartu_Keluarga',
+            'doc_marriage_cert' => 'Buku_Nikah',
+            'doc_parents_ktp' => 'KTP_Orang_Tua',
+            'doc_witness_ktp' => 'Surat_Pengantar_RTRW',
+            'applicant_signature' => 'Tanda_Tangan_Pemohon',
+        ];
+
+        $label = $labels[$field] ?? 'Berkas_Lampiran';
+        $ext = pathinfo($filePath, PATHINFO_EXTENSION);
+        $filename = $label . '_' . $birth->registration_no . ($ext ? '.' . $ext : '');
+
+        return response()->download($filePath, $filename);
+    }
+
+    protected function resolveFilePath(string $path): ?string
+    {
+        $cleanPath = ltrim(preg_replace('#^(public/|storage/)#', '', $path), '/\\');
+
+        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
+            return \Illuminate\Support\Facades\Storage::disk('public')->path($cleanPath);
+        }
+
+        $storageAppPublic = storage_path('app/public/' . $cleanPath);
+        if (file_exists($storageAppPublic)) {
+            return $storageAppPublic;
+        }
+
+        $publicStorage = public_path('storage/' . $cleanPath);
+        if (file_exists($publicStorage)) {
+            return $publicStorage;
+        }
+
+        return null;
+    }
 }

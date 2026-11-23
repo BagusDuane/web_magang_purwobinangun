@@ -317,6 +317,73 @@ class CertificateServiceTest extends TestCase
         $response->assertRedirect(route('birth.success', ['registration_no' => $birth->registration_no]));
     }
 
+    public function test_birth_certificate_can_be_submitted_via_ajax_returning_json(): void
+    {
+        Storage::fake('public');
+
+        $warga = User::create([
+            'name' => 'Bapak Joko',
+            'nik' => '3404051205900001',
+            'family_card_no' => '3404050101900001',
+            'role' => 'warga',
+            'status' => 'active',
+            'password' => bcrypt('password123'),
+        ]);
+
+        $response = $this->actingAs($warga)->postJson('/akte-kelahiran/buat', [
+            'child_name' => 'Bayi Ajax Test',
+            'gender' => 'L',
+            'birth_place' => 'Sleman',
+            'birth_date' => '2026-08-01',
+            'birth_time' => '07:30',
+            'birth_type' => 'Tunggal',
+            'birth_order' => 1,
+            'birth_place_type' => 'Rumah Sakit',
+            'applicant_nik' => '3404051205900001',
+            'applicant_name' => 'Bapak Joko',
+            'address' => 'Padukuhan Kadilobo RT 01 / RW 02',
+            'applicant_phone' => '081234567890',
+            'father_name' => 'Bapak Joko',
+            'father_nik' => '3404051205900001',
+            'father_birth_date' => '1990-05-12',
+            'father_job' => 'Wiraswasta',
+            'mother_name' => 'Ibu Siti',
+            'mother_nik' => '3404051205900002',
+            'mother_birth_date' => '1992-06-15',
+            'mother_job' => 'PNS',
+            'doc_birth_cert' => UploadedFile::fake()->create('surat_lahir.pdf', 100),
+            'doc_family_card' => UploadedFile::fake()->create('kk.jpg', 100),
+            'doc_marriage_cert' => UploadedFile::fake()->create('buku_nikah.pdf', 100),
+            'doc_parents_ktp' => UploadedFile::fake()->create('ktp.jpg', 100),
+            'doc_witness_ktp' => UploadedFile::fake()->create('pengantar_rt_rw.pdf', 100),
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'success',
+                'message',
+                'registration_no',
+                'birth' => [
+                    'registration_no',
+                    'child_name',
+                    'applicant_name',
+                    'applicant_phone',
+                    'gender',
+                    'birth_date',
+                    'status',
+                    'status_label',
+                    'status_badge_class',
+                    'created_at',
+                ],
+                'receipt_url',
+                'tracking_url',
+                'list_url',
+            ]);
+
+        $this->assertTrue($response->json('success'));
+        $this->assertEquals('Bayi Ajax Test', $response->json('birth.child_name'));
+    }
+
     public function test_birth_submissions_list_page_can_be_accessed(): void
     {
         $warga = User::create([
