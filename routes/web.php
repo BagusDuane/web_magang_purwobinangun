@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\AdminNotificationController;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\AdminProfileController;
 use App\Http\Controllers\Admin\AdminProfileRequestController;
+use App\Http\Controllers\Admin\AdminStaffController;
 use App\Http\Controllers\Auth\WargaAuthController;
 use App\Http\Controllers\BirthCertificateController;
 use App\Http\Controllers\DeathCertificateController;
@@ -150,6 +151,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Log Aktivitas Sistem (Seluruh Aktivitas Warga & Admin)
         Route::prefix('log-aktivitas')->name('activity_logs.')->group(function () {
             Route::get('/', [AdminActivityLogController::class, 'index'])->name('index');
+        });
+
+        // Kelola Akun Petugas / Admin Kalurahan
+        Route::prefix('petugas')->name('staff.')->group(function () {
+            Route::get('/', [AdminStaffController::class, 'index'])->name('index');
+            Route::post('/', [AdminStaffController::class, 'store'])->name('store');
         });
 
         // Pengaturan Profil Admin

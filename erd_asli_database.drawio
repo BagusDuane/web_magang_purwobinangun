@@ -1,0 +1,217 @@
+<mxfile host="app.diagrams.net" modified="2026-11-17T12:55:00.000Z" agent="Antigravity" version="24.0.0">
+  <diagram id="tab_asli_database" name="1. Skema Asli Database (Physical ERD)">
+    <mxGraphModel dx="1600" dy="1100" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1150" background="#FFFFFF" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- HEADER BANNER -->
+        <mxCell id="asli_banner_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#095B8C;strokeColor=none;arcSize=3;" vertex="1" parent="1">
+          <mxGeometry x="40" y="30" width="1620" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="asli_banner_title" value="PHYSICAL ENTITY RELATIONSHIP DIAGRAM (ERD) - SKEMA ASLI BASIS DATA" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#FFFFFF;fontFamily=Helvetica;fontSize=17;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="70" y="42" width="1100" height="26" as="geometry" />
+        </mxCell>
+        <mxCell id="asli_banner_sub" value="Struktur Tabel Asli, Nama Kolom Fisik Sesuai Migrasi Database, Tipe Data MySQL, Indeks (PK/FK/UK/IX), dan Aturan Referential Integrity" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#B8EDE6;fontFamily=Helvetica;fontSize=11;" vertex="1" parent="1">
+          <mxGeometry x="70" y="68" width="1100" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="asli_banner_tag" value="VERSI ASLI DATABASE (PRODUCTION SCHEMA)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#059CB8;strokeColor=none;fontColor=#FFFFFF;fontSize=10;fontStyle=1;arcSize=20;" vertex="1" parent="1">
+          <mxGeometry x="1350" y="50" width="280" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- TABLE: users -->
+        <mxCell id="tbl_users" value="users" style="shape=table;startSize=30;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=center;resizeLast=1;html=1;fillColor=#095B8C;fontColor=#FFFFFF;strokeColor=#095B8C;strokeWidth=2;fontSize=12;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="690" y="140" width="320" height="535" as="geometry" />
+        </mxCell>
+        <mxCell id="u_r1" value="PK  | id : bigint unsigned AUTO_INCREMENT" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#D97706;" vertex="1" parent="tbl_users"><mxGeometry y="30" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="u_r2" value="UK  | nik : varchar(16) UNIQUE" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#2563EB;" vertex="1" parent="tbl_users"><mxGeometry y="53" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="u_r3" value="IX  | family_card_no : varchar(16) INDEX" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#475569;" vertex="1" parent="tbl_users"><mxGeometry y="76" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="u_r4" value="    | role : varchar(255) ['admin','warga']" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_users"><mxGeometry y="99" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="u_r5" value="    | name : varchar(255)" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_users"><mxGeometry y="122" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="u_r6" value="UK  | email : varchar(255) UNIQUE" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#2563EB;" vertex="1" parent="tbl_users"><mxGeometry y="145" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="u_r7" value="    | password : varchar(255)" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#64748B;" vertex="1" parent="tbl_users"><mxGeometry y="168" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="u_r8" value="    | birth_place : varchar(255)" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_users"><mxGeometry y="191" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="u_r9" value="    | birth_date : date" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_users"><mxGeometry y="214" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="u_r10" value="    | gender : enum('L', 'P')" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_users"><mxGeometry y="237" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="u_r11" value="    | family_relationship : varchar(100)" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_users"><mxGeometry y="260" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="u_r12" value="    | doc_family_card : varchar(255)" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_users"><mxGeometry y="283" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="u_r13" value="    | address : text, rt : varchar(5), rw" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_users"><mxGeometry y="306" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="u_r14" value="    | phone : varchar(20)" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_users"><mxGeometry y="329" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="u_r15" value="    | status : enum('pending','active',..)" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#059669;" vertex="1" parent="tbl_users"><mxGeometry y="352" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="u_r16" value="    | rejection_reason : text" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#64748B;" vertex="1" parent="tbl_users"><mxGeometry y="375" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="u_r17" value="    | verified_at : timestamp, verified_by" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#64748B;" vertex="1" parent="tbl_users"><mxGeometry y="398" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="u_r18" value="    | email_verified_at, remember_token" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#94A3B8;" vertex="1" parent="tbl_users"><mxGeometry y="421" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="u_r19" value="    | created_at, updated_at : timestamp" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#94A3B8;" vertex="1" parent="tbl_users"><mxGeometry y="444" width="320" height="23" as="geometry" /></mxCell>
+
+        <!-- TABLE: family_members -->
+        <mxCell id="tbl_family_members" value="family_members" style="shape=table;startSize=30;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=center;resizeLast=1;html=1;fillColor=#059669;fontColor=#FFFFFF;strokeColor=#059669;strokeWidth=2;fontSize=12;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="60" y="140" width="330" height="280" as="geometry" />
+        </mxCell>
+        <mxCell id="fm_r1" value="PK  | id : bigint unsigned AUTO_INCREMENT" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#D97706;" vertex="1" parent="tbl_family_members"><mxGeometry y="30" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="fm_r2" value="FK  | user_id : bigint unsigned (users.id)" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#7C3AED;" vertex="1" parent="tbl_family_members"><mxGeometry y="53" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="fm_r3" value="IX  | family_card_no : varchar(16) INDEX" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#475569;" vertex="1" parent="tbl_family_members"><mxGeometry y="76" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="fm_r4" value="IX  | nik : varchar(16) INDEX" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_family_members"><mxGeometry y="99" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="fm_r5" value="    | name : varchar(255)" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_family_members"><mxGeometry y="122" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="fm_r6" value="    | birth_place : varchar(150), birth_date" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_family_members"><mxGeometry y="145" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="fm_r7" value="    | gender : enum('L', 'P')" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_family_members"><mxGeometry y="168" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="fm_r8" value="    | family_relationship : varchar(100)" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_family_members"><mxGeometry y="191" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="fm_r9" value="    | created_at, updated_at : timestamp" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#94A3B8;" vertex="1" parent="tbl_family_members"><mxGeometry y="214" width="330" height="23" as="geometry" /></mxCell>
+
+        <!-- TABLE: profile_update_requests -->
+        <mxCell id="tbl_profile_update_requests" value="profile_update_requests" style="shape=table;startSize=30;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=center;resizeLast=1;html=1;fillColor=#7C3AED;fontColor=#FFFFFF;strokeColor=#7C3AED;strokeWidth=2;fontSize=12;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="1310" y="140" width="330" height="340" as="geometry" />
+        </mxCell>
+        <mxCell id="pr_r1" value="PK  | id : bigint unsigned AUTO_INCREMENT" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#D97706;" vertex="1" parent="tbl_profile_update_requests"><mxGeometry y="30" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="pr_r2" value="FK  | user_id : bigint unsigned (users.id)" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#7C3AED;" vertex="1" parent="tbl_profile_update_requests"><mxGeometry y="53" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="pr_r3" value="    | nik : varchar(16), family_card_no" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_profile_update_requests"><mxGeometry y="76" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="pr_r4" value="    | name, birth_place, birth_date, gender" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_profile_update_requests"><mxGeometry y="99" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="pr_r5" value="    | family_relationship, doc_family_card" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_profile_update_requests"><mxGeometry y="122" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="pr_r6" value="    | address : text, rt, rw, phone, email" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_profile_update_requests"><mxGeometry y="145" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="pr_r7" value="    | family_members_data : json" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#2563EB;" vertex="1" parent="tbl_profile_update_requests"><mxGeometry y="168" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="pr_r8" value="IX  | status : enum('pending','appr',..) INDEX" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#059669;" vertex="1" parent="tbl_profile_update_requests"><mxGeometry y="191" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="pr_r9" value="    | admin_notes : text, processed_by" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#64748B;" vertex="1" parent="tbl_profile_update_requests"><mxGeometry y="214" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="pr_r10" value="    | processed_at, created_at, updated_at" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#94A3B8;" vertex="1" parent="tbl_profile_update_requests"><mxGeometry y="237" width="330" height="23" as="geometry" /></mxCell>
+
+        <!-- TABLE: birth_certificates -->
+        <mxCell id="tbl_birth_certificates" value="birth_certificates" style="shape=table;startSize=30;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=center;resizeLast=1;html=1;fillColor=#059CB8;fontColor=#FFFFFF;strokeColor=#059CB8;strokeWidth=2;fontSize=12;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="60" y="520" width="330" height="490" as="geometry" />
+        </mxCell>
+        <mxCell id="bc_r1" value="PK  | id : bigint unsigned AUTO_INCREMENT" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#D97706;" vertex="1" parent="tbl_birth_certificates"><mxGeometry y="30" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="bc_r2" value="FK  | user_id : bigint unsigned (users.id)" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#7C3AED;" vertex="1" parent="tbl_birth_certificates"><mxGeometry y="53" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="bc_r3" value="UK  | registration_no : varchar(255) UNIQUE" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#2563EB;" vertex="1" parent="tbl_birth_certificates"><mxGeometry y="76" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="bc_r4" value="IX  | family_card_no : varchar(16) INDEX" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#475569;" vertex="1" parent="tbl_birth_certificates"><mxGeometry y="99" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="bc_r5" value="    | child_name, child_nik, gender" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_birth_certificates"><mxGeometry y="122" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="bc_r6" value="    | birth_place, birth_date, birth_day, time" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_birth_certificates"><mxGeometry y="145" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="bc_r7" value="    | birth_type, birth_order, birth_helper" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_birth_certificates"><mxGeometry y="168" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="bc_r8" value="    | weight_kg, weight_gram, length_cm" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_birth_certificates"><mxGeometry y="191" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="bc_r9" value="    | father_nik, father_name, father_bdate" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_birth_certificates"><mxGeometry y="214" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="bc_r10" value="    | mother_nik, mother_name, mother_bdate" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_birth_certificates"><mxGeometry y="237" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="bc_r11" value="    | marriage_date : date" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_birth_certificates"><mxGeometry y="260" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="bc_r12" value="    | applicant_nik, applicant_name, phone" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_birth_certificates"><mxGeometry y="283" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="bc_r13" value="    | witness_1_*, witness_2_* (nik, name..)" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_birth_certificates"><mxGeometry y="306" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="bc_r14" value="    | doc_birth_cert, doc_family_card, .." style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_birth_certificates"><mxGeometry y="329" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="bc_r15" value="    | applicant_signature : text" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_birth_certificates"><mxGeometry y="352" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="bc_r16" value="    | status : varchar(30) DEFAULT 'pending'" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#059669;" vertex="1" parent="tbl_birth_certificates"><mxGeometry y="375" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="bc_r17" value="    | is_archived : tinyint(1) DEFAULT 0" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#64748B;" vertex="1" parent="tbl_birth_certificates"><mxGeometry y="398" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="bc_r18" value="    | rejection_note : text, processed_by" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#64748B;" vertex="1" parent="tbl_birth_certificates"><mxGeometry y="421" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="bc_r19" value="    | created_at, updated_at : timestamp" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#94A3B8;" vertex="1" parent="tbl_birth_certificates"><mxGeometry y="444" width="330" height="23" as="geometry" /></mxCell>
+
+        <!-- TABLE: death_certificates -->
+        <mxCell id="tbl_death_certificates" value="death_certificates" style="shape=table;startSize=30;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=center;resizeLast=1;html=1;fillColor=#E11D48;fontColor=#FFFFFF;strokeColor=#E11D48;strokeWidth=2;fontSize=12;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="1310" y="520" width="330" height="490" as="geometry" />
+        </mxCell>
+        <mxCell id="dc_r1" value="PK  | id : bigint unsigned AUTO_INCREMENT" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#D97706;" vertex="1" parent="tbl_death_certificates"><mxGeometry y="30" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="dc_r2" value="FK  | user_id : bigint unsigned (users.id)" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#7C3AED;" vertex="1" parent="tbl_death_certificates"><mxGeometry y="53" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="dc_r3" value="UK  | registration_no : varchar(255) UNIQUE" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#2563EB;" vertex="1" parent="tbl_death_certificates"><mxGeometry y="76" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="dc_r4" value="IX  | family_card_no : varchar(16) INDEX" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#475569;" vertex="1" parent="tbl_death_certificates"><mxGeometry y="99" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="dc_r5" value="    | head_of_family_name : varchar(255)" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_death_certificates"><mxGeometry y="122" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="dc_r6" value="    | deceased_nik, deceased_name, gender" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_death_certificates"><mxGeometry y="145" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="dc_r7" value="    | deceased_birth_place, birth_date, rel" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_death_certificates"><mxGeometry y="168" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="dc_r8" value="    | death_day, death_date, death_time" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_death_certificates"><mxGeometry y="191" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="dc_r9" value="    | death_place, cause_of_death, detail" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_death_certificates"><mxGeometry y="214" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="dc_r10" value="    | mother_nik/name, father_nik/name" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_death_certificates"><mxGeometry y="237" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="dc_r11" value="    | applicant_nik, applicant_name, phone" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_death_certificates"><mxGeometry y="260" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="dc_r12" value="    | witness1_*, witness2_*, report_date" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_death_certificates"><mxGeometry y="283" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="dc_r13" value="    | doc_death_statement, doc_rt_rw_.." style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_death_certificates"><mxGeometry y="306" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="dc_r14" value="    | doc_family_card, doc_deceased_ktp" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_death_certificates"><mxGeometry y="329" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="dc_r15" value="    | doc_heir_family_card, doc_heir_ktp" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_death_certificates"><mxGeometry y="352" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="dc_r16" value="    | officer_registration_type, officer_name" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_death_certificates"><mxGeometry y="375" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="dc_r17" value="    | status : varchar(30) DEFAULT 'pending'" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#059669;" vertex="1" parent="tbl_death_certificates"><mxGeometry y="398" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="dc_r18" value="    | is_archived, rejection_note, proc_by" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#64748B;" vertex="1" parent="tbl_death_certificates"><mxGeometry y="421" width="330" height="23" as="geometry" /></mxCell>
+        <mxCell id="dc_r19" value="    | created_at, updated_at : timestamp" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#94A3B8;" vertex="1" parent="tbl_death_certificates"><mxGeometry y="444" width="330" height="23" as="geometry" /></mxCell>
+
+        <!-- TABLE: activity_logs -->
+        <mxCell id="tbl_activity_logs" value="activity_logs" style="shape=table;startSize=30;container=1;collapsible=0;childLayout=tableLayout;fixedRows=1;rowLines=1;fontStyle=1;align=center;resizeLast=1;html=1;fillColor=#475569;fontColor=#FFFFFF;strokeColor=#475569;strokeWidth=2;fontSize=12;fontFamily=Courier New;" vertex="1" parent="1">
+          <mxGeometry x="690" y="740" width="320" height="270" as="geometry" />
+        </mxCell>
+        <mxCell id="log_r1" value="PK  | id : bigint unsigned AUTO_INCREMENT" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#D97706;" vertex="1" parent="tbl_activity_logs"><mxGeometry y="30" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="log_r2" value="FK  | user_id : bigint unsigned (users.id)" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#7C3AED;" vertex="1" parent="tbl_activity_logs"><mxGeometry y="53" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="log_r3" value="    | user_name : varchar(255), user_role" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_activity_logs"><mxGeometry y="76" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="log_r4" value="IX  | action_type : varchar(50) INDEX" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#475569;" vertex="1" parent="tbl_activity_logs"><mxGeometry y="99" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="log_r5" value="IX  | module : varchar(50) INDEX" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#475569;" vertex="1" parent="tbl_activity_logs"><mxGeometry y="122" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="log_r6" value="    | title : varchar(255), description" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_activity_logs"><mxGeometry y="145" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="log_r7" value="    | reference_no : varchar(255)" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_activity_logs"><mxGeometry y="168" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="log_r8" value="FK* | subject_type, subject_id (Morphs)" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontStyle=1;fontColor=#0284C7;" vertex="1" parent="tbl_activity_logs"><mxGeometry y="191" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="log_r9" value="    | properties : json, ip_address" style="text;strokeColor=none;fillColor=#F8FAFC;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#1E293B;" vertex="1" parent="tbl_activity_logs"><mxGeometry y="214" width="320" height="23" as="geometry" /></mxCell>
+        <mxCell id="log_r10" value="IX  | created_at, updated_at INDEX" style="text;strokeColor=none;fillColor=#FFFFFF;align=left;verticalAlign=middle;spacingLeft=8;fontSize=10.5;fontFamily=Courier New;fontColor=#94A3B8;" vertex="1" parent="tbl_activity_logs"><mxGeometry y="237" width="320" height="23" as="geometry" /></mxCell>
+
+        <!-- RELATION CONNECTORS -->
+        <!-- 1. users -> family_members (1 : N, ON DELETE CASCADE) -->
+        <mxCell id="asli_rel_users_fm" value="1 : N&#xa;ON DELETE CASCADE" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.25;entryDx=0;entryDy=0;exitX=0;exitY=0.15;exitDx=0;exitDy=0;strokeColor=#059669;strokeWidth=2;fontSize=10;fontStyle=1;fontColor=#059669;labelBackgroundColor=#FFFFFF;startArrow=ERone;startFill=0;endArrow=ERmany;endFill=0;" edge="1" parent="1" source="tbl_users" target="tbl_family_members">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="540" y="220" />
+              <mxPoint x="540" y="210" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 2. users -> profile_update_requests (1 : N, ON DELETE CASCADE) -->
+        <mxCell id="asli_rel_users_pr" value="1 : N&#xa;ON DELETE CASCADE" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.25;entryDx=0;entryDy=0;exitX=1;exitY=0.15;exitDx=0;exitDy=0;strokeColor=#7C3AED;strokeWidth=2;fontSize=10;fontStyle=1;fontColor=#7C3AED;labelBackgroundColor=#FFFFFF;startArrow=ERone;startFill=0;endArrow=ERmany;endFill=0;" edge="1" parent="1" source="tbl_users" target="tbl_profile_update_requests">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1160" y="220" />
+              <mxPoint x="1160" y="225" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 3. users -> birth_certificates (1 : N, ON DELETE SET NULL) -->
+        <mxCell id="asli_rel_users_bc" value="1 : N&#xa;ON DELETE SET NULL" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.1;entryDx=0;entryDy=0;exitX=0;exitY=0.8;exitDx=0;exitDy=0;strokeColor=#059CB8;strokeWidth=2;fontSize=10;fontStyle=1;fontColor=#059CB8;labelBackgroundColor=#FFFFFF;startArrow=ERone;startFill=0;endArrow=ERmany;endFill=0;" edge="1" parent="1" source="tbl_users" target="tbl_birth_certificates">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="540" y="568" />
+              <mxPoint x="540" y="569" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 4. users -> death_certificates (1 : N, ON DELETE SET NULL) -->
+        <mxCell id="asli_rel_users_dc" value="1 : N&#xa;ON DELETE SET NULL" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.1;entryDx=0;entryDy=0;exitX=1;exitY=0.8;exitDx=0;exitDy=0;strokeColor=#E11D48;strokeWidth=2;fontSize=10;fontStyle=1;fontColor=#E11D48;labelBackgroundColor=#FFFFFF;startArrow=ERone;startFill=0;endArrow=ERmany;endFill=0;" edge="1" parent="1" source="tbl_users" target="tbl_death_certificates">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1160" y="568" />
+              <mxPoint x="1160" y="569" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 5. users -> activity_logs (1 : N, ON DELETE SET NULL) -->
+        <mxCell id="asli_rel_users_log" value="1 : N&#xa;ON DELETE SET NULL" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;strokeColor=#475569;strokeWidth=2;fontSize=10;fontStyle=1;fontColor=#475569;labelBackgroundColor=#FFFFFF;startArrow=ERone;startFill=0;endArrow=ERmany;endFill=0;" edge="1" parent="1" source="tbl_users" target="tbl_activity_logs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- 6. birth_certificates -> activity_logs (Polymorphic Morphs) -->
+        <mxCell id="asli_rel_bc_log" value="subject_type = 'App\Models\BirthCertificate' &amp; subject_id = id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;exitX=0.75;exitY=1;exitDx=0;exitDy=0;strokeColor=#059CB8;strokeWidth=1.5;strokeDashArray=3 3;fontSize=9;fontStyle=2;fontColor=#059CB8;labelBackgroundColor=#FFFFFF;startArrow=ERone;startFill=0;endArrow=ERmany;endFill=0;" edge="1" parent="1" source="tbl_birth_certificates" target="tbl_activity_logs">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="308" y="1050" />
+              <mxPoint x="520" y="1050" />
+              <mxPoint x="520" y="875" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- 7. death_certificates -> activity_logs (Polymorphic Morphs) -->
+        <mxCell id="asli_rel_dc_log" value="subject_type = 'App\Models\DeathCertificate' &amp; subject_id = id" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;exitX=0.25;exitY=1;exitDx=0;exitDy=0;strokeColor=#E11D48;strokeWidth=1.5;strokeDashArray=3 3;fontSize=9;fontStyle=2;fontColor=#E11D48;labelBackgroundColor=#FFFFFF;startArrow=ERone;startFill=0;endArrow=ERmany;endFill=0;" edge="1" parent="1" source="tbl_death_certificates" target="tbl_activity_logs">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1393" y="1050" />
+              <mxPoint x="1180" y="1050" />
+              <mxPoint x="1180" y="875" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- LEGEND BOX -->
+        <mxCell id="asli_leg_bg" value="" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F8FAFC;strokeColor=#CBD5E1;arcSize=4;" vertex="1" parent="1">
+          <mxGeometry x="60" y="1035" width="220" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="asli_leg_txt" value="PK = Primary Key | FK = Foreign Key&#xa;UK = Unique Key   | IX = Indexed" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontColor=#475569;fontSize=10;fontFamily=Courier New;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="1037" width="220" height="26" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

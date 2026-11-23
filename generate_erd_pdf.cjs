@@ -24,7 +24,7 @@ console.log('DF destination:', pdfPath);
 
 const fileUrl = 'file:///' + htmlPath.replace(/\\/g, '/');
 
-const argPs = [
+const args = [
     '--headless=new',
     '--disable-gpu',
     '--no-pdf-header-footer',

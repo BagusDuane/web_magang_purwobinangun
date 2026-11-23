@@ -130,6 +130,11 @@
                 Pengaturan
             </div>
 
+            <a href="{{ route('admin.staff.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('admin.staff.*') ? 'bg-[#0b7c89] text-white shadow-sm font-bold' : 'text-teal-100 hover:bg-teal-800/50 hover:text-white' }}">
+                <i class="fa-solid fa-users-gear w-5 text-center text-teal-300 text-base"></i>
+                <span>Kelola Petugas</span>
+            </a>
+
             <a href="{{ route('admin.profile.index') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition {{ request()->routeIs('admin.profile.*') ? 'bg-[#0b7c89] text-white shadow-sm font-bold' : 'text-teal-100 hover:bg-teal-800/50 hover:text-white' }}">
                 <i class="fa-solid fa-user-gear w-5 text-center text-teal-300 text-base"></i>
                 <span>Profil Akun Admin</span>
