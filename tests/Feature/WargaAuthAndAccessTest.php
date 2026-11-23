@@ -193,7 +193,15 @@ class WargaAuthAndAccessTest extends TestCase
 
     public function test_pending_warga_cannot_login_and_gets_notice()
     {
-        // KK C is pending in seeder (Fitri Anggraini, NIK 3404054807960006)
+        $pendingWarga = User::create([
+            'name' => 'Fitri Anggraini',
+            'role' => 'warga',
+            'nik' => '3404054807960006',
+            'family_card_no' => '3404050101960003',
+            'password' => Hash::make('password123'),
+            'status' => 'pending',
+        ]);
+
         $response = $this->post('/warga/login', [
             'nik' => '3404054807960006',
             'password' => 'password123',
@@ -206,7 +214,16 @@ class WargaAuthAndAccessTest extends TestCase
 
     public function test_rejected_warga_cannot_login_and_gets_rejection_reason()
     {
-        // KK D is rejected in seeder (Gunawan Wibisono, NIK 3404052208800005)
+        $rejectedWarga = User::create([
+            'name' => 'Gunawan Wibisono',
+            'role' => 'warga',
+            'nik' => '3404052208800005',
+            'family_card_no' => '3404050101800004',
+            'password' => Hash::make('password123'),
+            'status' => 'rejected',
+            'rejection_reason' => 'Nomor KK tidak sesuai.',
+        ]);
+
         $response = $this->post('/warga/login', [
             'nik' => '3404052208800005',
             'password' => 'password123',
@@ -220,7 +237,45 @@ class WargaAuthAndAccessTest extends TestCase
     public function test_active_warga_can_login_and_access_own_kk_submissions_only()
     {
         $wargaA = User::where('nik', '3404051205900001')->first(); // KK 3404050101900001
-        $wargaB = User::where('nik', '3404051010880003')->first(); // KK 3404050101880002
+
+        $wargaB = User::create([
+            'name' => 'Agus Setiawan',
+            'role' => 'warga',
+            'nik' => '3404051010880003',
+            'family_card_no' => '3404050101880002',
+            'status' => 'active',
+            'password' => Hash::make('password123'),
+        ]);
+
+        // Pengajuan untuk KK A
+        $subA = BirthCertificate::create([
+            'user_id' => $wargaA->id,
+            'registration_no' => 'AKL-TEST-KK-A',
+            'family_card_no' => $wargaA->family_card_no,
+            'child_name' => 'Aditya Pratama Nugraha',
+            'gender' => 'L',
+            'birth_place' => 'Sleman',
+            'birth_date' => '2026-08-15',
+            'applicant_nik' => $wargaA->nik,
+            'applicant_name' => $wargaA->name,
+            'applicant_phone' => '081234567890',
+            'status' => 'completed',
+        ]);
+
+        // Pengajuan untuk KK B
+        $subB = BirthCertificate::create([
+            'user_id' => $wargaB->id,
+            'registration_no' => 'AKL-TEST-KK-B',
+            'family_card_no' => $wargaB->family_card_no,
+            'child_name' => 'Kirana Ayudia Putri',
+            'gender' => 'P',
+            'birth_place' => 'Sleman',
+            'birth_date' => '2026-08-28',
+            'applicant_nik' => $wargaB->nik,
+            'applicant_name' => $wargaB->name,
+            'applicant_phone' => '081398765432',
+            'status' => 'in_process',
+        ]);
 
         // Login as Warga A
         $response = $this->post('/warga/login', [
@@ -237,12 +292,10 @@ class WargaAuthAndAccessTest extends TestCase
         $responseList->assertDontSee('Kirana Ayudia Putri'); // KK B
 
         // Warga A mencoba melihat detail pengajuan milik KK B via URL -> harus 403 Forbidden
-        $subB = BirthCertificate::where('family_card_no', $wargaB->family_card_no)->first();
         $responseForbidden = $this->actingAs($wargaA)->get('/lacak/birth/' . $subB->registration_no);
         $responseForbidden->assertStatus(403);
 
         // Warga A melihat pengajuan miliknya sendiri -> 200 OK
-        $subA = BirthCertificate::where('family_card_no', $wargaA->family_card_no)->first();
         $responseAllowed = $this->actingAs($wargaA)->get('/lacak/birth/' . $subA->registration_no);
         $responseAllowed->assertStatus(200);
         $responseAllowed->assertSee('Aditya Pratama Nugraha');
@@ -285,7 +338,7 @@ class WargaAuthAndAccessTest extends TestCase
         $this->assertDatabaseHas('users', [
             'id' => $pendingCitizen->id,
             'status' => 'active',
-            'verified_by' => 'Petugas Pelayanan Kalurahan',
+            'verified_by' => $admin->name,
         ]);
 
         // Cek halaman aktif menampilkan tombol "Hapus Akun Warga" dan TIDAK menampilkan "Tolak Pendaftaran Akun"
