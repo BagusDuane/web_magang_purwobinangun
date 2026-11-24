@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\DeathCertificate;
+use App\Services\CertificateExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -107,6 +108,11 @@ class AdminDeathController extends Controller
     public function printLetter(DeathCertificate $death)
     {
         return view('admin.death.print-letter', compact('death'));
+    }
+
+    public function export(DeathCertificate $death, string $format, CertificateExportService $exportService)
+    {
+        return $exportService->export('death', $death, $format);
     }
 
     public function viewAttachment(DeathCertificate $death, string $field)

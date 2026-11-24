@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\DeathCertificate;
 use App\Models\FamilyMember;
+use App\Services\CertificateExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -294,5 +295,25 @@ class DeathCertificateController extends Controller
         }
 
         return view('death.success', compact('death'));
+    }
+
+    public function export(DeathCertificate $death, string $format, CertificateExportService $exportService)
+    {
+        if (!Auth::check()) {
+            abort(401);
+        }
+
+        $user = Auth::user();
+        if ($user->isWarga()) {
+            $isSameKK = $death->family_card_no && $death->family_card_no === $user->family_card_no;
+            $isSameUser = $death->user_id && $death->user_id === $user->id;
+            if (!$isSameKK && !$isSameUser) {
+                abort(403, 'Akses Ditolak: Anda hanya berhak mengunduh berkas dari Kartu Keluarga (KK) Anda sendiri.');
+            }
+        } elseif (!$user->isAdmin()) {
+            abort(403, 'Akses Ditolak: Hanya Warga terkait atau Petugas Kalurahan yang berhak mengunduh.');
+        }
+
+        return $exportService->export('death', $death, $format);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\BirthCertificate;
+use App\Services\CertificateExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -107,6 +108,11 @@ class AdminBirthController extends Controller
     public function printLetter(BirthCertificate $birth)
     {
         return view('admin.birth.print-letter', compact('birth'));
+    }
+
+    public function export(BirthCertificate $birth, string $format, CertificateExportService $exportService)
+    {
+        return $exportService->export('birth', $birth, $format);
     }
 
     public function viewAttachment(BirthCertificate $birth, string $field)

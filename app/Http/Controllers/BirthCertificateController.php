@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ActivityLog;
 use App\Models\BirthCertificate;
 use App\Models\DeathCertificate;
+use App\Services\CertificateExportService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Auth;
@@ -918,5 +919,25 @@ class BirthCertificateController extends Controller
         }
 
         return view('admin.birth.print-letter', compact('birth'));
+    }
+
+    public function export(BirthCertificate $birth, string $format, CertificateExportService $exportService)
+    {
+        if (!Auth::check()) {
+            abort(401);
+        }
+
+        $user = Auth::user();
+        if ($user->isWarga()) {
+            $isSameKK = $birth->family_card_no && $birth->family_card_no === $user->family_card_no;
+            $isSameUser = $birth->user_id && $birth->user_id === $user->id;
+            if (!$isSameKK && !$isSameUser) {
+                abort(403, 'Akses Ditolak: Anda hanya berhak mengunduh berkas dari Kartu Keluarga (KK) Anda sendiri.');
+            }
+        } elseif (!$user->isAdmin()) {
+            abort(403, 'Akses Ditolak: Hanya Warga terkait atau Petugas Kalurahan yang berhak mengunduh.');
+        }
+
+        return $exportService->export('birth', $birth, $format);
     }
 }

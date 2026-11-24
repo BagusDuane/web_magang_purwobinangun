@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BirthCertificate;
 use App\Models\DeathCertificate;
+use App\Services\CertificateExportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -138,5 +139,41 @@ class TrackingController extends Controller
         } else {
             abort(404, 'Jenis permohonan tidak mendukung cetak surat ini.');
         }
+    }
+
+    public function export(string $type, string $registrationNo, string $format, CertificateExportService $exportService)
+    {
+        if (!Auth::check()) {
+            return redirect()->guest(route('admin.login'))
+                ->with('error', 'Silakan masuk ke panel admin petugas terlebih dahulu.');
+        }
+
+        $user = Auth::user();
+        if ($user->isWarga()) {
+            $model = $type === 'birth'
+                ? BirthCertificate::where('registration_no', $registrationNo)->firstOrFail()
+                : DeathCertificate::where('registration_no', $registrationNo)->firstOrFail();
+
+            $isSameKK = $model->family_card_no && $model->family_card_no === $user->family_card_no;
+            $isSameUser = $model->user_id && $model->user_id === $user->id;
+            if (!$isSameKK && !$isSameUser) {
+                abort(403, 'Akses Ditolak: Anda hanya berhak mengunduh berkas dari Kartu Keluarga (KK) Anda sendiri.');
+            }
+            return $exportService->export($type, $model, $format);
+        }
+
+        if (!$user->isAdmin()) {
+            abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengunduh berkas ini.');
+        }
+
+        if ($type === 'birth') {
+            $certificate = BirthCertificate::where('registration_no', $registrationNo)->firstOrFail();
+        } elseif ($type === 'death') {
+            $certificate = DeathCertificate::where('registration_no', $registrationNo)->firstOrFail();
+        } else {
+            abort(404, 'Jenis permohonan tidak valid.');
+        }
+
+        return $exportService->export($type, $certificate, $format);
     }
 }

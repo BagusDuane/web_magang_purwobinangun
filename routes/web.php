@@ -46,6 +46,7 @@ Route::prefix('lacak')->name('tracking.')->group(function () {
     Route::get('/{type}/{registrationNo}', [TrackingController::class, 'show'])->name('show');
     Route::get('/{type}/{registrationNo}/cetak-resi', [TrackingController::class, 'printReceipt'])->name('print_receipt');
     Route::get('/{type}/{registrationNo}/cetak-surat', [TrackingController::class, 'printLetter'])->name('print_letter');
+    Route::get('/{type}/{registrationNo}/export/{format}', [TrackingController::class, 'export'])->name('export');
 });
 
 /*
@@ -69,6 +70,7 @@ Route::middleware('auth.warga')->group(function () {
         Route::post('/buat', [BirthCertificateController::class, 'store'])->name('store');
         Route::get('/sukses', [BirthCertificateController::class, 'success'])->name('success');
         Route::get('/{birth}/cetak-surat', [BirthCertificateController::class, 'printLetter'])->name('print_letter');
+        Route::get('/{birth}/export/{format}', [BirthCertificateController::class, 'export'])->name('export');
         Route::get('/daftar-pengajuan', function () {
             return redirect()->route('submissions.index', request()->query());
         })->name('list');
@@ -79,6 +81,7 @@ Route::middleware('auth.warga')->group(function () {
         Route::get('/buat', [DeathCertificateController::class, 'create'])->name('create');
         Route::post('/buat', [DeathCertificateController::class, 'store'])->name('store');
         Route::get('/sukses', [DeathCertificateController::class, 'success'])->name('success');
+        Route::get('/{death}/export/{format}', [DeathCertificateController::class, 'export'])->name('export');
         Route::get('/daftar-pengajuan', function () {
             return redirect()->route('submissions.index', array_merge(['type' => 'death'], request()->query()));
         })->name('list');
@@ -110,6 +113,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/{birth}', [AdminBirthController::class, 'show'])->name('show');
             Route::put('/{birth}/status', [AdminBirthController::class, 'updateStatus'])->name('update_status');
             Route::get('/{birth}/cetak-surat', [AdminBirthController::class, 'printLetter'])->name('print_letter');
+            Route::get('/{birth}/export/{format}', [AdminBirthController::class, 'export'])->name('export');
             Route::get('/{birth}/berkas/{field}', [AdminBirthController::class, 'viewAttachment'])->name('attachment.view');
             Route::get('/{birth}/unduh/{field}', [AdminBirthController::class, 'downloadAttachment'])->name('attachment.download');
         });
@@ -120,6 +124,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/{death}', [AdminDeathController::class, 'show'])->name('show');
             Route::put('/{death}/status', [AdminDeathController::class, 'updateStatus'])->name('update_status');
             Route::get('/{death}/cetak-surat', [AdminDeathController::class, 'printLetter'])->name('print_letter');
+            Route::get('/{death}/export/{format}', [AdminDeathController::class, 'export'])->name('export');
             Route::get('/{death}/berkas/{field}', [AdminDeathController::class, 'viewAttachment'])->name('attachment.view');
             Route::get('/{death}/unduh/{field}', [AdminDeathController::class, 'downloadAttachment'])->name('attachment.download');
         });

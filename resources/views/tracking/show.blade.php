@@ -154,7 +154,24 @@
                         </a>
                     @endif
                     @if(auth()->check() && auth()->user()->isAdmin() && $data->status !== 'revision')
-                        <a href="{{ route('tracking.print_letter', ['type' => $type, 'registrationNo' => $data->registration_no]) }}" target="_blank" class="bg-slate-900 hover:bg-black text-white font-bold text-xs px-5 py-2.5 rounded-lg shadow-sm transition flex items-center gap-2">
+                        <details class="relative inline-block text-left">
+                            <summary class="list-none [&::-webkit-details-marker]:hidden bg-slate-900 hover:bg-black text-white font-bold text-xs px-4 py-2.5 rounded-lg shadow-sm transition flex items-center gap-2 cursor-pointer">
+                                <i class="fa-solid fa-file-arrow-down"></i> Unduh Berkas (3 Format) <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                            </summary>
+                            <div class="absolute right-0 bottom-full mb-2 w-52 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
+                                <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Format Dokumen:</div>
+                                <a href="{{ route('tracking.export', ['type' => $type, 'registrationNo' => $data->registration_no, 'format' => 'pdf']) }}" class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-rose-700 transition">
+                                    <i class="fa-solid fa-file-pdf text-rose-600 w-4"></i> Unduh PDF (.pdf)
+                                </a>
+                                <a href="{{ route('tracking.export', ['type' => $type, 'registrationNo' => $data->registration_no, 'format' => 'docx']) }}" class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-700 transition">
+                                    <i class="fa-solid fa-file-word text-blue-600 w-4"></i> Unduh Word (.docx)
+                                </a>
+                                <a href="{{ route('tracking.export', ['type' => $type, 'registrationNo' => $data->registration_no, 'format' => 'xlsx']) }}" class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700 transition">
+                                    <i class="fa-solid fa-file-excel text-emerald-600 w-4"></i> Unduh Excel (.xlsx)
+                                </a>
+                            </div>
+                        </details>
+                        <a href="{{ route('tracking.print_letter', ['type' => $type, 'registrationNo' => $data->registration_no]) }}" target="_blank" class="bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs px-4 py-2.5 rounded-lg shadow-sm transition flex items-center gap-2">
                             <i class="fa-solid fa-file-lines"></i> Cetak Surat Keterangan (A4)
                         </a>
                     @endif

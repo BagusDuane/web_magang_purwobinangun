@@ -17,10 +17,27 @@
                 <h3 class="text-base font-extrabold text-[#0b7c89]">{{ $birth->registration_no }}</h3>
             </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
             <span class="text-xs font-bold px-3 py-1.5 rounded-full border {{ $birth->status_badge_class }}">
                 Status: {{ $birth->status_label }}
             </span>
+            <details class="relative inline-block text-left">
+                <summary class="list-none [&::-webkit-details-marker]:hidden bg-[#095b8c] hover:bg-[#064266] text-white font-bold text-xs px-3.5 py-2 rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                    <i class="fa-solid fa-file-arrow-down"></i> Unduh Berkas (3 Format) <i class="fa-solid fa-chevron-down text-[10px] ml-0.5"></i>
+                </summary>
+                <div class="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
+                    <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Format Dokumen:</div>
+                    <a href="{{ route('admin.birth.export', [$birth, 'pdf']) }}" class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-rose-700 transition">
+                        <i class="fa-solid fa-file-pdf text-rose-600 w-4"></i> Unduh PDF (.pdf)
+                    </a>
+                    <a href="{{ route('admin.birth.export', [$birth, 'docx']) }}" class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-700 transition">
+                        <i class="fa-solid fa-file-word text-blue-600 w-4"></i> Unduh Word (.docx)
+                    </a>
+                    <a href="{{ route('admin.birth.export', [$birth, 'xlsx']) }}" class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700 transition">
+                        <i class="fa-solid fa-file-excel text-emerald-600 w-4"></i> Unduh Excel (.xlsx)
+                    </a>
+                </div>
+            </details>
             <a href="{{ route('admin.birth.print_letter', $birth) }}" target="_blank" class="bg-[#0b7c89] hover:bg-[#065b65] text-white font-bold text-xs px-4 py-2 rounded-lg shadow-sm transition flex items-center gap-1.5">
                 <i class="fa-solid fa-print"></i> Cetak Surat Pengantar
             </a>

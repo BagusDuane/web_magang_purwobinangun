@@ -130,9 +130,19 @@
                 </a>
             @endif
         </div>
-        <div class="flex items-center gap-2">
-            <button onclick="window.print()" class="font-sans-ui bg-[#059cb8] hover:bg-[#095b8c] text-white font-bold text-xs px-4 py-2 rounded-lg shadow-sm transition flex items-center gap-2 cursor-pointer">
-                <i class="fa-solid fa-print"></i> Cetak Berkas Lengkap & Surat (A4)
+        <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs text-slate-500 font-semibold font-sans-ui mr-1 hidden sm:inline">Unduh Berkas:</span>
+            <a href="{{ auth()->check() && auth()->user()->isAdmin() ? route('admin.birth.export', [$birth, 'pdf']) : route('birth.export', [$birth, 'pdf']) }}" class="font-sans-ui bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs px-3 py-2 rounded-lg shadow-xs transition flex items-center gap-1.5">
+                <i class="fa-solid fa-file-pdf"></i> Unduh PDF
+            </a>
+            <a href="{{ auth()->check() && auth()->user()->isAdmin() ? route('admin.birth.export', [$birth, 'docx']) : route('birth.export', [$birth, 'docx']) }}" class="font-sans-ui bg-blue-700 hover:bg-blue-800 text-white font-bold text-xs px-3 py-2 rounded-lg shadow-xs transition flex items-center gap-1.5">
+                <i class="fa-solid fa-file-word"></i> Unduh Word (DOCX)
+            </a>
+            <a href="{{ auth()->check() && auth()->user()->isAdmin() ? route('admin.birth.export', [$birth, 'xlsx']) : route('birth.export', [$birth, 'xlsx']) }}" class="font-sans-ui bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3 py-2 rounded-lg shadow-xs transition flex items-center gap-1.5">
+                <i class="fa-solid fa-file-excel"></i> Unduh Excel (XLSX)
+            </a>
+            <button onclick="window.print()" class="font-sans-ui bg-[#059cb8] hover:bg-[#095b8c] text-white font-bold text-xs px-3.5 py-2 rounded-lg shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-print"></i> Cetak (A4)
             </button>
         </div>
     </div>
