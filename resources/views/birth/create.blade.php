@@ -2496,6 +2496,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         updateProgressIndicator(currentStep);
+        if (typeof updateNextButtonsState === 'function') {
+            updateNextButtonsState();
+        }
 
         if (smoothScroll) {
             window.scrollTo({ top: 180, behavior: 'smooth' });
@@ -2868,12 +2871,21 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    form.addEventListener('input', saveFormDraft);
-    form.addEventListener('change', saveFormDraft);
+    form.addEventListener('input', function () {
+        saveFormDraft();
+        updateNextButtonsState();
+    });
+    form.addEventListener('change', function () {
+        saveFormDraft();
+        updateNextButtonsState();
+    });
 
     restoreFormDraft();
-    restoreDraftFiles();
+    restoreDraftFiles().then(() => {
+        updateNextButtonsState();
+    });
     updateProgressIndicator(currentStep);
+    updateNextButtonsState();
 
     // ==========================================
     // Fitur Otomatisasi Form Langkah 2 (Orang Tua)
@@ -3218,6 +3230,79 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         showModal(previewModal);
+    }
+
+    // Helper: Validasi silent tanpa menampilkan error visual atau scroll otomatis
+    function isStep1Valid() {
+        if (!childName || !childName.value.trim()) return false;
+        if (childNik && childNik.value.trim()) {
+            const cNik = childNik.value.trim();
+            if (cNik.length !== 16 || isNaN(cNik)) return false;
+        }
+        if (!birthPlace || !birthPlace.value.trim()) return false;
+        if (!birthDate || !birthDate.value) return false;
+        if (!birthOrder || !birthOrder.value || birthOrder.value < 1) return false;
+        if (birthHelper && !birthHelper.value) return false;
+        return true;
+    }
+
+    function isStep2Valid() {
+        const fatherNikVal = fatherNik ? fatherNik.value.trim() : '';
+        if (!fatherNikVal || fatherNikVal.length !== 16 || isNaN(fatherNikVal)) return false;
+        if (!fatherName || !fatherName.value.trim()) return false;
+        if (!fatherBirthDate || !fatherBirthDate.value) return false;
+        if (!fatherJob || !fatherJob.value.trim()) return false;
+
+        const motherNikVal = motherNik ? motherNik.value.trim() : '';
+        if (!motherNikVal || motherNikVal.length !== 16 || isNaN(motherNikVal)) return false;
+        if (!motherName || !motherName.value.trim()) return false;
+        if (!motherBirthDate || !motherBirthDate.value) return false;
+        if (!motherJob || !motherJob.value.trim()) return false;
+        return true;
+    }
+
+    function isStep3Valid() {
+        const nikVal = applicantNik ? applicantNik.value.trim() : '';
+        if (!nikVal || nikVal.length !== 16 || isNaN(nikVal)) return false;
+        if (!applicantName || !applicantName.value.trim()) return false;
+        if (!applicantBirthDate || !applicantBirthDate.value) return false;
+        if (!applicantGender || !applicantGender.value) return false;
+        if (!applicantJob || !applicantJob.value.trim()) return false;
+        if (!address || !address.value.trim()) return false;
+        return true;
+    }
+
+    function isStep4Valid() {
+        if (witness1Nik && witness1Nik.value.trim()) {
+            const val = witness1Nik.value.trim();
+            if (val.length !== 16 || isNaN(val)) return false;
+        }
+        if (witness2Nik && witness2Nik.value.trim()) {
+            const val = witness2Nik.value.trim();
+            if (val.length !== 16 || isNaN(val)) return false;
+        }
+        return true;
+    }
+
+    function updateNextButtonsState() {
+        const setButtonState = (btn, isValid) => {
+            if (!btn) return;
+            btn.disabled = !isValid;
+            if (!isValid) {
+                btn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                btn.classList.remove('hover:bg-[#059cb8]', 'cursor-pointer', 'hover:shadow-md');
+                btn.setAttribute('aria-disabled', 'true');
+            } else {
+                btn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                btn.classList.add('hover:bg-[#059cb8]', 'cursor-pointer', 'hover:shadow-md');
+                btn.removeAttribute('aria-disabled');
+            }
+        };
+
+        setButtonState(btnStep1Next, isStep1Valid());
+        setButtonState(btnStep2Next, isStep2Valid());
+        setButtonState(btnStep3Next, isStep3Valid());
+        setButtonState(btnStep4Next, isStep4Valid());
     }
 
     // Validation Functions

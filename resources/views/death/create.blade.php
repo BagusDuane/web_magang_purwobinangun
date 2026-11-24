@@ -19,6 +19,73 @@
             right: 18px;
         }
     }
+    /* Pop-up Modal Top Layer & Smooth Transitions */
+    .modal-overlay {
+        position: fixed !important;
+        inset: 0 !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+        margin: 0 !important;
+        z-index: 999999 !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(15, 23, 42, 0.72) !important;
+        backdrop-filter: blur(6px) !important;
+        -webkit-backdrop-filter: blur(6px) !important;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        padding: 1rem;
+        box-sizing: border-box;
+        overflow-y: auto !important;
+        overscroll-behavior: contain;
+    }
+    .modal-overlay.active {
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+    }
+    .modal-dialog-box {
+        opacity: 0;
+        transform: scale(0.92) translateY(24px);
+        transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        width: 100% !important;
+        max-width: 32rem !important;
+        max-height: min(90vh, calc(100% - 1.5rem)) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        z-index: 1000000 !important;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45) !important;
+        margin: auto !important;
+        overflow: hidden;
+        will-change: transform, opacity;
+    }
+    .modal-overlay.active .modal-dialog-box {
+        opacity: 1 !important;
+        transform: scale(1) translateY(0) !important;
+    }
+    .custom-modal-scroll::-webkit-scrollbar {
+        width: 6px;
+    }
+    .custom-modal-scroll::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 8px;
+    }
+    .custom-modal-scroll::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 8px;
+    }
+    .custom-modal-scroll::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
 </style>
 @endpush
 
@@ -963,9 +1030,89 @@
             <button type="button" onclick="closeConfirmModal()" class="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition">
                 Periksa Lagi
             </button>
-            <button type="button" id="btn-final-send" class="px-4 py-2 text-xs font-bold text-white bg-rose-700 hover:bg-rose-800 rounded-lg shadow-xs transition flex items-center gap-1.5">
+            <button type="button" id="btn-final-send" class="px-4 py-2 text-xs font-bold text-white bg-rose-700 hover:bg-rose-800 rounded-lg shadow-xs transition flex items-center gap-1.5 cursor-pointer">
                 <i class="fa-solid fa-check"></i> Ya, Kirim Sekarang
             </button>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- MODAL POP-UP: PENGAJUAN AKTE KEMATIAN BERHASIL TERKIRIM                   -->
+<!-- ========================================================================= -->
+<div id="success-modal" class="modal-overlay">
+    <div id="success-modal-dialog" class="modal-dialog-box bg-white rounded-2xl shadow-2xl border border-rose-100">
+        <!-- Modal Top Decoration -->
+        <div class="bg-gradient-to-r from-rose-700 via-rose-600 to-rose-700 px-5 py-4 sm:p-5 text-center text-white relative shadow-xs shrink-0">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 bg-white/20 backdrop-blur rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-2.5 ring-4 sm:ring-6 ring-white/10 shadow-md">
+                <i class="fa-solid fa-circle-check text-2xl sm:text-3xl text-emerald-300"></i>
+            </div>
+            <span class="text-[10px] sm:text-[11px] uppercase tracking-widest font-extrabold bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded-full shadow-xs">
+                PENGAJUAN BERHASIL TERKIRIM
+            </span>
+            <h3 class="text-base sm:text-lg md:text-xl font-extrabold text-white mt-1.5 sm:mt-2">
+                Permohonan Akte Kematian Diterima
+            </h3>
+            <p class="text-[11px] sm:text-xs text-rose-100 mt-1 max-w-sm mx-auto leading-relaxed">
+                Berkas permohonan Anda telah berhasil didaftarkan ke sistem pelayanan Kalurahan Purwobinangun.
+            </p>
+        </div>
+
+        <!-- Modal Body Content -->
+        <div class="p-4 sm:p-5 space-y-3 sm:space-y-3.5 overflow-y-auto custom-modal-scroll flex-1 min-h-0">
+            <!-- Registration Number Highlight Box -->
+            <div class="p-3 sm:p-3.5 bg-rose-50/80 border-2 border-dashed border-rose-600 rounded-xl text-center">
+                <span class="text-[10px] sm:text-[11px] font-bold text-rose-800 uppercase tracking-wider block">Nomor Registrasi Permohonan</span>
+                <div class="flex items-center justify-center gap-2 my-0.5 sm:my-1">
+                    <span id="modal-reg-no" class="text-lg sm:text-xl md:text-2xl font-black text-rose-700 tracking-widest font-mono">AKM-XXXXXXXX-XXXX</span>
+                    <button type="button" id="btn-copy-reg" title="Salin Nomor Registrasi" class="text-slate-400 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-white cursor-pointer">
+                        <i class="fa-regular fa-copy text-sm"></i>
+                    </button>
+                </div>
+                <p class="text-[10px] text-slate-500">Gunakan nomor ini untuk melacak status proses permohonan Anda.</p>
+            </div>
+
+            <!-- Summary Details -->
+            <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 space-y-1.5 text-xs">
+                <div class="flex justify-between items-center py-0.5 border-b border-slate-200">
+                    <span class="text-slate-500">Nama Almarhum/ah:</span>
+                    <span id="modal-deceased-name" class="font-bold text-slate-800">-</span>
+                </div>
+                <div class="flex justify-between items-center py-0.5 border-b border-slate-200">
+                    <span class="text-slate-500">Nama Pelapor:</span>
+                    <span id="modal-applicant-name" class="font-semibold text-slate-800">-</span>
+                </div>
+                <div class="flex justify-between items-center py-0.5">
+                    <span class="text-slate-500">Status Permohonan:</span>
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                        Menunggu Verifikasi
+                    </span>
+                </div>
+            </div>
+
+            <!-- Important Info Notice -->
+            <div class="p-2.5 sm:p-3 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-2.5 text-xs text-amber-900">
+                <i class="fa-solid fa-triangle-exclamation text-amber-600 text-sm mt-0.5 shrink-0"></i>
+                <p class="text-[11px] leading-relaxed">
+                    Petugas Kalurahan akan memverifikasi berkas Anda dalam waktu <strong>1-3 hari kerja</strong>. Anda dapat memantau status secara berkala melalui menu <strong>Lacak Berkas</strong>.
+                </p>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="pt-1 space-y-2">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <a id="modal-btn-receipt" href="#" target="_blank" class="w-full bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs py-2.5 px-3 rounded-lg text-center transition flex items-center justify-center gap-1.5 shadow-xs">
+                        <i class="fa-solid fa-print"></i> Cetak Bukti Resi
+                    </a>
+                    <a id="modal-btn-tracking" href="#" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs py-2.5 px-3 rounded-lg border border-rose-200 text-center transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-magnifying-glass"></i> Lacak Status Berkas
+                    </a>
+                </div>
+                <a id="modal-btn-list" href="{{ route('submissions.index') }}" class="w-full block bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs py-2 px-3 rounded-lg text-center transition border border-slate-300">
+                    <i class="fa-solid fa-list-check mr-1"></i> Buka Daftar Pengajuan Permohonan Akta
+                </a>
+            </div>
         </div>
     </div>
 </div>
@@ -1207,10 +1354,98 @@
 
         currentStep = step;
         saveFormDraft();
+        if (typeof updateDeathNextButtonsState === 'function') {
+            updateDeathNextButtonsState();
+        }
 
         if (smoothScroll) {
             window.scrollTo({ top: 100, behavior: 'smooth' });
         }
+    }
+
+    const btnStep1Next = document.getElementById('btn-step1-next');
+    const btnStep2Next = document.getElementById('btn-step2-next');
+    const btnStep3Next = document.getElementById('btn-step3-next');
+    const btnStep4Next = document.getElementById('btn-step4-next');
+
+    // Helper: Validasi silent tanpa alert atau auto-focus
+    function isStep1Valid() {
+        const familyCardNo = document.getElementById('family_card_no') ? document.getElementById('family_card_no').value.trim() : '';
+        const headOfFamily = document.getElementById('head_of_family_name') ? document.getElementById('head_of_family_name').value.trim() : '';
+        const deceasedNik = document.getElementById('deceased_nik') ? document.getElementById('deceased_nik').value.trim() : '';
+        const deceasedName = document.getElementById('deceased_name') ? document.getElementById('deceased_name').value.trim() : '';
+        const birthPlace = document.getElementById('deceased_birth_place') ? document.getElementById('deceased_birth_place').value.trim() : '';
+        const birthDate = document.getElementById('birth_date') ? document.getElementById('birth_date').value.trim() : '';
+        const padukuhan = document.getElementById('padukuhan') ? document.getElementById('padukuhan').value : '';
+        const rt = document.getElementById('rt') ? document.getElementById('rt').value.trim() : '';
+        const rw = document.getElementById('rw') ? document.getElementById('rw').value.trim() : '';
+        const deathDay = document.getElementById('death_day') ? document.getElementById('death_day').value : '';
+        const deathDate = document.getElementById('death_date') ? document.getElementById('death_date').value.trim() : '';
+        const deathPlace = document.getElementById('death_place') ? document.getElementById('death_place').value : '';
+        const causeOfDeath = document.getElementById('cause_of_death') ? document.getElementById('cause_of_death').value : '';
+
+        if (familyCardNo.length !== 16 || isNaN(familyCardNo)) return false;
+        if (!headOfFamily) return false;
+        if (deceasedNik.length !== 16 || isNaN(deceasedNik)) return false;
+        if (!deceasedName) return false;
+        if (!birthPlace || !birthDate) return false;
+        if (!padukuhan) return false;
+        if (!rt || !rw) return false;
+        if (!deathDay || !deathDate) return false;
+        if (!deathPlace || !causeOfDeath) return false;
+        return true;
+    }
+
+    function isStep2Valid() {
+        const mNik = document.getElementById('mother_nik') ? document.getElementById('mother_nik').value.trim() : '';
+        if (mNik && (mNik.length !== 16 || isNaN(mNik))) return false;
+        const fNik = document.getElementById('father_nik') ? document.getElementById('father_nik').value.trim() : '';
+        if (fNik && (fNik.length !== 16 || isNaN(fNik))) return false;
+        return true;
+    }
+
+    function isStep3Valid() {
+        const appNik = document.getElementById('applicant_nik') ? document.getElementById('applicant_nik').value.trim() : '';
+        const appName = document.getElementById('applicant_name') ? document.getElementById('applicant_name').value.trim() : '';
+        const appPhone = document.getElementById('applicant_phone') ? document.getElementById('applicant_phone').value.trim() : '';
+        const appRelation = document.getElementById('applicant_relation') ? document.getElementById('applicant_relation').value : '';
+        const repDate = document.getElementById('report_date') ? document.getElementById('report_date').value.trim() : '';
+
+        if (appNik.length !== 16 || isNaN(appNik)) return false;
+        if (!appName) return false;
+        if (!appRelation) return false;
+        if (!appPhone) return false;
+        if (!repDate) return false;
+        return true;
+    }
+
+    function isStep4Valid() {
+        const w1Nik = document.getElementById('witness1_nik') ? document.getElementById('witness1_nik').value.trim() : '';
+        if (w1Nik && (w1Nik.length !== 16 || isNaN(w1Nik))) return false;
+        const w2Nik = document.getElementById('witness2_nik') ? document.getElementById('witness2_nik').value.trim() : '';
+        if (w2Nik && (w2Nik.length !== 16 || isNaN(w2Nik))) return false;
+        return true;
+    }
+
+    function updateDeathNextButtonsState() {
+        const setButtonState = (btn, isValid) => {
+            if (!btn) return;
+            btn.disabled = !isValid;
+            if (!isValid) {
+                btn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                btn.classList.remove('hover:bg-rose-800', 'cursor-pointer');
+                btn.setAttribute('aria-disabled', 'true');
+            } else {
+                btn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+                btn.classList.add('hover:bg-rose-800', 'cursor-pointer');
+                btn.removeAttribute('aria-disabled');
+            }
+        };
+
+        setButtonState(btnStep1Next, isStep1Valid());
+        setButtonState(btnStep2Next, isStep2Valid());
+        setButtonState(btnStep3Next, isStep3Valid());
+        setButtonState(btnStep4Next, isStep4Valid());
     }
 
     // Validasi Langkah 1
@@ -1529,7 +1764,97 @@
         confirmModal.classList.add('hidden');
     }
 
-    btnFinalSend.addEventListener('click', function () {
+    // Modal Pop-up Berhasil
+    const successModal = document.getElementById('success-modal');
+    let isSubmitting = false;
+
+    function showModal(modalEl) {
+        if (!modalEl) return;
+        modalEl.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            modalEl.classList.add('active');
+        });
+        document.body.style.overflow = 'hidden';
+    }
+
+    function hideModal(modalEl) {
+        if (!modalEl) return;
+        modalEl.classList.remove('active');
+        setTimeout(() => {
+            modalEl.classList.add('hidden');
+            document.body.style.overflow = '';
+        }, 400);
+    }
+
+    const deathFieldStepMap = {
+        'family_card_no': 1,
+        'head_of_family_name': 1,
+        'deceased_nik': 1,
+        'deceased_name': 1,
+        'gender': 1,
+        'deceased_birth_place': 1,
+        'birth_date': 1,
+        'religion': 1,
+        'deceased_job': 1,
+        'padukuhan': 1,
+        'rt': 1,
+        'rw': 1,
+        'deceased_address': 1,
+        'deceased_child_order': 1,
+        'death_day': 1,
+        'death_date': 1,
+        'death_time': 1,
+        'death_place': 1,
+        'cause_of_death': 1,
+        'death_location_detail': 1,
+        'reported_by_title': 1,
+
+        'mother_nik': 2,
+        'mother_name': 2,
+        'mother_birth_place': 2,
+        'mother_birth_date': 2,
+        'mother_job': 2,
+        'mother_address': 2,
+        'mother_citizenship': 2,
+        'father_nik': 2,
+        'father_name': 2,
+        'father_birth_place': 2,
+        'father_birth_date': 2,
+        'father_job': 2,
+        'father_address': 2,
+        'father_citizenship': 2,
+
+        'applicant_nik': 3,
+        'applicant_name': 3,
+        'applicant_birth_place': 3,
+        'applicant_birth_date': 3,
+        'applicant_age': 3,
+        'applicant_job': 3,
+        'applicant_address': 3,
+        'report_date': 3,
+        'applicant_relation': 3,
+        'applicant_phone': 3,
+
+        'witness1_nik': 4,
+        'witness1_name': 4,
+        'witness1_age': 4,
+        'witness1_address': 4,
+        'witness2_nik': 4,
+        'witness2_name': 4,
+        'witness2_age': 4,
+        'witness2_address': 4,
+
+        'doc_death_statement': 5,
+        'doc_rt_rw_statement': 5,
+        'doc_family_card': 5,
+        'doc_deceased_ktp': 5,
+        'doc_heir_family_card': 5,
+        'doc_heir_ktp': 5
+    };
+
+    function executeFormSubmission() {
+        if (isSubmitting) return;
+
         // Cek total ukuran berkas agar tidak melebihi post_max_size server (7 MB)
         let totalFileSizeBytes = 0;
         const deathFileInputs = deathForm.querySelectorAll('input[type="file"]');
@@ -1546,23 +1871,150 @@
             return;
         }
 
+        isSubmitting = true;
         btnFinalSend.disabled = true;
-        btnFinalSend.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Mengirimkan...';
-        try {
-            localStorage.removeItem(DRAFT_KEY);
-            localStorage.removeItem('purwobinangun_death_form_draft');
-        } catch (e) {}
-        deathForm.submit();
-    });
+        btnFinalSend.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>Mengirimkan...</span>';
+        if (btnSubmitForm) {
+            btnSubmitForm.disabled = true;
+        }
+
+        const formData = new FormData(deathForm);
+        const csrfToken = deathForm.querySelector('input[name="_token"]')?.value || '';
+
+        fetch(deathForm.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': csrfToken
+            }
+        })
+        .then(async response => {
+            const contentType = response.headers.get('content-type') || '';
+            let data = null;
+            if (contentType.includes('application/json')) {
+                data = await response.json();
+            } else {
+                const text = await response.text();
+                data = { message: text };
+            }
+
+            if (!response.ok) {
+                return Promise.reject({ status: response.status, data: data });
+            }
+            return data;
+        })
+        .then(data => {
+            if (data && data.success) {
+                try {
+                    localStorage.removeItem(DRAFT_KEY);
+                    localStorage.removeItem('purwobinangun_death_form_draft');
+
+                    ['death', 'rtrw', 'kk', 'deceased-ktp', 'heir-kk', 'heir-ktp'].forEach(key => {
+                        const ph = document.getElementById(`placeholder-${key}`);
+                        const pb = document.getElementById(`preview-box-${key}`);
+                        if (ph) ph.classList.remove('hidden');
+                        if (pb) pb.classList.add('hidden');
+                    });
+                } catch (e) {
+                    console.warn('Gagal membersihkan draft setelah submit:', e);
+                }
+
+                closeConfirmModal();
+
+                document.getElementById('modal-reg-no').textContent = data.registration_no;
+                document.getElementById('modal-deceased-name').textContent = data.death.deceased_name;
+                document.getElementById('modal-applicant-name').textContent = data.death.applicant_name;
+                
+                document.getElementById('modal-btn-receipt').href = data.receipt_url;
+                document.getElementById('modal-btn-tracking').href = data.tracking_url;
+                document.getElementById('modal-btn-list').href = data.list_url;
+
+                setStep(1, false);
+
+                showModal(successModal);
+            }
+        })
+        .catch(err => {
+            console.error("Submission error:", err);
+            isSubmitting = false;
+            btnFinalSend.disabled = false;
+            btnFinalSend.innerHTML = '<i class="fa-solid fa-check"></i> Ya, Kirim Sekarang';
+            if (btnSubmitForm) {
+                btnSubmitForm.disabled = false;
+            }
+
+            if (err.status === 419) {
+                alert('Sesi pengajuan Anda telah berakhir. Halaman akan dimuat ulang agar sesi dapat diperbarui.');
+                window.location.reload();
+                return;
+            }
+
+            if (err.status === 422 && err.data?.errors) {
+                closeConfirmModal();
+                const firstKey = Object.keys(err.data.errors)[0];
+                const errorMsg = err.data.errors[firstKey][0];
+                const targetStep = deathFieldStepMap[firstKey] || 1;
+                setStep(targetStep);
+                alert('Terdapat kesalahan pengisian data: ' + errorMsg);
+                const targetInput = document.getElementById(firstKey) || document.querySelector(`[name="${firstKey}"]`);
+                if (targetInput && typeof targetInput.focus === 'function') {
+                    targetInput.focus();
+                }
+                return;
+            }
+
+            if (err.status === 403) {
+                closeConfirmModal();
+                alert('Akses Ditolak: ' + (err.data?.message || 'Anda tidak berhak melakukan pengajuan ini.'));
+                return;
+            }
+
+            const errorDetail = err.data?.message || (err.message && !err.message.startsWith('<!') ? err.message : null);
+            alert('Gagal mengirimkan permohonan. ' + (errorDetail ? errorDetail : 'Terjadi kendala jaringan atau server. Silakan periksa koneksi Anda dan coba kirim kembali.'));
+        });
+    }
+
+    btnFinalSend.addEventListener('click', executeFormSubmission);
 
     confirmModal.addEventListener('click', function (e) {
         if (e.target === confirmModal) closeConfirmModal();
     });
 
+    // Copy Registration Number
+    const btnCopyReg = document.getElementById('btn-copy-reg');
+    if (btnCopyReg) {
+        btnCopyReg.addEventListener('click', function () {
+            const regNo = document.getElementById('modal-reg-no').textContent;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(regNo).then(() => {
+                    const originalHtml = btnCopyReg.innerHTML;
+                    btnCopyReg.innerHTML = '<i class="fa-solid fa-check text-emerald-600"></i>';
+                    setTimeout(() => { btnCopyReg.innerHTML = originalHtml; }, 2000);
+                }).catch(() => {
+                    prompt('Salin Nomor Registrasi:', regNo);
+                });
+            } else {
+                prompt('Salin Nomor Registrasi:', regNo);
+            }
+        });
+    }
+
     // Event Listener Auto-Save Draft saat user mengetik atau mengubah field
     if (deathForm) {
-        deathForm.addEventListener('input', saveFormDraft);
-        deathForm.addEventListener('change', saveFormDraft);
+        deathForm.addEventListener('input', function () {
+            saveFormDraft();
+            if (typeof updateDeathNextButtonsState === 'function') {
+                updateDeathNextButtonsState();
+            }
+        });
+        deathForm.addEventListener('change', function () {
+            saveFormDraft();
+            if (typeof updateDeathNextButtonsState === 'function') {
+                updateDeathNextButtonsState();
+            }
+        });
         deathForm.addEventListener('submit', function () {
             try {
                 localStorage.removeItem(DRAFT_KEY);
@@ -1573,5 +2025,8 @@
 
     // Pulihkan data draft yang tersimpan saat halaman dimuat / direfresh
     restoreFormDraft();
+    if (typeof updateDeathNextButtonsState === 'function') {
+        updateDeathNextButtonsState();
+    }
 </script>
 @endsection

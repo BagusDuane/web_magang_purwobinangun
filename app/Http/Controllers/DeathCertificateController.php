@@ -254,6 +254,29 @@ class DeathCertificateController extends Controller
             ? 'Revisi berkas permohonan Akte Kematian berhasil dikirimkan!'
             : 'Permohonan Akte Kematian berhasil diajukan!';
 
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $successMsg,
+                'registration_no' => $death->registration_no,
+                'death' => [
+                    'registration_no' => $death->registration_no,
+                    'deceased_name' => $death->deceased_name,
+                    'deceased_nik' => $death->deceased_nik,
+                    'applicant_name' => $death->applicant_name,
+                    'applicant_phone' => $death->applicant_phone,
+                    'death_date' => $death->death_date ? $death->death_date->translatedFormat('d F Y') : '',
+                    'status' => $death->status,
+                    'status_label' => $death->status_label,
+                    'status_badge_class' => $death->status_badge_class,
+                    'created_at' => $death->created_at->translatedFormat('d F Y, H:i') . ' WIB',
+                ],
+                'receipt_url' => route('tracking.print_receipt', ['type' => 'death', 'registrationNo' => $death->registration_no]),
+                'tracking_url' => route('tracking.show', ['type' => 'death', 'registrationNo' => $death->registration_no]),
+                'list_url' => route('submissions.index'),
+            ]);
+        }
+
         return redirect()->route('death.success', ['registration_no' => $death->registration_no])
             ->with('success', $successMsg);
     }
