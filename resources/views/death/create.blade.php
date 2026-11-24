@@ -1041,19 +1041,19 @@
 <!-- MODAL POP-UP: PENGAJUAN AKTE KEMATIAN BERHASIL TERKIRIM                   -->
 <!-- ========================================================================= -->
 <div id="success-modal" class="modal-overlay">
-    <div id="success-modal-dialog" class="modal-dialog-box bg-white rounded-2xl shadow-2xl border border-rose-100">
-        <!-- Modal Top Decoration -->
-        <div class="bg-gradient-to-r from-rose-700 via-rose-600 to-rose-700 px-5 py-4 sm:p-5 text-center text-white relative shadow-xs shrink-0">
-            <div class="w-12 h-12 sm:w-14 sm:h-14 bg-white/20 backdrop-blur rounded-full flex items-center justify-center mx-auto mb-2 sm:mb-2.5 ring-4 sm:ring-6 ring-white/10 shadow-md">
+    <div id="success-modal-dialog" class="modal-dialog-box bg-white rounded-2xl shadow-2xl border border-slate-200">
+        <!-- Modal Top Decoration: Subtle Rich Gradient with High Contrast (Deep Crimson & Rose) -->
+        <div class="px-5 py-5 sm:p-6 text-center text-white relative shadow-xs shrink-0" style="background: linear-gradient(135deg, #881337 0%, #9f1239 50%, #be123c 100%);">
+            <div class="w-12 h-12 sm:w-14 sm:h-14 bg-white/20 backdrop-blur rounded-full flex items-center justify-center mx-auto mb-2.5 ring-4 ring-white/20 shadow-md">
                 <i class="fa-solid fa-circle-check text-2xl sm:text-3xl text-emerald-300"></i>
             </div>
-            <span class="text-[10px] sm:text-[11px] uppercase tracking-widest font-extrabold bg-amber-400 text-slate-950 px-2.5 py-0.5 rounded-full shadow-xs">
+            <span class="inline-block text-[10px] sm:text-[11px] uppercase tracking-wider font-extrabold bg-amber-400 text-slate-950 px-3 py-1 rounded-full shadow-xs">
                 PENGAJUAN BERHASIL TERKIRIM
             </span>
-            <h3 class="text-base sm:text-lg md:text-xl font-extrabold text-white mt-1.5 sm:mt-2">
+            <h3 class="text-base sm:text-lg md:text-xl font-extrabold text-white mt-2">
                 Permohonan Akte Kematian Diterima
             </h3>
-            <p class="text-[11px] sm:text-xs text-rose-100 mt-1 max-w-sm mx-auto leading-relaxed">
+            <p class="text-xs text-rose-100 mt-1.5 max-w-sm mx-auto leading-relaxed">
                 Berkas permohonan Anda telah berhasil didaftarkan ke sistem pelayanan Kalurahan Purwobinangun.
             </p>
         </div>
@@ -1061,38 +1061,38 @@
         <!-- Modal Body Content -->
         <div class="p-4 sm:p-5 space-y-3 sm:space-y-3.5 overflow-y-auto custom-modal-scroll flex-1 min-h-0">
             <!-- Registration Number Highlight Box -->
-            <div class="p-3 sm:p-3.5 bg-rose-50/80 border-2 border-dashed border-rose-600 rounded-xl text-center">
-                <span class="text-[10px] sm:text-[11px] font-bold text-rose-800 uppercase tracking-wider block">Nomor Registrasi Permohonan</span>
-                <div class="flex items-center justify-center gap-2 my-0.5 sm:my-1">
-                    <span id="modal-reg-no" class="text-lg sm:text-xl md:text-2xl font-black text-rose-700 tracking-widest font-mono">AKM-XXXXXXXX-XXXX</span>
-                    <button type="button" id="btn-copy-reg" title="Salin Nomor Registrasi" class="text-slate-400 hover:text-rose-700 transition p-1.5 rounded-lg hover:bg-white cursor-pointer">
+            <div class="p-3.5 sm:p-4 bg-slate-50 border-2 border-dashed border-rose-600 rounded-xl text-center">
+                <span class="text-[11px] font-bold text-rose-900 uppercase tracking-wider block">Nomor Registrasi Permohonan</span>
+                <div class="flex items-center justify-center gap-2 my-1">
+                    <span id="modal-reg-no" class="text-xl sm:text-2xl font-black text-rose-800 tracking-wider font-mono">AKM-XXXXXXXX-XXXX</span>
+                    <button type="button" id="btn-copy-reg" title="Salin Nomor Registrasi" class="text-slate-500 hover:text-rose-800 transition p-1.5 rounded-lg hover:bg-white cursor-pointer border border-transparent hover:border-slate-200">
                         <i class="fa-regular fa-copy text-sm"></i>
                     </button>
                 </div>
-                <p class="text-[10px] text-slate-500">Gunakan nomor ini untuk melacak status proses permohonan Anda.</p>
+                <p class="text-[11px] text-slate-600">Gunakan nomor ini untuk melacak status proses permohonan Anda.</p>
             </div>
 
             <!-- Summary Details -->
-            <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 space-y-1.5 text-xs">
-                <div class="flex justify-between items-center py-0.5 border-b border-slate-200">
-                    <span class="text-slate-500">Nama Almarhum/ah:</span>
-                    <span id="modal-deceased-name" class="font-bold text-slate-800">-</span>
+            <div class="bg-slate-50 rounded-xl p-3.5 border border-slate-200 space-y-2 text-xs">
+                <div class="flex justify-between items-center py-1 border-b border-slate-200">
+                    <span class="text-slate-600 font-medium">Nama Almarhum/ah:</span>
+                    <span id="modal-deceased-name" class="font-bold text-slate-900">-</span>
                 </div>
-                <div class="flex justify-between items-center py-0.5 border-b border-slate-200">
-                    <span class="text-slate-500">Nama Pelapor:</span>
-                    <span id="modal-applicant-name" class="font-semibold text-slate-800">-</span>
+                <div class="flex justify-between items-center py-1 border-b border-slate-200">
+                    <span class="text-slate-600 font-medium">Nama Pelapor:</span>
+                    <span id="modal-applicant-name" class="font-semibold text-slate-900">-</span>
                 </div>
-                <div class="flex justify-between items-center py-0.5">
-                    <span class="text-slate-500">Status Permohonan:</span>
-                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800">
-                        <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                <div class="flex justify-between items-center py-1">
+                    <span class="text-slate-600 font-medium">Status Permohonan:</span>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-200">
+                        <span class="w-1.5 h-1.5 rounded-full bg-amber-600 animate-pulse"></span>
                         Menunggu Verifikasi
                     </span>
                 </div>
             </div>
 
             <!-- Important Info Notice -->
-            <div class="p-2.5 sm:p-3 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-2.5 text-xs text-amber-900">
+            <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-2.5 text-xs text-amber-950">
                 <i class="fa-solid fa-triangle-exclamation text-amber-600 text-sm mt-0.5 shrink-0"></i>
                 <p class="text-[11px] leading-relaxed">
                     Petugas Kalurahan akan memverifikasi berkas Anda dalam waktu <strong>1-3 hari kerja</strong>. Anda dapat memantau status secara berkala melalui menu <strong>Lacak Berkas</strong>.
@@ -1102,15 +1102,15 @@
             <!-- Modal Action Buttons -->
             <div class="pt-1 space-y-2">
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <a id="modal-btn-receipt" href="#" target="_blank" class="w-full bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs py-2.5 px-3 rounded-lg text-center transition flex items-center justify-center gap-1.5 shadow-xs">
+                    <a id="modal-btn-receipt" href="#" target="_blank" class="w-full bg-rose-700 hover:bg-rose-800 text-white font-bold text-xs py-2.5 px-3 rounded-lg text-center transition flex items-center justify-center gap-1.5 shadow-xs cursor-pointer">
                         <i class="fa-solid fa-print"></i> Cetak Bukti Resi
                     </a>
-                    <a id="modal-btn-tracking" href="#" class="w-full bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs py-2.5 px-3 rounded-lg border border-rose-200 text-center transition flex items-center justify-center gap-1.5">
-                        <i class="fa-solid fa-magnifying-glass"></i> Lacak Status Berkas
+                    <a id="modal-btn-tracking" href="#" class="w-full bg-white hover:bg-rose-50 text-rose-800 font-bold text-xs py-2.5 px-3 rounded-lg border border-rose-300 text-center transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer">
+                        <i class="fa-solid fa-magnifying-glass text-rose-700"></i> Lacak Status Berkas
                     </a>
                 </div>
-                <a id="modal-btn-list" href="{{ route('submissions.index') }}" class="w-full block bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs py-2 px-3 rounded-lg text-center transition border border-slate-300">
-                    <i class="fa-solid fa-list-check mr-1"></i> Buka Daftar Pengajuan Permohonan Akta
+                <a id="modal-btn-list" href="{{ route('submissions.index') }}" class="w-full block bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold text-xs py-2.5 px-3 rounded-lg text-center transition border border-slate-300">
+                    <i class="fa-solid fa-list-check mr-1.5 text-slate-600"></i> Buka Daftar Pengajuan Permohonan Akta
                 </a>
             </div>
         </div>
