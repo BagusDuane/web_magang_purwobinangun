@@ -9,8 +9,8 @@
             margin: 12mm 15mm 12mm 15mm;
         }
         body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
-            font-size: 9.5pt;
+            font-family: 'Times-Roman', 'Times New Roman', Times, serif;
+            font-size: 10pt;
             color: #000000;
             line-height: 1.35;
         }

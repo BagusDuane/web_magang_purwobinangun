@@ -18,7 +18,7 @@
 
     <style>
         body {
-            font-family: 'Aptos', 'Calibri', Arial, 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Times New Roman', Times, serif;
             color: #000;
             background-color: #f1f5f9;
         }
@@ -44,7 +44,8 @@
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             border: 1px solid #cbd5e1;
             position: relative;
-            font-size: 10pt;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 10.5pt;
             line-height: 1.35;
         }
 
@@ -61,6 +62,7 @@
                 background: white !important; 
                 padding: 0 !important; 
                 margin: 0 !important;
+                font-family: 'Times New Roman', Times, serif !important;
                 color: black !important; 
             }
             .print-page {
@@ -72,6 +74,7 @@
                 max-width: 100% !important;
                 min-height: auto !important;
                 box-sizing: border-box !important;
+                font-family: 'Times New Roman', Times, serif !important;
             }
             .page-break {
                 page-break-before: always !important;
@@ -87,7 +90,8 @@
         .data-table td {
             padding: 1.5px 0;
             vertical-align: top;
-            font-size: 10pt;
+            font-size: 10.5pt;
+            font-family: 'Times New Roman', Times, serif;
         }
     </style>
 </head>
@@ -186,22 +190,22 @@
 
                 <!-- Teks Kop Surat Rata Tengah -->
                 <div class="text-center pl-16 pr-2">
-                    <h4 class="text-[10pt] font-bold tracking-wide uppercase leading-tight font-sans">
+                    <h4 class="text-[10.5pt] font-bold tracking-wide uppercase leading-tight">
                         PEMERINTAH KABUPATEN SLEMAN
                     </h4>
-                    <h4 class="text-[11pt] font-bold tracking-wide uppercase leading-tight mt-0.5 font-sans">
+                    <h4 class="text-[11.5pt] font-bold tracking-wide uppercase leading-tight mt-0.5">
                         KAPANEWON PAKEM
                     </h4>
-                    <h3 class="text-[13pt] font-bold tracking-wide uppercase leading-tight mt-0.5 font-sans">
+                    <h3 class="text-[13.5pt] font-bold tracking-wide uppercase leading-tight mt-0.5">
                         PEMERINTAH KALURAHAN PURWOBINANGUN
                     </h3>
                     <div class="my-0.5 flex justify-center items-center">
                         <img src="{{ asset('images/aksara-purwobinangun.jpg') }}" alt="Aksara Jawa" class="h-4 object-contain">
                     </div>
-                    <p class="text-[8pt] leading-tight text-slate-900 font-sans">
+                    <p class="text-[8.5pt] leading-tight text-slate-900">
                         Alamat : Jl. Pakem - Turi Km.04 Watuadeg Purwobinangun Pakem Sleman Yogyakarta. 55582
                     </p>
-                    <p class="text-[8pt] leading-tight mt-0.5 text-slate-900 font-sans">
+                    <p class="text-[8.5pt] leading-tight mt-0.5 text-slate-900">
                         Laman : <span class="underline">www.purwobinangun.slemankab.go.id</span> &nbsp;&nbsp; Surel : desapurwobinangun@slemankab.go.id
                     </p>
                 </div>
