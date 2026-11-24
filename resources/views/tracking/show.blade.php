@@ -161,13 +161,13 @@
                             <div class="absolute right-0 bottom-full mb-2 w-52 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
                                 <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Format Dokumen:</div>
                                 <a href="{{ route('tracking.export', ['type' => $type, 'registrationNo' => $data->registration_no, 'format' => 'pdf']) }}" class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-rose-700 transition">
-                                    <i class="fa-solid fa-file-pdf text-rose-600 w-4"></i> Unduh PDF (.pdf)
+                                    <i class="fa-solid fa-file-pdf text-rose-600 w-4"></i> PDF (.pdf)
                                 </a>
                                 <a href="{{ route('tracking.export', ['type' => $type, 'registrationNo' => $data->registration_no, 'format' => 'docx']) }}" class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-blue-700 transition">
-                                    <i class="fa-solid fa-file-word text-blue-600 w-4"></i> Unduh Word (.docx)
+                                    <i class="fa-solid fa-file-word text-blue-600 w-4"></i> Word (.docx)
                                 </a>
                                 <a href="{{ route('tracking.export', ['type' => $type, 'registrationNo' => $data->registration_no, 'format' => 'xlsx']) }}" class="flex items-center gap-2 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:text-emerald-700 transition">
-                                    <i class="fa-solid fa-file-excel text-emerald-600 w-4"></i> Unduh Excel (.xlsx)
+                                    <i class="fa-solid fa-file-excel text-emerald-600 w-4"></i> Excel (.xlsx)
                                 </a>
                             </div>
                         </details>

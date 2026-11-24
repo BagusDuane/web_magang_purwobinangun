@@ -13,6 +13,7 @@ use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpWord\PhpWord;
+use PhpOffice\PhpWord\Settings;
 use PhpOffice\PhpWord\SimpleType\Jc;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -71,6 +72,8 @@ class CertificateExportService
 
     public function exportBirthDocx(BirthCertificate $birth): StreamedResponse
     {
+        Settings::setOutputEscapingEnabled(true);
+
         $phpWord = new PhpWord();
         $phpWord->setDefaultFontName('Calibri');
         $phpWord->setDefaultFontSize(11);
@@ -316,6 +319,8 @@ class CertificateExportService
 
     public function exportDeathDocx(DeathCertificate $death): StreamedResponse
     {
+        Settings::setOutputEscapingEnabled(true);
+
         $phpWord = new PhpWord();
         $phpWord->setDefaultFontName('Calibri');
         $phpWord->setDefaultFontSize(11);
