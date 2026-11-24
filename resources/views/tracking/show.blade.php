@@ -156,7 +156,7 @@
                     @if(auth()->check() && auth()->user()->isAdmin() && $data->status !== 'revision')
                         <details class="relative inline-block text-left">
                             <summary class="list-none [&::-webkit-details-marker]:hidden bg-slate-900 hover:bg-black text-white font-bold text-xs px-4 py-2.5 rounded-lg shadow-sm transition flex items-center gap-2 cursor-pointer">
-                                <i class="fa-solid fa-file-arrow-down"></i> Unduh Berkas (3 Format) <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                                <i class="fa-solid fa-file-arrow-down"></i> Unduh Berkas <i class="fa-solid fa-chevron-down text-[10px]"></i>
                             </summary>
                             <div class="absolute right-0 bottom-full mb-2 w-52 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
                                 <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Format Dokumen:</div>

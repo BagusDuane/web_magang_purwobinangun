@@ -23,7 +23,7 @@
             </span>
             <details class="relative inline-block text-left">
                 <summary class="list-none [&::-webkit-details-marker]:hidden bg-[#095b8c] hover:bg-[#064266] text-white font-bold text-xs px-3.5 py-2 rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer">
-                    <i class="fa-solid fa-file-arrow-down"></i> Unduh Berkas (3 Format) <i class="fa-solid fa-chevron-down text-[10px] ml-0.5"></i>
+                    <i class="fa-solid fa-file-arrow-down"></i> Unduh Berkas <i class="fa-solid fa-chevron-down text-[10px] ml-0.5"></i>
                 </summary>
                 <div class="absolute right-0 mt-2 w-52 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-50">
                     <div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Format Dokumen:</div>
