@@ -303,11 +303,13 @@ class CertificateExportService
     public function exportDeathPdf(DeathCertificate $death)
     {
         $logoBase64 = $this->getLogoBase64();
+        $aksaraBase64 = $this->getAksaraBase64();
         $filename = 'Surat_Kematian_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $death->registration_no) . '.pdf';
 
         $pdf = Pdf::loadView('exports.pdf.death', [
             'death' => $death,
             'logoBase64' => $logoBase64,
+            'aksaraBase64' => $aksaraBase64,
         ])->setPaper('a4', 'portrait')->setOption([
             'isHtml5ParserEnabled' => true,
             'isRemoteEnabled' => true,
@@ -563,6 +565,17 @@ class CertificateExportService
         if (file_exists($logoPath)) {
             $type = pathinfo($logoPath, PATHINFO_EXTENSION);
             $data = file_get_contents($logoPath);
+            return 'data:image/' . $type . ';base64,' . base64_encode($data);
+        }
+        return '';
+    }
+
+    private function getAksaraBase64(): string
+    {
+        $aksaraPath = public_path('images/aksara-purwobinangun.jpg');
+        if (file_exists($aksaraPath)) {
+            $type = pathinfo($aksaraPath, PATHINFO_EXTENSION);
+            $data = file_get_contents($aksaraPath);
             return 'data:image/' . $type . ';base64,' . base64_encode($data);
         }
         return '';

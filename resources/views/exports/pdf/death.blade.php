@@ -5,274 +5,471 @@
     <title>Surat Keterangan Kematian - {{ $death->registration_no }}</title>
     <style>
         @page {
-            size: A4 portrait;
-            margin: 15mm 15mm 15mm 15mm;
+            size: a4 portrait;
+            margin: 12mm 15mm 12mm 15mm;
         }
         body {
-            font-family: 'DejaVu Sans', Helvetica, Arial, sans-serif;
+            font-family: 'Helvetica', 'Arial', sans-serif;
             font-size: 9.5pt;
-            color: #1e293b;
-            line-height: 1.4;
+            color: #000000;
+            line-height: 1.35;
         }
         .header-table {
             width: 100%;
             border-collapse: collapse;
-            border-bottom: 2px solid #000;
-            padding-bottom: 8px;
-            margin-bottom: 12px;
         }
         .header-logo {
             width: 70px;
-            vertical-align: middle;
-            text-align: center;
+            vertical-align: top;
+            text-align: left;
         }
         .header-logo img {
-            width: 60px;
+            width: 58px;
             height: auto;
         }
         .header-text {
             text-align: center;
-            vertical-align: middle;
+            vertical-align: top;
+            padding-right: 60px;
+        }
+        .header-text h4 {
+            margin: 0;
+            font-size: 10pt;
+            font-weight: bold;
+            text-transform: uppercase;
         }
         .header-text h3 {
-            margin: 0;
+            margin: 1px 0;
             font-size: 11pt;
             font-weight: bold;
             text-transform: uppercase;
         }
         .header-text h2 {
-            margin: 2px 0;
+            margin: 1px 0;
             font-size: 12.5pt;
             font-weight: bold;
             text-transform: uppercase;
         }
         .header-text p {
-            margin: 2px 0 0 0;
+            margin: 1px 0 0 0;
             font-size: 8pt;
-            font-style: italic;
+        }
+        .double-line {
+            margin-top: 6px;
+            border-top: 3px solid #000;
+            border-bottom: 0.72px solid #000;
+            height: 2px;
         }
         .doc-title {
             text-align: center;
-            margin: 10px 0 14px 0;
+            margin: 10px 0 12px 0;
         }
         .doc-title h1 {
-            font-size: 12.5pt;
+            font-size: 14pt;
             font-weight: bold;
-            text-decoration: underline;
             margin: 0;
             text-transform: uppercase;
-            color: #be123c;
         }
         .doc-title p {
-            font-size: 8.5pt;
-            margin: 3px 0 0 0;
-            color: #475569;
-        }
-        .content-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 14px;
-        }
-        .content-table td {
-            padding: 4px 6px;
-            vertical-align: top;
-            font-size: 9pt;
-            border: 1px solid #cbd5e1;
-        }
-        .section-header {
-            background-color: #fee2e2;
+            font-size: 10pt;
             font-weight: bold;
-            color: #be123c;
+            margin: 2px 0 0 0;
+        }
+        .section-title {
+            font-size: 10.5pt;
+            font-weight: bold;
             text-transform: uppercase;
-            font-size: 8.5pt;
+            margin-top: 8px;
+            margin-bottom: 2px;
         }
-        .label-col {
-            width: 32%;
-            color: #334155;
-        }
-        .val-col {
-            width: 68%;
-            font-weight: bold;
-        }
-        .sig-table {
+        .data-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
         }
-        .sig-table td {
-            width: 50%;
-            text-align: center;
+        .data-table td {
+            padding: 1.5px 0;
             vertical-align: top;
-            font-size: 9pt;
+            font-size: 9.5pt;
+        }
+        .col-num {
+            width: 24px;
+        }
+        .col-label {
+            width: 190px;
+        }
+        .col-colon {
+            width: 15px;
+        }
+        .page-break {
+            page-break-after: always;
+        }
+        .sig-block {
+            margin-top: 15px;
+            float: right;
+            width: 250px;
+            text-align: left;
+            font-size: 9.5pt;
         }
         .sig-space {
-            height: 50px;
+            height: 60px;
+        }
+        .uppercase {
+            text-transform: uppercase;
         }
     </style>
 </head>
 <body>
 
     @php
+        $romans = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+        $monthNum = (int)($death->death_date ? $death->death_date->format('n') : date('n'));
+        $monthRoman = $romans[$monthNum] ?? 'IX';
+        $letterYear = $death->death_date ? $death->death_date->format('Y') : date('Y');
+        $letterNumberSeq = (int)substr($death->registration_no, -4) ?: '82';
+
         $deceasedAge = null;
         if ($death->birth_date && $death->death_date) {
             $deceasedAge = $death->birth_date->diffInYears($death->death_date);
+        } elseif ($death->birth_date) {
+            $deceasedAge = $death->birth_date->diffInYears(now());
         }
-        $deathDateFormatted = $death->death_date ? ($death->death_day ? strtoupper($death->death_day) . ', ' : '') . $death->death_date->translatedFormat('d F Y') : '-';
+
+        $motherAge = $death->mother_birth_date ? $death->mother_birth_date->diffInYears($death->death_date ?? now()) : null;
+        $fatherAge = $death->father_birth_date ? $death->father_birth_date->diffInYears($death->death_date ?? now()) : null;
+
+        $genderText = $death->gender === 'L' ? 'LAKI - LAKI' : ($death->gender === 'P' ? 'PEREMPUAN' : '-');
         $deceasedFullAddress = $death->deceased_address ?: ('Padukuhan ' . $death->padukuhan . ', RT ' . $death->rt . ' / RW ' . $death->rw . ', Purwobinangun, Pakem, Sleman');
+        $reportDateFormatted = $death->report_date ? \Carbon\Carbon::parse($death->report_date)->translatedFormat('d F Y') : ($death->created_at ? $death->created_at->translatedFormat('d F Y') : \Carbon\Carbon::now()->translatedFormat('d F Y'));
+        $officerName = $death->officer_name ?: 'Teguh Kurniawan, S.Pi.';
+
+        $formatBirthAndAge = function($place, $date, $age) {
+            $parts = [];
+            if ($place) $parts[] = strtoupper($place);
+            if ($date) $parts[] = $date->format('d - m - Y');
+            $base = implode(', ', $parts);
+            if ($age) {
+                $base .= ($base ? '   Umur ' : 'Umur ') . $age . ' th';
+            }
+            return $base ?: '';
+        };
+
+        $motherBirth = $formatBirthAndAge($death->mother_birth_place, $death->mother_birth_date, $motherAge);
+        $fatherBirth = $formatBirthAndAge($death->father_birth_place, $death->father_birth_date, $fatherAge);
+        $applicantBirth = $formatBirthAndAge($death->applicant_birth_place, $death->applicant_birth_date, $death->applicant_age);
+        $witness1Birth = $formatBirthAndAge($death->witness1_birth_place, $death->witness1_birth_date, $death->witness1_age);
+        $witness2Birth = $formatBirthAndAge($death->witness2_birth_place, $death->witness2_birth_date, $death->witness2_age);
     @endphp
 
-    <!-- KOP SURAT RESMI -->
-    <table class="header-table">
-        <tr>
-            @if(!empty($logoBase64))
-                <td class="header-logo">
-                    <img src="{{ $logoBase64 }}" alt="Logo Sleman">
+    <!-- =========================================================================
+         HALAMAN 1: KOP SURAT, JUDUL, DATA KEPALA KELUARGA & SECTION JENAZAH
+    ========================================================================== -->
+    <div>
+        <!-- 1. KOP SURAT RESMI -->
+        <table class="header-table">
+            <tr>
+                @if(!empty($logoBase64))
+                    <td class="header-logo">
+                        <img src="{{ $logoBase64 }}" alt="Logo Sleman">
+                    </td>
+                @endif
+                <td class="header-text">
+                    <h4>PEMERINTAH KABUPATEN SLEMAN</h4>
+                    <h3>KAPANEWON PAKEM</h3>
+                    <h2>PEMERINTAH KALURAHAN PURWOBINANGUN</h2>
+                    @if(!empty($aksaraBase64))
+                        <div style="margin: 2px 0;">
+                            <img src="{{ $aksaraBase64 }}" alt="Aksara Jawa" style="height: 14px;">
+                        </div>
+                    @endif
+                    <p>Alamat : Jl. Pakem - Turi Km.04 Watuadeg Purwobinangun Pakem Sleman Yogyakarta. 55582</p>
+                    <p>Laman : <u>www.purwobinangun.slemankab.go.id</u> &nbsp;&nbsp; Surel : desapurwobinangun@slemankab.go.id</p>
                 </td>
-            @endif
-            <td class="header-text">
-                <h3>PEMERINTAH KABUPATEN SLEMAN</h3>
-                <h3>KAPANEWON PAKEM</h3>
-                <h2>PEMERINTAH KALURAHAN PURWOBINANGUN</h2>
-                <p>Alamat: Jl. Boyong No. 1 Purwobinangun, Pakem, Sleman, D.I. Yogyakarta 55582</p>
-            </td>
-        </tr>
-    </table>
+            </tr>
+        </table>
 
-    <!-- JUDUL SURAT -->
-    <div class="doc-title">
-        <h1>SURAT KETERANGAN KEMATIAN</h1>
-        <p>Nomor Registrasi: <strong>{{ $death->registration_no }}</strong></p>
+        <!-- Garis Ganda -->
+        <div class="double-line"></div>
+
+        <!-- 2. JUDUL SURAT -->
+        <div class="doc-title">
+            <h1>SURAT KETERANGAN KEMATIAN</h1>
+            <p>No. 474.3/ &nbsp;{{ $letterNumberSeq }}&nbsp; /{{ $monthRoman }}/{{ $letterYear }}</p>
+        </div>
+
+        <!-- 3. DATA KEPALA KELUARGA -->
+        <table class="data-table" style="margin-bottom: 8px;">
+            <tr>
+                <td class="col-label" style="width: 214px;">Nama Kepala Keluarga</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $death->head_of_family_name ?: '-' }}</td>
+            </tr>
+            <tr>
+                <td class="col-label" style="width: 214px;">Nomor Kartu Keluarga</td>
+                <td class="col-colon">:</td>
+                <td>{{ $death->family_card_no ?: '-' }}</td>
+            </tr>
+        </table>
+
+        <!-- 4. SECTION JENAZAH -->
+        <div class="section-title">JENAZAH</div>
+        <table class="data-table">
+            <tr>
+                <td class="col-num">1</td>
+                <td class="col-label">NIK</td>
+                <td class="col-colon">:</td>
+                <td>{{ $death->deceased_nik ?: '-' }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">2</td>
+                <td class="col-label">Nama Lengkap</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $death->deceased_name ?: '-' }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">3</td>
+                <td class="col-label">Jenis Kelamin / Anak ke</td>
+                <td class="col-colon">:</td>
+                <td>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 0;">{{ $genderText }}</td>
+                            <td style="padding: 0; text-align: right; width: 140px;">Anak ke &nbsp; {{ $death->deceased_child_order ?: '-' }}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td class="col-num">4</td>
+                <td class="col-label">Tempat dan Tanggal Lahir /<br>Umur</td>
+                <td class="col-colon">:</td>
+                <td>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 0;" class="uppercase">{{ $death->deceased_birth_place ?: 'SLEMAN' }}, {{ $death->birth_date ? $death->birth_date->format('d - m - Y') : '-' }}</td>
+                            <td style="padding: 0; text-align: right; width: 140px;">Umur {{ $deceasedAge !== null ? $deceasedAge . ' th' : '-' }}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td class="col-num">5</td>
+                <td class="col-label">Agama</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $death->religion ?: '-' }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">6</td>
+                <td class="col-label">Pekerjaan</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $death->deceased_job ?: '-' }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">7</td>
+                <td class="col-label">Alamat</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $deceasedFullAddress }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">8</td>
+                <td class="col-label">Tanggal dan Jam Kematian</td>
+                <td class="col-colon">:</td>
+                <td>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 0;">{{ $death->death_date ? $death->death_date->format('d - m - Y') : '-' }}</td>
+                            <td style="padding: 0; text-align: right; width: 140px;">Jam: {{ $death->death_time ? $death->death_time . ' WIB' : '-' }}</td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td class="col-num">9</td>
+                <td class="col-label">Sebab Kematian</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $death->cause_of_death ?: '-' }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">10</td>
+                <td class="col-label">Tempat Kematian</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $death->death_place ?: '-' }}{{ $death->death_location_detail ? ' (' . $death->death_location_detail . ')' : '' }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">11</td>
+                <td class="col-label">Yang Menerangkan</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $death->reported_by_title ?: 'LAINNYA' }}</td>
+            </tr>
+        </table>
     </div>
 
-    <p style="font-size: 9pt; margin-bottom: 8px;">
-        Pemerintah Kalurahan Purwobinangun dengan ini menerangkan bahwa telah tercatat pendaftaran permohonan penerbitan Akta Kematian atas nama warga di bawah ini:
-    </p>
+    <!-- PAGE BREAK -->
+    <div class="page-break"></div>
 
-    <!-- TABEL DATA LENGKAP -->
-    <table class="content-table">
-        <!-- 1. DATA KELUARGA -->
-        <tr class="section-header">
-            <td colspan="2">I. DATA KELUARGA & PENDAFTARAN</td>
-        </tr>
-        <tr>
-            <td class="label-col">Nomor Registrasi</td>
-            <td class="val-col">{{ $death->registration_no }}</td>
-        </tr>
-        <tr>
-            <td class="label-col">Nomor Kartu Keluarga (KK)</td>
-            <td class="val-col">{{ $death->family_card_no ?: '-' }}</td>
-        </tr>
-        <tr>
-            <td class="label-col">Nama Kepala Keluarga</td>
-            <td class="val-col">{{ strtoupper($death->head_of_family_name ?: '-') }}</td>
-        </tr>
-        <tr>
-            <td class="label-col">Tanggal Pendaftaran</td>
-            <td class="val-col">{{ $death->created_at ? $death->created_at->translatedFormat('d F Y H:i') : '-' }} WIB</td>
-        </tr>
+    <!-- =========================================================================
+         HALAMAN 2: SECTION IBU, AYAH, PELAPOR, SAKSI 1, SAKSI 2 & TANDA TANGAN
+    ========================================================================== -->
+    <div>
+        <!-- 1. IBU -->
+        <div class="section-title">IBU</div>
+        <table class="data-table">
+            <tr>
+                <td class="col-num">1</td>
+                <td class="col-label">NIK</td>
+                <td class="col-colon">:</td>
+                <td>{{ $death->mother_nik ?: '' }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">2</td>
+                <td class="col-label">Nama Lengkap</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $death->mother_name ?: '' }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">3</td>
+                <td class="col-label">Tempat dan Tanggal Lahir /<br>Umur</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $motherBirth }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">4</td>
+                <td class="col-label">Alamat</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $death->mother_address ?: '' }}</td>
+            </tr>
+        </table>
 
-        <!-- 2. DATA JENAZAH -->
-        <tr class="section-header">
-            <td colspan="2">II. DATA JENAZAH (YANG MENINGGAL DUNIA)</td>
-        </tr>
-        <tr>
-            <td class="label-col">Nama Lengkap Jenazah</td>
-            <td class="val-col">{{ strtoupper($death->deceased_name) }}</td>
-        </tr>
-        <tr>
-            <td class="label-col">NIK Jenazah</td>
-            <td class="val-col">{{ $death->deceased_nik }}</td>
-        </tr>
-        <tr>
-            <td class="label-col">Jenis Kelamin</td>
-            <td class="val-col">{{ $death->gender === 'L' ? 'LAKI-LAKI' : ($death->gender === 'P' ? 'PEREMPUAN' : '-') }}</td>
-        </tr>
-        <tr>
-            <td class="label-col">Tempat & Tanggal Lahir / Umur</td>
-            <td class="val-col">{{ strtoupper($death->deceased_birth_place ?: 'Sleman') }}, {{ $death->birth_date ? $death->birth_date->translatedFormat('d F Y') : '-' }} {{ $deceasedAge !== null ? "({$deceasedAge} Tahun)" : '' }}</td>
-        </tr>
-        <tr>
-            <td class="label-col">Agama & Pekerjaan</td>
-            <td class="val-col">{{ strtoupper($death->religion ?: '-') }} &mdash; {{ strtoupper($death->deceased_job ?: '-') }}</td>
-        </tr>
-        <tr>
-            <td class="label-col">Alamat Jenazah</td>
-            <td class="val-col">{{ $deceasedFullAddress }}</td>
-        </tr>
+        <!-- 2. AYAH -->
+        <div class="section-title" style="margin-top: 10px;">AYAH</div>
+        <table class="data-table">
+            <tr>
+                <td class="col-num">1</td>
+                <td class="col-label">NIK</td>
+                <td class="col-colon">:</td>
+                <td>{{ $death->father_nik ?: '' }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">2</td>
+                <td class="col-label">Nama Lengkap</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $death->father_name ?: '' }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">3</td>
+                <td class="col-label">Tempat dan Tanggal Lahir /<br>Umur</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $fatherBirth }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">4</td>
+                <td class="col-label">Alamat</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $death->father_address ?: '' }}</td>
+            </tr>
+        </table>
 
-        <!-- 3. RINCIAN PERISTIWA KEMATIAN -->
-        <tr class="section-header">
-            <td colspan="2">III. RINCIAN PERISTIWA KEMATIAN</td>
-        </tr>
-        <tr>
-            <td class="label-col">Hari & Tanggal Kematian</td>
-            <td class="val-col">{{ $deathDateFormatted }}</td>
-        </tr>
-        <tr>
-            <td class="label-col">Waktu / Jam Kematian</td>
-            <td class="val-col">{{ $death->death_time ? $death->death_time . ' WIB' : '-' }}</td>
-        </tr>
-        <tr>
-            <td class="label-col">Tempat Kematian</td>
-            <td class="val-col">{{ strtoupper($death->death_place ?: 'RUMAH') }} {{ $death->death_location_detail ? "({$death->death_location_detail})" : '' }}</td>
-        </tr>
-        <tr>
-            <td class="label-col">Sebab Kematian</td>
-            <td class="val-col">{{ strtoupper($death->cause_of_death ?: 'SAKIT BIASA / TUA') }}</td>
-        </tr>
-        <tr>
-            <td class="label-col">Yang Menerangkan Kematian</td>
-            <td class="val-col">{{ $death->reported_by_title ?: 'Dokter / Rumah Sakit / RT' }}</td>
-        </tr>
+        <!-- 3. PELAPOR -->
+        <div class="section-title" style="margin-top: 10px;">PELAPOR</div>
+        <table class="data-table">
+            <tr>
+                <td class="col-num">1</td>
+                <td class="col-label">NIK</td>
+                <td class="col-colon">:</td>
+                <td>{{ $death->applicant_nik ?: '' }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">2</td>
+                <td class="col-label">Nama Lengkap</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $death->applicant_name ?: '' }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">3</td>
+                <td class="col-label">Tempat dan Tanggal Lahir /<br>Umur</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $applicantBirth }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">4</td>
+                <td class="col-label">Alamat</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $death->applicant_address ?: '' }}</td>
+            </tr>
+        </table>
 
-        <!-- 4. DATA ORANG TUA JENAZAH -->
-        <tr class="section-header">
-            <td colspan="2">IV. DATA ORANG TUA JENAZAH</td>
-        </tr>
-        <tr>
-            <td class="label-col">Nama Ayah / NIK</td>
-            <td class="val-col">{{ strtoupper($death->father_name ?: '-') }} / {{ $death->father_nik ?: '-' }}</td>
-        </tr>
-        <tr>
-            <td class="label-col">Nama Ibu Kandung / NIK</td>
-            <td class="val-col">{{ strtoupper($death->mother_name ?: '-') }} / {{ $death->mother_nik ?: '-' }}</td>
-        </tr>
+        <!-- 4. SAKSI 1 -->
+        <div class="section-title" style="margin-top: 10px;">SAKSI 1</div>
+        <table class="data-table">
+            <tr>
+                <td class="col-num">1</td>
+                <td class="col-label">NIK</td>
+                <td class="col-colon">:</td>
+                <td>{{ $death->witness1_nik ?: ($death->witness_nik ?: '') }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">2</td>
+                <td class="col-label">Nama Lengkap</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $death->witness1_name ?: ($death->witness_name ?: '') }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">3</td>
+                <td class="col-label">Tempat dan Tanggal Lahir /<br>Umur</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $witness1Birth }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">4</td>
+                <td class="col-label">Alamat</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $death->witness1_address ?: '' }}</td>
+            </tr>
+        </table>
 
-        <!-- 5. DATA PELAPOR & SAKSI -->
-        <tr class="section-header">
-            <td colspan="2">V. DATA PELAPOR & SAKSI</td>
-        </tr>
-        <tr>
-            <td class="label-col">Pelapor (Nama / NIK / Hubungan)</td>
-            <td class="val-col">{{ strtoupper($death->applicant_name ?: '-') }} / {{ $death->applicant_nik ?: '-' }} ({{ $death->applicant_relation ?: 'Ahli Waris / Keluarga' }})</td>
-        </tr>
-        <tr>
-            <td class="label-col">Saksi I (Nama / NIK)</td>
-            <td class="val-col">{{ $death->witness1_name ?: ($death->witness_name ?: '-') }} / {{ $death->witness1_nik ?: ($death->witness_nik ?: '-') }}</td>
-        </tr>
-        <tr>
-            <td class="label-col">Saksi II (Nama / NIK)</td>
-            <td class="val-col">{{ $death->witness2_name ?: '-' }} / {{ $death->witness2_nik ?: '-' }}</td>
-        </tr>
-    </table>
+        <!-- 5. SAKSI 2 -->
+        <div class="section-title" style="margin-top: 10px;">SAKSI 2</div>
+        <table class="data-table">
+            <tr>
+                <td class="col-num">1</td>
+                <td class="col-label">NIK</td>
+                <td class="col-colon">:</td>
+                <td>{{ $death->witness2_nik ?: '' }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">2</td>
+                <td class="col-label">Nama Lengkap</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $death->witness2_name ?: '' }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">3</td>
+                <td class="col-label">Tempat dan Tanggal Lahir /<br>Umur</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $witness2Birth }}</td>
+            </tr>
+            <tr>
+                <td class="col-num">4</td>
+                <td class="col-label">Alamat</td>
+                <td class="col-colon">:</td>
+                <td class="uppercase">{{ $death->witness2_address ?: '' }}</td>
+            </tr>
+        </table>
 
-    <!-- TANDA TANGAN -->
-    <table class="sig-table">
-        <tr>
-            <td>
-                Mengetahui / Memeriksa:<br>
-                <strong>Petugas Registrasi Kalurahan,</strong>
-                <div class="sig-space"></div>
-                <u>( ..................................................... )</u>
-            </td>
-            <td>
-                Purwobinangun, {{ $death->created_at ? $death->created_at->translatedFormat('d F Y') : \Carbon\Carbon::now()->translatedFormat('d F Y') }}<br>
-                <strong>Lurah Purwobinangun,</strong>
-                <div class="sig-space"></div>
-                <u><strong>( R. HADI PURWANTO )</strong></u>
-            </td>
-        </tr>
-    </table>
+        <!-- 6. TANDA TANGAN -->
+        <table style="width: 100%; border-collapse: collapse; margin-top: 18px;">
+            <tr>
+                <td style="width: 55%;"></td>
+                <td style="width: 45%; text-align: left;">
+                    <p style="margin: 0;">Sleman, {{ $reportDateFormatted }}</p>
+                    <p style="margin: 2px 0 0 0;">Mengetahui</p>
+                    <p style="margin: 0;">a.n Lurah</p>
+                    <p style="margin: 0;">Kaur Tata Laksana</p>
+                    <div class="sig-space"></div>
+                    <p style="margin: 0; font-weight: bold;">{{ $officerName }}</p>
+                </td>
+            </tr>
+        </table>
+    </div>
 
 </body>
 </html>
