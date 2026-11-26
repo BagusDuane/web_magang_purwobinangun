@@ -105,6 +105,68 @@ class AdminDeathController extends Controller
             ->with('success', $message);
     }
 
+    public function destroy(Request $request, DeathCertificate $death)
+    {
+        $regNo = $death->registration_no;
+        $deceasedName = $death->deceased_name;
+        $applicantName = $death->applicant_name;
+        $wasArchived = $death->isArchived();
+        $reason = trim((string) $request->input('reason', 'Data warga pindah domisili / pembersihan arsip'));
+
+        $attachmentFields = [
+            'doc_death_statement',
+            'doc_rt_rw_statement',
+            'doc_family_card',
+            'doc_deceased_ktp',
+            'doc_heir_family_card',
+            'doc_heir_ktp',
+            'doc_applicant_ktp',
+        ];
+
+        foreach ($attachmentFields as $field) {
+            $path = $death->$field;
+            if ($path && !str_starts_with($path, 'data:image')) {
+                $cleanPath = ltrim(preg_replace('#^(public/|storage/)#', '', $path), '/\\');
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($cleanPath);
+                }
+            }
+        }
+
+        ActivityLog::where('subject_type', DeathCertificate::class)
+            ->where('subject_id', $death->id)
+            ->update([
+                'subject_type' => null,
+                'subject_id' => null,
+            ]);
+
+        $death->delete();
+
+        ActivityLog::record([
+            'user_id' => Auth::id(),
+            'user_name' => Auth::user()->name,
+            'user_role' => 'admin',
+            'action_type' => 'delete',
+            'module' => 'death_certificate',
+            'title' => 'Penghapusan Data Pengajuan Akte Kematian',
+            'description' => "Menghapus permanen data pengajuan Akte Kematian {$regNo} (Almarhum/ah: {$deceasedName}, Pelapor: {$applicantName}). Alasan: {$reason}.",
+            'reference_no' => $regNo,
+            'properties' => [
+                'deceased_name' => $deceasedName,
+                'applicant_name' => $applicantName,
+                'reason' => $reason,
+            ],
+        ]);
+
+        if ($request->input('from') === 'archive' || $wasArchived) {
+            return redirect()->route('admin.archive.index', ['tab' => 'death'])
+                ->with('success', "Data pengajuan Akte Kematian ({$regNo} - {$deceasedName}) berhasil dihapus secara permanen.");
+        }
+
+        return redirect()->route('admin.death.index')
+            ->with('success', "Data pengajuan Akte Kematian ({$regNo} - {$deceasedName}) berhasil dihapus secara permanen.");
+    }
+
     public function printLetter(DeathCertificate $death)
     {
         return view('admin.death.print-letter', compact('death'));

@@ -172,4 +172,65 @@ class CertificateExportTest extends TestCase
             ->get(route('tracking.export', ['type' => 'birth', 'registrationNo' => $this->birth->registration_no, 'format' => 'pdf']));
         $responseForbidden->assertStatus(403);
     }
+
+    public function test_excel_export_displays_accurate_cell_values_and_preserves_nik_strings(): void
+    {
+        $birthResp = $this->actingAs($this->admin)
+            ->get(route('admin.birth.export', ['birth' => $this->birth, 'format' => 'xlsx']));
+        $birthResp->assertStatus(200);
+
+        $tmpBirth = tempnam(sys_get_temp_dir(), 'birth_xlsx_');
+        file_put_contents($tmpBirth, $birthResp->streamedContent());
+        $birthSheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($tmpBirth)->getActiveSheet();
+        @unlink($tmpBirth);
+
+        $birthValues = [];
+        foreach ($birthSheet->toArray(null, false, false, true) as $row) {
+            if (!empty($row['B'])) {
+                $birthValues[$row['B']] = $row['C'];
+            }
+        }
+
+        $this->assertSame('KLH-202611-0001', $birthValues['Nomor Registrasi'] ?? null);
+        $this->assertSame('ANANDA RIZKY PURWOBINANGUN', $birthValues['Nama Lengkap Anak'] ?? null);
+        $this->assertSame('3404050101260001', $birthValues['NIK Anak'] ?? null);
+        $this->assertSame('3404051010880001', $birthValues['NIK Ayah'] ?? null);
+        $this->assertSame('AYAH RIZKY', $birthValues['Nama Lengkap Ayah'] ?? null);
+        $this->assertSame('081234567890', $birthValues['Telepon / WhatsApp Pelapor'] ?? null);
+
+        $deathResp = $this->actingAs($this->admin)
+            ->get(route('admin.death.export', ['death' => $this->death, 'format' => 'xlsx']));
+        $deathResp->assertStatus(200);
+
+        $tmpDeath = tempnam(sys_get_temp_dir(), 'death_xlsx_');
+        file_put_contents($tmpDeath, $deathResp->streamedContent());
+        $deathSheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($tmpDeath)->getActiveSheet();
+        @unlink($tmpDeath);
+
+        $deathValues = [];
+        foreach ($deathSheet->toArray(null, false, false, true) as $row) {
+            if (!empty($row['B'])) {
+                $deathValues[$row['B']] = $row['C'];
+            }
+        }
+
+        $this->assertSame('KMT-202611-0001', $deathValues['Nomor Registrasi'] ?? null);
+        $this->assertSame('3404050101450001', $deathValues['NIK Jenazah'] ?? null);
+        $this->assertSame('MBAH MULYO SANTOSO', $deathValues['Nama Lengkap Jenazah'] ?? null);
+        $this->assertSame('SAKIT BIASA / USIA LANJUT', $deathValues['Sebab Kematian'] ?? null);
+        $this->assertSame('081234567890', $deathValues['Telepon / WhatsApp Pelapor'] ?? null);
+    }
+
+    public function test_admin_can_delete_birth_and_death_certificates_for_moved_citizens(): void
+    {
+        $delBirth = $this->actingAs($this->admin)
+            ->delete(route('admin.birth.destroy', $this->birth), ['reason' => 'Warga pindah domisili']);
+        $delBirth->assertRedirect(route('admin.birth.index'));
+        $this->assertDatabaseMissing('birth_certificates', ['id' => $this->birth->id]);
+
+        $delDeath = $this->actingAs($this->admin)
+            ->delete(route('admin.death.destroy', $this->death), ['from' => 'archive', 'reason' => 'Warga pindah domisili']);
+        $delDeath->assertRedirect(route('admin.archive.index', ['tab' => 'death']));
+        $this->assertDatabaseMissing('death_certificates', ['id' => $this->death->id]);
+    }
 }

@@ -131,6 +131,22 @@
                 </h3>
                 <p class="text-xs text-slate-500 mt-0.5">Catatan lengkap pengajuan oleh warga, verifikasi/ACC oleh admin, perubahan data, arsip, hingga penghapusan.</p>
             </div>
+
+            @if((!empty($filters['search']) || !empty($filters['module']) || !empty($filters['action_type']) || !empty($filters['actor_role']) || !empty($filters['date_from']) || !empty($filters['date_to'])) && $logs->total() > 0)
+                <form action="{{ route('admin.activity_logs.destroy_filtered') }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin MENGHAPUS {{ $logs->total() }} catatan log aktivitas yang cocok dengan filter ini (misal data warga pindah domisili)?');">
+                    @csrf
+                    @method('DELETE')
+                    <input type="hidden" name="search" value="{{ $filters['search'] ?? '' }}">
+                    <input type="hidden" name="module" value="{{ $filters['module'] ?? '' }}">
+                    <input type="hidden" name="action_type" value="{{ $filters['action_type'] ?? '' }}">
+                    <input type="hidden" name="actor_role" value="{{ $filters['actor_role'] ?? '' }}">
+                    <input type="hidden" name="date_from" value="{{ $filters['date_from'] ?? '' }}">
+                    <input type="hidden" name="date_to" value="{{ $filters['date_to'] ?? '' }}">
+                    <button type="submit" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-3.5 py-2 rounded-lg transition shadow-2xs flex items-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-trash-can"></i> Hapus Log Hasil Filter ({{ $logs->total() }})
+                    </button>
+                </form>
+            @endif
         </div>
 
         <div class="overflow-x-auto">
@@ -141,7 +157,7 @@
                         <th class="py-3 px-4 w-48 border-r border-slate-200">Pelaku (Aktor)</th>
                         <th class="py-3 px-4 w-36 border-r border-slate-200">Modul & Aksi</th>
                         <th class="py-3 px-4 border-r border-slate-200">Keterangan Aktivitas</th>
-                        <th class="py-3 px-4 text-center w-28">Detail</th>
+                        <th class="py-3 px-4 text-center w-36">Detail & Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-200 text-slate-700">
@@ -235,27 +251,35 @@
                                 @endif
                             </td>
 
-                            <!-- Kolom 5: Detail -->
-                            <td class="py-3.5 px-4 align-top text-center">
-                                @if($log->subject_type === \App\Models\BirthCertificate::class && $log->subject)
-                                    <a href="{{ route('admin.birth.show', $log->subject_id) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 hover:bg-teal-100 text-[#0b7c89] border border-teal-200 transition" title="Buka Detail Akte Kelahiran">
-                                        <i class="fa-solid fa-eye text-[11px]"></i> Lihat
-                                    </a>
-                                @elseif($log->subject_type === \App\Models\DeathCertificate::class && $log->subject)
-                                    <a href="{{ route('admin.death.show', $log->subject_id) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 hover:bg-teal-100 text-[#0b7c89] border border-teal-200 transition" title="Buka Detail Akte Kematian">
-                                        <i class="fa-solid fa-eye text-[11px]"></i> Lihat
-                                    </a>
-                                @elseif($log->subject_type === \App\Models\User::class && $log->subject)
-                                    <a href="{{ route('admin.citizens.show', $log->subject_id) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 hover:bg-teal-100 text-[#0b7c89] border border-teal-200 transition" title="Buka Detail Akun Warga">
-                                        <i class="fa-solid fa-eye text-[11px]"></i> Lihat
-                                    </a>
-                                @elseif($log->subject_type === \App\Models\ProfileUpdateRequest::class && $log->subject)
-                                    <a href="{{ route('admin.profile_requests.show', $log->subject_id) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 hover:bg-teal-100 text-[#0b7c89] border border-teal-200 transition" title="Buka Permohonan Perubahan Profil">
-                                        <i class="fa-solid fa-eye text-[11px]"></i> Lihat
-                                    </a>
-                                @else
-                                    <span class="text-slate-300 text-[11px]">-</span>
-                                @endif
+                            <!-- Kolom 5: Detail & Aksi -->
+                            <td class="py-3.5 px-4 align-top text-center whitespace-nowrap">
+                                <div class="inline-flex items-center justify-center gap-1.5">
+                                    @if($log->subject_type === \App\Models\BirthCertificate::class && $log->subject)
+                                        <a href="{{ route('admin.birth.show', $log->subject_id) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 hover:bg-teal-100 text-[#0b7c89] border border-teal-200 transition" title="Buka Detail Akte Kelahiran">
+                                            <i class="fa-solid fa-eye text-[11px]"></i> Lihat
+                                        </a>
+                                    @elseif($log->subject_type === \App\Models\DeathCertificate::class && $log->subject)
+                                        <a href="{{ route('admin.death.show', $log->subject_id) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 hover:bg-teal-100 text-[#0b7c89] border border-teal-200 transition" title="Buka Detail Akte Kematian">
+                                            <i class="fa-solid fa-eye text-[11px]"></i> Lihat
+                                        </a>
+                                    @elseif($log->subject_type === \App\Models\User::class && $log->subject)
+                                        <a href="{{ route('admin.citizens.show', $log->subject_id) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 hover:bg-teal-100 text-[#0b7c89] border border-teal-200 transition" title="Buka Detail Akun Warga">
+                                            <i class="fa-solid fa-eye text-[11px]"></i> Lihat
+                                        </a>
+                                    @elseif($log->subject_type === \App\Models\ProfileUpdateRequest::class && $log->subject)
+                                        <a href="{{ route('admin.profile_requests.show', $log->subject_id) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 hover:bg-teal-100 text-[#0b7c89] border border-teal-200 transition" title="Buka Permohonan Perubahan Profil">
+                                            <i class="fa-solid fa-eye text-[11px]"></i> Lihat
+                                        </a>
+                                    @endif
+
+                                    <form action="{{ route('admin.activity_logs.destroy', $log) }}" method="POST" class="inline" onsubmit="return confirm('Hapus catatan log aktivitas ini?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white border border-rose-200 transition cursor-pointer" title="Hapus Log Aktivitas">
+                                            <i class="fa-solid fa-trash-can text-[11px]"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
 
                         </tr>

@@ -16,7 +16,8 @@ class EnsureAdminAuthenticated
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!Auth::check() || !Auth::user()->isAdmin()) {
+        if (!Auth::check() || !Auth::user()->isAdmin() || in_array(Auth::user()->status, ['rejected', 'archived', 'inactive'], true)) {
+            $isInactiveAdmin = Auth::check() && Auth::user()->isAdmin() && in_array(Auth::user()->status, ['rejected', 'archived', 'inactive'], true);
             if (Auth::check()) {
                 Auth::logout();
                 $request->session()->invalidate();
@@ -24,7 +25,9 @@ class EnsureAdminAuthenticated
             }
 
             return redirect()->guest(route('admin.login'))
-                ->with('error', 'Silakan masuk ke panel admin petugas terlebih dahulu.');
+                ->with('error', $isInactiveAdmin
+                    ? 'Akun petugas Anda telah dinonaktifkan (pindah tugas / pensiun).'
+                    : 'Silakan masuk ke panel admin petugas terlebih dahulu.');
         }
 
         return $next($request);

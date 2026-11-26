@@ -321,6 +321,15 @@
                         </button>
                     </form>
                 @endif
+
+                <form action="{{ route('admin.birth.destroy', $birth) }}" method="POST" class="mt-3 pt-3 border-t border-slate-100" onsubmit="const r = prompt('Alasan penghapusan data pengajuan Akte Kelahiran ({{ $birth->registration_no }}) — misal karena warga pindah domisili:', 'Warga pindah domisili'); if (r === null) return false; this.querySelector('input[name=reason]').value = r.trim() || 'Warga pindah domisili'; return confirm('Yakin ingin MENGHAPUS PERMANEN data pengajuan ini beserta berkas lampirannya?');">
+                    @csrf
+                    @method('DELETE')
+                    <input type="hidden" name="reason" value="Warga pindah domisili">
+                    <button type="submit" class="w-full bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border border-rose-200 font-bold text-xs py-2.5 rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer">
+                        <i class="fa-solid fa-trash-can"></i> Hapus Data Pengajuan (Pindah Domisili)
+                    </button>
+                </form>
             </div>
 
             <!-- Ringkasan Pemohon -->

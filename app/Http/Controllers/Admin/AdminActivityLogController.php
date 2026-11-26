@@ -96,4 +96,81 @@ class AdminActivityLogController extends Controller
 
         return view('admin.activity_logs.index', compact('logs', 'stats', 'filters'));
     }
+
+    public function destroy(ActivityLog $activityLog)
+    {
+        $ref = $activityLog->reference_no ?: ('#' . $activityLog->id);
+        $activityLog->delete();
+
+        return back()->with('success', "Catatan log aktivitas ({$ref}) berhasil dihapus.");
+    }
+
+    public function destroyFiltered(Request $request)
+    {
+        $search = trim((string) $request->input('search'));
+        $module = $request->input('module');
+        $actionType = $request->input('action_type');
+        $actorRole = $request->input('actor_role') ?: $request->input('user_role');
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+
+        if (!$search && !$module && !$actionType && !$actorRole && !$dateFrom && !$dateTo) {
+            return back()->with('error', 'Silakan gunakan pencarian (misal NIK/Nama warga pindah domisili) atau filter terlebih dahulu sebelum menghapus log massal.');
+        }
+
+        $query = ActivityLog::query();
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%")
+                  ->orWhere('user_name', 'like', "%{$search}%")
+                  ->orWhere('reference_no', 'like', "%{$search}%");
+            });
+        }
+
+        if ($module && $module !== 'all') {
+            if ($module === 'akte_kelahiran' || $module === 'birth_certificate') {
+                $query->where('module', 'birth_certificate');
+            } elseif ($module === 'akte_kematian' || $module === 'death_certificate') {
+                $query->where('module', 'death_certificate');
+            } elseif ($module === 'akun_warga' || $module === 'citizen' || $module === 'auth') {
+                $query->whereIn('module', ['citizen', 'auth']);
+            } elseif ($module === 'perubahan_profil' || $module === 'profile_update') {
+                $query->where('module', 'profile_update');
+            } else {
+                $query->where('module', $module);
+            }
+        }
+
+        if ($actionType && $actionType !== 'all') {
+            $actionMap = [
+                'pengajuan' => 'create',
+                'setujui' => 'approve',
+                'tolak' => 'reject',
+                'ubah' => 'update',
+                'arsip' => 'archive',
+                'pulihkan' => 'restore',
+                'hapus' => 'delete',
+            ];
+            $query->where('action_type', $actionMap[$actionType] ?? $actionType);
+        }
+
+        if ($actorRole && $actorRole !== 'all') {
+            $query->where('user_role', $actorRole);
+        }
+
+        if ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
+        }
+
+        $deletedCount = $query->count();
+        $query->delete();
+
+        return redirect()->route('admin.activity_logs.index')
+            ->with('success', "Berhasil menghapus {$deletedCount} catatan log aktivitas sesuai kriteria filter.");
+    }
 }

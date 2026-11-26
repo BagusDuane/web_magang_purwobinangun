@@ -197,6 +197,7 @@
                             <th class="py-3 px-4">Kontak Login</th>
                             <th class="py-3 px-4">Status Akun</th>
                             <th class="py-3 px-4">Terdaftar</th>
+                            <th class="py-3 px-4 text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 text-slate-700">
@@ -232,19 +233,53 @@
                                             <i class="fa-solid fa-circle-check text-[10px]"></i> Aktif
                                         </span>
                                     @else
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
-                                            {{ ucfirst($adminItem->status) }}
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-300">
+                                            <i class="fa-solid fa-user-slash text-[10px]"></i> Nonaktif
                                         </span>
+                                        @if($adminItem->rejection_reason)
+                                            <div class="text-[10px] text-rose-600 mt-1 italic">{{ $adminItem->rejection_reason }}</div>
+                                        @endif
                                     @endif
                                 </td>
                                 <td class="py-3.5 px-4 text-slate-500">
                                     <span>{{ $adminItem->created_at ? $adminItem->created_at->format('d/m/Y') : '-' }}</span>
                                     <div class="text-[10px] text-slate-400">{{ $adminItem->created_at ? $adminItem->created_at->diffForHumans() : '' }}</div>
                                 </td>
+                                <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                                    @if(Auth::id() === $adminItem->id)
+                                        <span class="text-[10px] font-semibold text-slate-400 italic">Sedang Aktif</span>
+                                    @else
+                                        <div class="inline-flex items-center justify-center gap-1.5">
+                                            <form action="{{ route('admin.staff.toggle_status', $adminItem) }}" method="POST" class="inline" onsubmit="return handleStaffToggle(this, @js($adminItem->name), @js($adminItem->status === 'active'));">
+                                                @csrf
+                                                @method('PATCH')
+                                                <input type="hidden" name="reason" value="">
+                                                @if($adminItem->status === 'active')
+                                                    <button type="submit" class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition cursor-pointer" title="Nonaktifkan petugas (Pindah Tugas / Pensiun)">
+                                                        <i class="fa-solid fa-user-clock"></i> Nonaktifkan
+                                                    </button>
+                                                @else
+                                                    <button type="submit" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition cursor-pointer" title="Aktifkan kembali akun petugas">
+                                                        <i class="fa-solid fa-rotate-left"></i> Aktifkan
+                                                    </button>
+                                                @endif
+                                            </form>
+
+                                            <form action="{{ route('admin.staff.destroy', $adminItem) }}" method="POST" class="inline" onsubmit="return handleStaffDelete(this, @js($adminItem->name));">
+                                                @csrf
+                                                @method('DELETE')
+                                                <input type="hidden" name="reason" value="">
+                                                <button type="submit" class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition cursor-pointer" title="Hapus permanen akun petugas (Tidak Aktif / Pindah Tugas / Pensiun)">
+                                                    <i class="fa-solid fa-trash-can"></i> Hapus
+                                                </button>
+                                            </form>
+                                        </div>
+                                    @endif
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="py-8 text-center text-slate-400">
+                                <td colspan="5" class="py-8 text-center text-slate-400">
                                     <i class="fa-solid fa-user-slash text-2xl mb-2 block"></i>
                                     <span>Tidak ada akun petugas yang ditemukan.</span>
                                 </td>
@@ -265,4 +300,23 @@
     </div>
 
 </div>
+
+<script>
+function handleStaffToggle(form, staffName, isDeactivating) {
+    if (isDeactivating) {
+        const reason = prompt('Tuliskan keterangan penonaktifan akun petugas "' + staffName + '" (misal: Pindah Tugas / Pensiun / Tidak Aktif):', 'Pindah Tugas / Pensiun');
+        if (reason === null) return false;
+        form.querySelector('input[name="reason"]').value = reason.trim() || 'Pindah Tugas / Pensiun';
+        return true;
+    }
+    return confirm('Aktifkan kembali akun petugas "' + staffName + '"?');
+}
+
+function handleStaffDelete(form, staffName) {
+    const reason = prompt('HAPUS PERMANEN akun petugas "' + staffName + '".\nMasukkan alasan penghapusan (misal: Pensiun / Pindah Tugas / Tidak Aktif):', 'Pindah Tugas / Pensiun');
+    if (reason === null) return false;
+    form.querySelector('input[name="reason"]').value = reason.trim() || 'Tidak Aktif / Pindah Tugas / Pensiun';
+    return confirm('Apakah Anda yakin ingin MENGHAPUS PERMANEN akun petugas "' + staffName + '"? Tindakan ini tidak dapat dibatalkan.');
+}
+</script>
 @endsection

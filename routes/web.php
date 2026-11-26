@@ -112,6 +112,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/', [AdminBirthController::class, 'index'])->name('index');
             Route::get('/{birth}', [AdminBirthController::class, 'show'])->name('show');
             Route::put('/{birth}/status', [AdminBirthController::class, 'updateStatus'])->name('update_status');
+            Route::delete('/{birth}', [AdminBirthController::class, 'destroy'])->name('destroy');
             Route::get('/{birth}/cetak-surat', [AdminBirthController::class, 'printLetter'])->name('print_letter');
             Route::get('/{birth}/export/{format}', [AdminBirthController::class, 'export'])->name('export');
             Route::get('/{birth}/berkas/{field}', [AdminBirthController::class, 'viewAttachment'])->name('attachment.view');
@@ -123,6 +124,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/', [AdminDeathController::class, 'index'])->name('index');
             Route::get('/{death}', [AdminDeathController::class, 'show'])->name('show');
             Route::put('/{death}/status', [AdminDeathController::class, 'updateStatus'])->name('update_status');
+            Route::delete('/{death}', [AdminDeathController::class, 'destroy'])->name('destroy');
             Route::get('/{death}/cetak-surat', [AdminDeathController::class, 'printLetter'])->name('print_letter');
             Route::get('/{death}/export/{format}', [AdminDeathController::class, 'export'])->name('export');
             Route::get('/{death}/berkas/{field}', [AdminDeathController::class, 'viewAttachment'])->name('attachment.view');
@@ -160,12 +162,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Log Aktivitas Sistem (Seluruh Aktivitas Warga & Admin)
         Route::prefix('log-aktivitas')->name('activity_logs.')->group(function () {
             Route::get('/', [AdminActivityLogController::class, 'index'])->name('index');
+            Route::delete('/filtered', [AdminActivityLogController::class, 'destroyFiltered'])->name('destroy_filtered');
+            Route::delete('/{activityLog}', [AdminActivityLogController::class, 'destroy'])->name('destroy');
         });
 
         // Kelola Akun Petugas / Admin Kalurahan
         Route::prefix('petugas')->name('staff.')->group(function () {
             Route::get('/', [AdminStaffController::class, 'index'])->name('index');
             Route::post('/', [AdminStaffController::class, 'store'])->name('store');
+            Route::patch('/{staff}/status', [AdminStaffController::class, 'toggleStatus'])->name('toggle_status');
+            Route::delete('/{staff}', [AdminStaffController::class, 'destroy'])->name('destroy');
         });
 
         // Pengaturan Profil Admin

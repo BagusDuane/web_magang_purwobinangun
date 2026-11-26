@@ -7,6 +7,7 @@ use App\Models\DeathCertificate;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
@@ -212,62 +213,106 @@ class CertificateExportService
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
 
+        $formatFullAddress = function (?string $addr, ?string $rt, ?string $rw, ?string $village, ?string $district, ?string $city, ?string $province, ?string $padukuhan = null): string {
+            $parts = [];
+            if ($addr) {
+                $parts[] = trim($addr);
+            } elseif ($padukuhan) {
+                $parts[] = 'Padukuhan ' . trim($padukuhan);
+            }
+            if ($rt || $rw) {
+                $parts[] = 'RT ' . ($rt ?: '-') . ' / RW ' . ($rw ?: '-');
+            }
+            $region = array_filter([$village, $district, $city, $province]);
+            if (!empty($region)) {
+                $parts[] = implode(', ', $region);
+            }
+            return !empty($parts) ? implode(', ', $parts) : '-';
+        };
+
+        $fatherFullAddr = $formatFullAddress($birth->father_address, $birth->father_rt, $birth->father_rw, $birth->father_village, $birth->father_district, $birth->father_city, $birth->father_province);
+        $motherFullAddr = $formatFullAddress($birth->mother_address, $birth->mother_rt, $birth->mother_rw, $birth->mother_village, $birth->mother_district, $birth->mother_city, $birth->mother_province);
+        $applicantFullAddr = $formatFullAddress($birth->address, $birth->rt, $birth->rw, $birth->applicant_village, $birth->applicant_district, $birth->applicant_city, $birth->applicant_province, $birth->padukuhan);
+        $witness1FullAddr = $formatFullAddress($birth->witness_1_address, $birth->witness_1_rt, $birth->witness_1_rw, $birth->witness_1_village, $birth->witness_1_district, $birth->witness_1_city, $birth->witness_1_province);
+        $witness2FullAddr = $formatFullAddress($birth->witness_2_address, $birth->witness_2_rt, $birth->witness_2_rw, $birth->witness_2_village, $birth->witness_2_district, $birth->witness_2_city, $birth->witness_2_province);
+
+        $fatherAgeVal = $birth->father_age ?: ($birth->father_birth_date ? $birth->father_birth_date->diffInYears($birth->birth_date ?? now()) : null);
+        $motherAgeVal = $birth->mother_age ?: ($birth->mother_birth_date ? $birth->mother_birth_date->diffInYears($birth->birth_date ?? now()) : null);
+        $applicantAgeVal = $birth->applicant_age ?: ($birth->applicant_birth_date ? $birth->applicant_birth_date->diffInYears(now()) : null);
+
+        $weightStr = ($birth->weight_kg !== null && $birth->weight_kg !== '')
+            ? $birth->weight_kg . ' kg' . ($birth->weight_gram ? ' (' . $birth->weight_gram . ' gram)' : '')
+            : ($birth->weight_gram ? $birth->weight_gram . ' gram' : '-');
+
         $dataRows = [
-            ['I. DATA KELUARGA & PENDAFTARAN', '', true],
+            ['section' => 'I. DATA KELUARGA & PENDAFTARAN'],
             ['1', 'Nomor Registrasi', $birth->registration_no],
             ['2', 'Nomor Kartu Keluarga (KK)', $birth->family_card_no ?: '-'],
-            ['3', 'Status Permohonan', $birth->status],
-            ['4', 'Tanggal Pendaftaran', $birth->created_at ? $birth->created_at->translatedFormat('d F Y H:i') : '-'],
+            ['3', 'Status Permohonan', $birth->status_label],
+            ['4', 'Tanggal Pendaftaran', $birth->created_at ? $birth->created_at->translatedFormat('d F Y H:i') . ' WIB' : '-'],
 
-            ['II. DATA ANAK / BAYI', '', true],
-            ['5', 'Nama Lengkap Anak', strtoupper($birth->child_name)],
+            ['section' => 'II. DATA ANAK / BAYI'],
+            ['5', 'Nama Lengkap Anak', strtoupper($birth->child_name ?: '-')],
             ['6', 'NIK Anak', $birth->child_nik ?: '-'],
             ['7', 'Jenis Kelamin', $birth->gender === 'L' ? 'LAKI-LAKI' : ($birth->gender === 'P' ? 'PEREMPUAN' : '-')],
-            ['8', 'Tempat Lahir', strtoupper($birth->birth_place ?: 'Sleman')],
+            ['8', 'Tempat Lahir', strtoupper($birth->birth_place ?: 'SLEMAN')],
             ['9', 'Hari, Tanggal Lahir', ($birth->birth_day ? strtoupper($birth->birth_day) . ', ' : '') . ($birth->birth_date ? Carbon::parse($birth->birth_date)->translatedFormat('d F Y') : '-')],
             ['10', 'Pukul / Jam Lahir', $birth->birth_time ? $birth->birth_time . ' WIB' : '-'],
-            ['11', 'Anak Ke', $birth->birth_order ?: '1'],
+            ['11', 'Anak Ke', (string) ($birth->birth_order ?: '1')],
             ['12', 'Jenis Kelahiran', $birth->birth_type ?: 'Tunggal'],
             ['13', 'Penolong Kelahiran', $birth->birth_helper ?: '-'],
             ['14', 'Tempat Dilahirkan', $birth->birth_place_type ?: '-'],
-            ['15', 'Berat Lahir', ($birth->weight_kg ?: '-') . ' kg (' . ($birth->weight_gram ?: '-') . ' gram)'],
-            ['16', 'Panjang Lahir', ($birth->length_cm ?: '-') . ' cm'],
+            ['15', 'Berat Lahir', $weightStr],
+            ['16', 'Panjang Lahir', $birth->length_cm ? $birth->length_cm . ' cm' : '-'],
 
-            ['III. DATA ORANG TUA', '', true],
+            ['section' => 'III. DATA ORANG TUA KANDUNG'],
             ['17', 'NIK Ayah', $birth->father_nik ?: '-'],
-            ['18', 'Nama Ayah', strtoupper($birth->father_name ?: '-')],
-            ['19', 'Pekerjaan Ayah', $birth->father_job ?: '-'],
-            ['20', 'Alamat Ayah', $birth->father_address ?: '-'],
-            ['21', 'NIK Ibu Kandung', $birth->mother_nik ?: '-'],
-            ['22', 'Nama Ibu Kandung', strtoupper($birth->mother_name ?: '-')],
-            ['23', 'Pekerjaan Ibu', $birth->mother_job ?: '-'],
-            ['24', 'Alamat Ibu', $birth->mother_address ?: '-'],
-            ['25', 'Tanggal Perkawinan Orang Tua', $birth->marriage_date ? Carbon::parse($birth->marriage_date)->translatedFormat('d F Y') : '-'],
+            ['18', 'Nama Lengkap Ayah', strtoupper($birth->father_name ?: '-')],
+            ['19', 'Tanggal Lahir / Umur Ayah', ($birth->father_birth_date ? $birth->father_birth_date->translatedFormat('d F Y') : '-') . ($fatherAgeVal !== null ? " ({$fatherAgeVal} Tahun)" : '')],
+            ['20', 'Pekerjaan Ayah', $birth->father_job ?: '-'],
+            ['21', 'Kewarganegaraan Ayah', ($birth->father_citizenship ?: 'WNI') . ($birth->father_nationality ? ' (' . $birth->father_nationality . ')' : '')],
+            ['22', 'Alamat Ayah', $fatherFullAddr],
+            ['23', 'NIK Ibu Kandung', $birth->mother_nik ?: '-'],
+            ['24', 'Nama Lengkap Ibu Kandung', strtoupper($birth->mother_name ?: '-')],
+            ['25', 'Tanggal Lahir / Umur Ibu', ($birth->mother_birth_date ? $birth->mother_birth_date->translatedFormat('d F Y') : '-') . ($motherAgeVal !== null ? " ({$motherAgeVal} Tahun)" : '')],
+            ['26', 'Pekerjaan Ibu', $birth->mother_job ?: '-'],
+            ['27', 'Kewarganegaraan Ibu', ($birth->mother_citizenship ?: 'WNI') . ($birth->mother_nationality ? ' (' . $birth->mother_nationality . ')' : '')],
+            ['28', 'Alamat Ibu', $motherFullAddr],
+            ['29', 'Tanggal Pencatatan Perkawinan', $birth->marriage_date ? Carbon::parse($birth->marriage_date)->translatedFormat('d F Y') : '-'],
 
-            ['IV. DATA PELAPOR & SAKSI', '', true],
-            ['26', 'NIK Pelapor', $birth->applicant_nik ?: '-'],
-            ['27', 'Nama Pelapor', strtoupper($birth->applicant_name ?: '-')],
-            ['28', 'Hubungan Pelapor', $birth->applicant_relation ?: 'Keluarga'],
-            ['29', 'Telepon Pelapor', $birth->applicant_phone ?: '-'],
-            ['30', 'Alamat Pelapor', $birth->applicant_address ?: '-'],
-            ['31', 'Saksi I (NIK / Nama)', ($birth->witness_1_nik ?: '-') . ' / ' . ($birth->witness_1_name ?: '-')],
-            ['32', 'Saksi II (NIK / Nama)', ($birth->witness_2_nik ?: '-') . ' / ' . ($birth->witness_2_name ?: '-')],
+            ['section' => 'IV. DATA PELAPOR & SAKSI'],
+            ['30', 'NIK Pelapor', $birth->applicant_nik ?: '-'],
+            ['31', 'Nama Lengkap Pelapor', strtoupper($birth->applicant_name ?: '-')],
+            ['32', 'Tanggal Lahir / Umur Pelapor', ($birth->applicant_birth_date ? $birth->applicant_birth_date->translatedFormat('d F Y') : '-') . ($applicantAgeVal !== null ? " ({$applicantAgeVal} Tahun)" : '')],
+            ['33', 'Pekerjaan Pelapor', $birth->applicant_job ?: '-'],
+            ['34', 'Hubungan dengan Bayi', $birth->applicant_relation ?: 'Keluarga'],
+            ['35', 'Telepon / WhatsApp Pelapor', $birth->applicant_phone ?: '-'],
+            ['36', 'Alamat Pelapor', $applicantFullAddr],
+            ['37', 'Saksi I (NIK / Nama)', ($birth->witness_1_nik ?: '-') . ' / ' . strtoupper($birth->witness_1_name ?: '-')],
+            ['38', 'Pekerjaan & Alamat Saksi I', ($birth->witness_1_job ?: '-') . ' — ' . $witness1FullAddr],
+            ['39', 'Saksi II (NIK / Nama)', ($birth->witness_2_nik ?: '-') . ' / ' . strtoupper($birth->witness_2_name ?: '-')],
+            ['40', 'Pekerjaan & Alamat Saksi II', ($birth->witness_2_job ?: '-') . ' — ' . $witness2FullAddr],
+            ['41', 'Petugas Pemroses', $birth->processed_by ?: '-'],
+            ['42', 'Catatan Verifikator', $birth->rejection_note ?: '-'],
         ];
 
         $currentRow = 6;
         foreach ($dataRows as $r) {
-            if (!empty($r[2])) {
+            if (isset($r['section'])) {
                 $sheet->mergeCells("A{$currentRow}:C{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", $r[0]);
+                $sheet->setCellValueExplicit("A{$currentRow}", $r['section'], DataType::TYPE_STRING);
                 $sheet->getStyle("A{$currentRow}")->applyFromArray([
                     'font' => ['bold' => true, 'color' => ['rgb' => '095B8C']],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E8F2F7']],
                 ]);
             } else {
-                $sheet->setCellValue("A{$currentRow}", $r[0]);
-                $sheet->setCellValue("B{$currentRow}", $r[1]);
-                $sheet->setCellValue("C{$currentRow}", $r[2]);
-                $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->setCellValueExplicit("A{$currentRow}", (string) $r[0], DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit("B{$currentRow}", (string) $r[1], DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit("C{$currentRow}", (string) ($r[2] ?? '-'), DataType::TYPE_STRING);
+                $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle("B{$currentRow}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP)->setWrapText(true);
+                $sheet->getStyle("C{$currentRow}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP)->setWrapText(true);
+                $sheet->getStyle("C{$currentRow}")->getFont()->setBold(true);
             }
             $currentRow++;
         }
@@ -524,69 +569,112 @@ class CertificateExportService
             'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
         ]);
 
+        $romans = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+        $monthNum = (int) ($death->death_date ? $death->death_date->format('n') : date('n'));
+        $monthRoman = $romans[$monthNum] ?? 'IX';
+        $letterYear = $death->death_date ? $death->death_date->format('Y') : date('Y');
+        $letterNumberSeq = (int) substr($death->registration_no, -4) ?: '82';
+        $officialLetterNo = "474.3/ {$letterNumberSeq} /{$monthRoman}/{$letterYear}";
+
         $deceasedAge = null;
         if ($death->birth_date && $death->death_date) {
             $deceasedAge = $death->birth_date->diffInYears($death->death_date);
+        } elseif ($death->birth_date) {
+            $deceasedAge = $death->birth_date->diffInYears(now());
         }
 
+        $motherAge = $death->mother_birth_date ? $death->mother_birth_date->diffInYears($death->death_date ?? now()) : null;
+        $fatherAge = $death->father_birth_date ? $death->father_birth_date->diffInYears($death->death_date ?? now()) : null;
+
         $deathDateFormatted = $death->death_date ? ($death->death_day ? strtoupper($death->death_day) . ', ' : '') . $death->death_date->translatedFormat('d F Y') : '-';
-        $deceasedFullAddress = $death->deceased_address ?: ('Padukuhan ' . $death->padukuhan . ', RT ' . $death->rt . ' / RW ' . $death->rw . ', Purwobinangun, Pakem, Sleman');
+        $deceasedFullAddress = $death->deceased_address ?: ('Padukuhan ' . ($death->padukuhan ?: '-') . ', RT ' . ($death->rt ?: '-') . ' / RW ' . ($death->rw ?: '-') . ', Purwobinangun, Pakem, Sleman');
+
+        $formatBirthInfo = function ($place, $date, $age): string {
+            $parts = [];
+            if ($place) {
+                $parts[] = strtoupper($place);
+            }
+            if ($date) {
+                $parts[] = $date->translatedFormat('d F Y');
+            }
+            $str = !empty($parts) ? implode(', ', $parts) : '-';
+            if ($age !== null && $age !== '') {
+                $str .= " ({$age} Tahun)";
+            }
+            return $str;
+        };
+
+        $witness1Nik = $death->witness1_nik ?: ($death->witness_nik ?: '-');
+        $witness1Name = $death->witness1_name ?: ($death->witness_name ?: '-');
 
         $dataRows = [
-            ['I. DATA KELUARGA & PENDAFTARAN', '', true],
+            ['section' => 'I. DATA KELUARGA & PENDAFTARAN'],
             ['1', 'Nomor Registrasi', $death->registration_no],
-            ['2', 'Nomor Kartu Keluarga (KK)', $death->family_card_no ?: '-'],
-            ['3', 'Nama Kepala Keluarga', strtoupper($death->head_of_family_name ?: '-')],
-            ['4', 'Status Permohonan', $death->status],
-            ['5', 'Tanggal Pendaftaran', $death->created_at ? $death->created_at->translatedFormat('d F Y H:i') : '-'],
+            ['2', 'Nomor Surat Keterangan', $officialLetterNo],
+            ['3', 'Nomor Kartu Keluarga (KK)', $death->family_card_no ?: '-'],
+            ['4', 'Nama Kepala Keluarga', strtoupper($death->head_of_family_name ?: '-')],
+            ['5', 'Status Permohonan', $death->status_label],
+            ['6', 'Tanggal Pendaftaran / Lapor', $death->report_date ? $death->report_date->translatedFormat('d F Y') : ($death->created_at ? $death->created_at->translatedFormat('d F Y H:i') . ' WIB' : '-')],
 
-            ['II. DATA JENAZAH (YANG MENINGGAL)', '', true],
-            ['6', 'NIK Jenazah', $death->deceased_nik],
-            ['7', 'Nama Lengkap Jenazah', strtoupper($death->deceased_name)],
-            ['8', 'Jenis Kelamin', $death->gender === 'L' ? 'LAKI-LAKI' : ($death->gender === 'P' ? 'PEREMPUAN' : '-')],
-            ['9', 'Tempat Lahir', strtoupper($death->deceased_birth_place ?: 'Sleman')],
-            ['10', 'Tanggal Lahir / Umur', ($death->birth_date ? $death->birth_date->translatedFormat('d F Y') : '-') . ($deceasedAge !== null ? " ({$deceasedAge} Tahun)" : '')],
+            ['section' => 'II. DATA JENAZAH (YANG MENINGGAL)'],
+            ['7', 'NIK Jenazah', $death->deceased_nik ?: '-'],
+            ['8', 'Nama Lengkap Jenazah', strtoupper($death->deceased_name ?: '-')],
+            ['9', 'Jenis Kelamin / Anak Ke', ($death->gender === 'L' ? 'LAKI-LAKI' : ($death->gender === 'P' ? 'PEREMPUAN' : '-')) . ($death->deceased_child_order ? ' / Anak ke-' . $death->deceased_child_order : '')],
+            ['10', 'Tempat, Tanggal Lahir / Umur', $formatBirthInfo($death->deceased_birth_place ?: 'Sleman', $death->birth_date, $deceasedAge)],
             ['11', 'Agama', strtoupper($death->religion ?: '-')],
             ['12', 'Pekerjaan', strtoupper($death->deceased_job ?: '-')],
             ['13', 'Alamat Jenazah', $deceasedFullAddress],
 
-            ['III. RINCIAN PERISTIWA KEMATIAN', '', true],
+            ['section' => 'III. RINCIAN PERISTIWA KEMATIAN'],
             ['14', 'Hari, Tanggal Kematian', $deathDateFormatted],
             ['15', 'Pukul / Jam Kematian', $death->death_time ? $death->death_time . ' WIB' : '-'],
-            ['16', 'Tempat Kematian', strtoupper($death->death_place ?: 'RUMAH') . ($death->death_location_detail ? " ({$death->death_location_detail})" : '')],
-            ['17', 'Sebab Kematian', strtoupper($death->cause_of_death ?: 'SAKIT BIASA / TUA')],
-            ['18', 'Penerang Kematian', $death->reported_by_title ?: '-'],
+            ['16', 'Tempat Kematian', strtoupper($death->death_place ?: '-') . ($death->death_location_detail ? " ({$death->death_location_detail})" : '')],
+            ['17', 'Sebab Kematian', strtoupper($death->cause_of_death ?: '-')],
+            ['18', 'Yang Menerangkan', strtoupper($death->reported_by_title ?: '-')],
 
-            ['IV. DATA ORANG TUA JENAZAH', '', true],
-            ['19', 'NIK Ayah', $death->father_nik ?: '-'],
-            ['20', 'Nama Ayah', strtoupper($death->father_name ?: '-')],
-            ['21', 'NIK Ibu Kandung', $death->mother_nik ?: '-'],
-            ['22', 'Nama Ibu Kandung', strtoupper($death->mother_name ?: '-')],
+            ['section' => 'IV. DATA ORANG TUA JENAZAH'],
+            ['19', 'NIK Ibu Kandung', $death->mother_nik ?: '-'],
+            ['20', 'Nama Lengkap Ibu Kandung', strtoupper($death->mother_name ?: '-')],
+            ['21', 'TTL / Umur Ibu Kandung', $formatBirthInfo($death->mother_birth_place, $death->mother_birth_date, $motherAge)],
+            ['22', 'Pekerjaan & Alamat Ibu', ($death->mother_job ?: '-') . ' — ' . ($death->mother_address ?: '-')],
+            ['23', 'NIK Ayah', $death->father_nik ?: '-'],
+            ['24', 'Nama Lengkap Ayah', strtoupper($death->father_name ?: '-')],
+            ['25', 'TTL / Umur Ayah', $formatBirthInfo($death->father_birth_place, $death->father_birth_date, $fatherAge)],
+            ['26', 'Pekerjaan & Alamat Ayah', ($death->father_job ?: '-') . ' — ' . ($death->father_address ?: '-')],
 
-            ['V. DATA PELAPOR & SAKSI', '', true],
-            ['23', 'NIK Pelapor', $death->applicant_nik ?: '-'],
-            ['24', 'Nama Pelapor / Ahli Waris', strtoupper($death->applicant_name ?: '-')],
-            ['25', 'Hubungan Pelapor', $death->applicant_relation ?: 'Ahli Waris / Keluarga'],
-            ['26', 'Telepon Pelapor', $death->applicant_phone ?: '-'],
-            ['27', 'Alamat Pelapor', $death->applicant_address ?: '-'],
-            ['28', 'Saksi I (NIK / Nama)', ($death->witness1_nik ?: ($death->witness_nik ?: '-')) . ' / ' . ($death->witness1_name ?: ($death->witness_name ?: '-'))],
-            ['29', 'Saksi II (NIK / Nama)', ($death->witness2_nik ?: '-') . ' / ' . ($death->witness2_name ?: '-')],
+            ['section' => 'V. DATA PELAPOR & SAKSI'],
+            ['27', 'NIK Pelapor', $death->applicant_nik ?: '-'],
+            ['28', 'Nama Pelapor / Ahli Waris', strtoupper($death->applicant_name ?: '-')],
+            ['29', 'TTL / Umur Pelapor', $formatBirthInfo($death->applicant_birth_place, $death->applicant_birth_date, $death->applicant_age)],
+            ['30', 'Pekerjaan Pelapor', $death->applicant_job ?: '-'],
+            ['31', 'Hubungan Pelapor', $death->applicant_relation ?: 'Ahli Waris / Keluarga'],
+            ['32', 'Telepon / WhatsApp Pelapor', $death->applicant_phone ?: '-'],
+            ['33', 'Alamat Pelapor', $death->applicant_address ?: '-'],
+            ['34', 'Saksi I (NIK / Nama)', $witness1Nik . ' / ' . strtoupper($witness1Name)],
+            ['35', 'TTL / Umur & Alamat Saksi I', $formatBirthInfo($death->witness1_birth_place, $death->witness1_birth_date, $death->witness1_age) . ' — ' . ($death->witness1_address ?: '-')],
+            ['36', 'Saksi II (NIK / Nama)', ($death->witness2_nik ?: '-') . ' / ' . strtoupper($death->witness2_name ?: '-')],
+            ['37', 'TTL / Umur & Alamat Saksi II', $formatBirthInfo($death->witness2_birth_place, $death->witness2_birth_date, $death->witness2_age) . ' — ' . ($death->witness2_address ?: '-')],
+            ['38', 'Petugas Penandatangan / Pemroses', ($death->officer_name ?: '-') . ($death->processed_by ? ' / Verifikator: ' . $death->processed_by : '')],
+            ['39', 'Catatan Verifikator', $death->rejection_note ?: '-'],
         ];
 
         $currentRow = 6;
         foreach ($dataRows as $r) {
-            if (!empty($r[2])) {
+            if (isset($r['section'])) {
                 $sheet->mergeCells("A{$currentRow}:C{$currentRow}");
-                $sheet->setCellValue("A{$currentRow}", $r[0]);
+                $sheet->setCellValueExplicit("A{$currentRow}", $r['section'], DataType::TYPE_STRING);
                 $sheet->getStyle("A{$currentRow}")->applyFromArray([
                     'font' => ['bold' => true, 'color' => ['rgb' => 'BE123C']],
                     'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'FBE8E8']],
                 ]);
             } else {
-                $sheet->setCellValue("A{$currentRow}", $r[0]);
-                $sheet->setCellValue("B{$currentRow}", $r[1]);
-                $sheet->setCellValue("C{$currentRow}", $r[2]);
-                $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $sheet->setCellValueExplicit("A{$currentRow}", (string) $r[0], DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit("B{$currentRow}", (string) $r[1], DataType::TYPE_STRING);
+                $sheet->setCellValueExplicit("C{$currentRow}", (string) ($r[2] ?? '-'), DataType::TYPE_STRING);
+                $sheet->getStyle("A{$currentRow}")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_TOP);
+                $sheet->getStyle("B{$currentRow}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP)->setWrapText(true);
+                $sheet->getStyle("C{$currentRow}")->getAlignment()->setVertical(Alignment::VERTICAL_TOP)->setWrapText(true);
+                $sheet->getStyle("C{$currentRow}")->getFont()->setBold(true);
             }
             $currentRow++;
         }

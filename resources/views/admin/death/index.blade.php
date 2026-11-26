@@ -72,6 +72,14 @@
                                         <i class="fa-solid fa-print"></i> Surat
                                     </a>
                                 @endif
+                                <form action="{{ route('admin.death.destroy', $d) }}" method="POST" class="inline-block" onsubmit="return confirm('Hapus permanen data pengajuan Akte Kematian ({{ $d->registration_no }} - {{ $d->deceased_name }})? Gunakan fitur ini bagi data warga yang pindah domisili atau pengajuan tidak valid.');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <input type="hidden" name="reason" value="Data warga pindah domisili">
+                                    <button type="submit" class="bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white font-bold text-sm px-3 py-1.5 rounded-lg border border-rose-200 transition cursor-pointer" title="Hapus Data Pengajuan (Warga Pindah Domisili)">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
                             </td>
                         </tr>
                     @empty

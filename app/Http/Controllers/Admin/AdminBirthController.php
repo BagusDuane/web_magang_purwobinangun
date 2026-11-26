@@ -105,6 +105,67 @@ class AdminBirthController extends Controller
             ->with('success', $message);
     }
 
+    public function destroy(Request $request, BirthCertificate $birth)
+    {
+        $regNo = $birth->registration_no;
+        $childName = $birth->child_name;
+        $applicantName = $birth->applicant_name;
+        $wasArchived = $birth->isArchived();
+        $reason = trim((string) $request->input('reason', 'Data warga pindah domisili / pembersihan arsip'));
+
+        $attachmentFields = [
+            'doc_birth_cert',
+            'doc_family_card',
+            'doc_marriage_cert',
+            'doc_parents_ktp',
+            'doc_witness_ktp',
+            'applicant_signature',
+        ];
+
+        foreach ($attachmentFields as $field) {
+            $path = $birth->$field;
+            if ($path && !str_starts_with($path, 'data:image')) {
+                $cleanPath = ltrim(preg_replace('#^(public/|storage/)#', '', $path), '/\\');
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists($cleanPath)) {
+                    \Illuminate\Support\Facades\Storage::disk('public')->delete($cleanPath);
+                }
+            }
+        }
+
+        ActivityLog::where('subject_type', BirthCertificate::class)
+            ->where('subject_id', $birth->id)
+            ->update([
+                'subject_type' => null,
+                'subject_id' => null,
+            ]);
+
+        $birth->delete();
+
+        ActivityLog::record([
+            'user_id' => Auth::id(),
+            'user_name' => Auth::user()->name,
+            'user_role' => 'admin',
+            'action_type' => 'delete',
+            'module' => 'birth_certificate',
+            'title' => 'Penghapusan Data Pengajuan Akte Kelahiran',
+            'description' => "Menghapus permanen data pengajuan Akte Kelahiran {$regNo} (Bayi: {$childName}, Pelapor: {$applicantName}). Alasan: {$reason}.",
+            'reference_no' => $regNo,
+            'properties' => [
+                'child_name' => $childName,
+                'applicant_name' => $applicantName,
+                'reason' => $reason,
+            ],
+        ]);
+
+        if ($request->input('from') === 'archive' || $wasArchived) {
+            return redirect()->route('admin.archive.index', ['tab' => 'birth'])
+                ->with('success', "Data pengajuan Akte Kelahiran ({$regNo} - {$childName}) berhasil dihapus secara permanen.");
+        }
+
+        return redirect()->route('admin.birth.index')
+            ->with('success', "Data pengajuan Akte Kelahiran ({$regNo} - {$childName}) berhasil dihapus secara permanen.");
+    }
+
     public function printLetter(BirthCertificate $birth)
     {
         return view('admin.birth.print-letter', compact('birth'));

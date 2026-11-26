@@ -41,6 +41,16 @@ class AuthController extends Controller
                 ])->onlyInput('email');
             }
 
+            if (in_array(Auth::user()->status, ['rejected', 'archived', 'inactive'], true)) {
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return back()->withErrors([
+                    'email' => 'Akun petugas ini sudah tidak aktif (pindah tugas / pensiun) dan tidak dapat digunakan untuk masuk.',
+                ])->onlyInput('email');
+            }
+
             $intended = $request->session()->pull('url.intended', null);
             $request->session()->regenerate();
 

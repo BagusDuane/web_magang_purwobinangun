@@ -32,6 +32,7 @@ class AdminStaffController extends Controller
         $stats = [
             'total' => User::where('role', 'admin')->count(),
             'active' => User::where('role', 'admin')->where('status', 'active')->count(),
+            'inactive' => User::where('role', 'admin')->where('status', '!=', 'active')->count(),
         ];
 
         return view('admin.staff.index', compact('admins', 'stats'));
@@ -97,5 +98,137 @@ class AdminStaffController extends Controller
 
         return redirect()->route('admin.staff.index')
             ->with('success', "Akun petugas '{$newAdmin->name}' berhasil ditambahkan dan siap digunakan untuk masuk.");
+    }
+
+    /**
+     * Aktifkan atau nonaktifkan status akun petugas (misal: pindah tugas / pensiun).
+     */
+    public function toggleStatus(Request $request, User $staff)
+    {
+        if (!$staff->isAdmin()) {
+            abort(404);
+        }
+
+        $currentAdmin = Auth::user();
+
+        if ($currentAdmin->id === $staff->id) {
+            return back()->with('error', 'Anda tidak dapat menonaktifkan akun petugas yang sedang Anda gunakan sendiri.');
+        }
+
+        $validated = $request->validate([
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        $isCurrentlyActive = $staff->status === 'active';
+
+        if ($isCurrentlyActive) {
+            $otherActiveAdmins = User::where('role', 'admin')
+                ->where('status', 'active')
+                ->where('id', '!=', $staff->id)
+                ->count();
+
+            if ($otherActiveAdmins === 0) {
+                return back()->with('error', 'Tidak dapat menonaktifkan satu-satunya akun petugas aktif di sistem.');
+            }
+
+            $staff->status = 'archived';
+            $staff->rejection_reason = $validated['reason'] ?: 'Tidak aktif / Pindah tugas / Pensiun';
+            $staff->save();
+
+            ActivityLog::record([
+                'actor_id' => $currentAdmin->id,
+                'actor_name' => $currentAdmin->name,
+                'actor_role' => 'admin',
+                'module' => 'citizen',
+                'action' => 'archive',
+                'title' => 'Penonaktifan Akun Petugas/Admin',
+                'description' => "Menonaktifkan akun petugas: {$staff->name} ({$staff->email}). Keterangan: {$staff->rejection_reason}.",
+                'reference_no' => $staff->email,
+                'subject_type' => User::class,
+                'subject_id' => $staff->id,
+            ]);
+
+            return redirect()->route('admin.staff.index')
+                ->with('success', "Akun petugas '{$staff->name}' berhasil dinonaktifkan ({$staff->rejection_reason}).");
+        }
+
+        $staff->status = 'active';
+        $staff->rejection_reason = null;
+        $staff->save();
+
+        ActivityLog::record([
+            'actor_id' => $currentAdmin->id,
+            'actor_name' => $currentAdmin->name,
+            'actor_role' => 'admin',
+            'module' => 'citizen',
+            'action' => 'restore',
+            'title' => 'Pengaktifan Kembali Akun Petugas/Admin',
+            'description' => "Mengaktifkan kembali akun petugas: {$staff->name} ({$staff->email}).",
+            'reference_no' => $staff->email,
+            'subject_type' => User::class,
+            'subject_id' => $staff->id,
+        ]);
+
+        return redirect()->route('admin.staff.index')
+            ->with('success', "Akun petugas '{$staff->name}' berhasil diaktifkan kembali.");
+    }
+
+    /**
+     * Hapus permanen akun petugas yang tidak aktif, pindah tugas, atau pensiun.
+     */
+    public function destroy(Request $request, User $staff)
+    {
+        if (!$staff->isAdmin()) {
+            abort(404);
+        }
+
+        $currentAdmin = Auth::user();
+
+        if ($currentAdmin->id === $staff->id) {
+            return back()->with('error', 'Anda tidak dapat menghapus akun petugas yang sedang Anda gunakan sendiri.');
+        }
+
+        $remainingAdmins = User::where('role', 'admin')
+            ->where('id', '!=', $staff->id)
+            ->count();
+
+        if ($remainingAdmins === 0) {
+            return back()->with('error', 'Tidak dapat menghapus satu-satunya akun petugas di sistem.');
+        }
+
+        $validated = $request->validate([
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        $staffName = $staff->name;
+        $staffEmail = $staff->email;
+        $reason = $validated['reason'] ?: ($staff->rejection_reason ?: 'Tidak aktif / Pindah tugas / Pensiun');
+
+        ActivityLog::where('user_id', $staff->id)->update(['user_id' => null]);
+        ActivityLog::where('subject_type', User::class)->where('subject_id', $staff->id)->update([
+            'subject_type' => null,
+            'subject_id' => null,
+        ]);
+
+        $staff->delete();
+
+        ActivityLog::record([
+            'actor_id' => $currentAdmin->id,
+            'actor_name' => $currentAdmin->name,
+            'actor_role' => 'admin',
+            'module' => 'citizen',
+            'action' => 'delete',
+            'title' => 'Penghapusan Akun Petugas/Admin',
+            'description' => "Menghapus permanen akun petugas: {$staffName} ({$staffEmail}). Alasan: {$reason}.",
+            'reference_no' => $staffEmail,
+            'properties' => [
+                'deleted_staff_name' => $staffName,
+                'deleted_staff_email' => $staffEmail,
+                'reason' => $reason,
+            ],
+        ]);
+
+        return redirect()->route('admin.staff.index')
+            ->with('success', "Akun petugas '{$staffName}' berhasil dihapus secara permanen.");
     }
 }

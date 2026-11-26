@@ -100,5 +100,17 @@ class AdminActivityLogTest extends TestCase
         $responseSearch->assertStatus(200);
         $responseSearch->assertSee('REG-DEATH-01');
         $responseSearch->assertDontSee('REG-BIRTH-01');
+
+        // Delete filtered logs for moved citizen Budi
+        $delFiltered = $this->actingAs($admin)->delete(route('admin.activity_logs.destroy_filtered'), ['search' => 'Budi']);
+        $delFiltered->assertRedirect(route('admin.activity_logs.index'));
+        $this->assertDatabaseMissing('activity_logs', ['reference_no' => 'REG-DEATH-01']);
+        $this->assertDatabaseHas('activity_logs', ['reference_no' => 'REG-BIRTH-01']);
+
+        // Delete single log
+        $remainingLog = ActivityLog::where('reference_no', 'REG-BIRTH-01')->firstOrFail();
+        $delSingle = $this->actingAs($admin)->delete(route('admin.activity_logs.destroy', $remainingLog));
+        $delSingle->assertStatus(302);
+        $this->assertDatabaseMissing('activity_logs', ['id' => $remainingLog->id]);
     }
 }

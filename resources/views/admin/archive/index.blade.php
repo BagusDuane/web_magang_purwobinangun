@@ -254,8 +254,19 @@
                                             <!-- Tombol Pulihkan -->
                                             <form action="{{ route('admin.archive.birth.restore', $birth) }}" method="POST" class="inline">
                                                 @csrf
-                                                <button type="submit" onclick="return confirm('Apakah Anda yakin ingin MENGEMBALIKAN permohonan ini ke status Menunggu Verifikasi?');" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition" title="Kembalikan ke Menunggu Verifikasi">
+                                                <button type="submit" onclick="return confirm('Apakah Anda yakin ingin MENGEMBALIKAN permohonan ini ke status Menunggu Verifikasi?');" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition cursor-pointer" title="Kembalikan ke Menunggu Verifikasi">
                                                     <i class="fa-solid fa-rotate-left"></i> Pulihkan
+                                                </button>
+                                            </form>
+
+                                            <!-- Tombol Hapus Permanen Arsip Pengajuan -->
+                                            <form action="{{ route('admin.birth.destroy', $birth) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin MENGHAPUS PERMANEN arsip pengajuan Akte Kelahiran ({{ $birth->registration_no }} - {{ $birth->child_name }}) bagi warga pindah domisili?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <input type="hidden" name="from" value="archive">
+                                                <input type="hidden" name="reason" value="Pembersihan arsip / warga pindah domisili">
+                                                <button type="submit" class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition cursor-pointer" title="Hapus Permanen Data Pengajuan">
+                                                    <i class="fa-solid fa-trash-can"></i> Hapus
                                                 </button>
                                             </form>
                                         </div>
@@ -339,8 +350,19 @@
                                             <!-- Tombol Pulihkan -->
                                             <form action="{{ route('admin.archive.death.restore', $death) }}" method="POST" class="inline">
                                                 @csrf
-                                                <button type="submit" onclick="return confirm('Apakah Anda yakin ingin MENGEMBALIKAN permohonan ini ke status Menunggu Verifikasi?');" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition" title="Kembalikan ke Menunggu Verifikasi">
+                                                <button type="submit" onclick="return confirm('Apakah Anda yakin ingin MENGEMBALIKAN permohonan ini ke status Menunggu Verifikasi?');" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition cursor-pointer" title="Kembalikan ke Menunggu Verifikasi">
                                                     <i class="fa-solid fa-rotate-left"></i> Pulihkan
+                                                </button>
+                                            </form>
+
+                                            <!-- Tombol Hapus Permanen Arsip Pengajuan -->
+                                            <form action="{{ route('admin.death.destroy', $death) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin MENGHAPUS PERMANEN arsip pengajuan Akte Kematian ({{ $death->registration_no }} - {{ $death->deceased_name }}) bagi warga pindah domisili?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <input type="hidden" name="from" value="archive">
+                                                <input type="hidden" name="reason" value="Pembersihan arsip / warga pindah domisili">
+                                                <button type="submit" class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition cursor-pointer" title="Hapus Permanen Data Pengajuan">
+                                                    <i class="fa-solid fa-trash-can"></i> Hapus
                                                 </button>
                                             </form>
                                         </div>
