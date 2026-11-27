@@ -265,7 +265,7 @@
                             <label class="block text-xs font-semibold text-slate-700 mb-1.5">
                                 3. Jenis Kelamin <span class="text-rose-500">*</span>
                             </label>
-                            <div class="grid grid-cols-2 gap-3">
+                            <div class="grid grid-cols-2 gap-3" id="gender-group">
                                 <label class="flex items-center justify-center gap-2 p-2.5 rounded-lg border border-slate-300 hover:border-[#095b8c] cursor-pointer transition bg-white has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500 has-[:checked]:text-blue-700">
                                     <input type="radio" name="gender" value="L" {{ old('gender', $revisionBirth->gender ?? 'L') === 'L' ? 'checked' : '' }} class="text-[#095b8c] focus:ring-[#095b8c]">
                                     <i class="fa-solid fa-mars text-blue-600"></i>
@@ -278,6 +278,7 @@
                                     <span class="text-xs font-semibold">2. Perempuan</span>
                                 </label>
                             </div>
+                            <span class="text-[11px] text-rose-500 hidden error-text mt-1 block" id="error-gender">Jenis kelamin anak wajib dipilih.</span>
                         </div>
 
                         <!-- 4. Tempat Dilahirkan -->
@@ -292,10 +293,12 @@
                                 <option value="Rumah" {{ old('birth_place_type', $revisionBirth->birth_place_type ?? '') === 'Rumah' ? 'selected' : '' }}>4. Rumah</option>
                                 <option value="Lainnya" {{ old('birth_place_type', $revisionBirth->birth_place_type ?? '') === 'Lainnya' ? 'selected' : '' }}>5. Lainnya</option>
                             </select>
+                            <span class="text-[11px] text-rose-500 hidden error-text mt-1 block" id="error-birth_place_type">Tempat dilahirkan wajib dipilih.</span>
 
                             <!-- Input Kustom jika Tempat Dilahirkan Lainnya -->
                             <div id="custom-birth-place-box" class="mt-2 hidden">
                                 <input type="text" id="birth_place_other" name="birth_place_other" placeholder="Sebutkan Tempat Dilahirkan" class="w-full text-xs px-3 py-2 rounded-lg border border-teal-400 bg-teal-50/40 focus:outline-none focus:ring-2 focus:ring-[#095b8c]">
+                                <span class="text-[11px] text-rose-500 hidden error-text mt-1 block" id="error-birth_place_other">Keterangan tempat dilahirkan lainnya wajib diisi.</span>
                             </div>
                         </div>
 
@@ -341,6 +344,7 @@
                             <!-- Input Jumlah Kustom jika dipilih Input Jumlah -->
                             <div id="custom-birth-type-box" class="mt-2 hidden">
                                 <input type="number" id="birth_type_custom" name="birth_type_custom" min="4" max="10" placeholder="Masukkan Jumlah Anak Kembar" class="w-full text-xs px-3 py-2 rounded-lg border border-teal-400 bg-teal-50/40 focus:outline-none focus:ring-2 focus:ring-[#095b8c]">
+                                <span class="text-[11px] text-rose-500 hidden error-text mt-1 block" id="error-birth_type_custom">Jumlah anak kembar wajib diisi.</span>
                             </div>
                         </div>
 
@@ -368,6 +372,7 @@
                             <!-- Input Kustom jika Penolong Kelahiran Lainnya -->
                             <div id="custom-birth-helper-box" class="mt-2 hidden">
                                 <input type="text" id="birth_helper_other" name="birth_helper_other" placeholder="Sebutkan Penolong Kelahiran" class="w-full text-xs px-3 py-2 rounded-lg border border-teal-400 bg-teal-50/40 focus:outline-none focus:ring-2 focus:ring-[#095b8c]">
+                                <span class="text-[11px] text-rose-500 hidden error-text mt-1 block" id="error-birth_helper_other">Keterangan penolong kelahiran lainnya wajib diisi.</span>
                             </div>
                             <span class="text-[11px] text-rose-500 hidden error-text mt-1 block" id="error-birth_helper">Penolong kelahiran wajib dipilih.</span>
                         </div>
@@ -2496,9 +2501,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         updateProgressIndicator(currentStep);
-        if (typeof updateNextButtonsState === 'function') {
-            updateNextButtonsState();
-        }
 
         if (smoothScroll) {
             window.scrollTo({ top: 180, behavior: 'smooth' });
@@ -2871,21 +2873,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    form.addEventListener('input', function () {
-        saveFormDraft();
-        updateNextButtonsState();
-    });
-    form.addEventListener('change', function () {
-        saveFormDraft();
-        updateNextButtonsState();
-    });
+    form.addEventListener('input', saveFormDraft);
+    form.addEventListener('change', saveFormDraft);
 
     restoreFormDraft();
-    restoreDraftFiles().then(() => {
-        updateNextButtonsState();
-    });
+    restoreDraftFiles();
     updateProgressIndicator(currentStep);
-    updateNextButtonsState();
+    initBirthFormValidation();
 
     // ==========================================
     // Fitur Otomatisasi Form Langkah 2 (Orang Tua)
@@ -3232,77 +3226,116 @@ document.addEventListener('DOMContentLoaded', function () {
         showModal(previewModal);
     }
 
-    // Helper: Validasi silent tanpa menampilkan error visual atau scroll otomatis
-    function isStep1Valid() {
-        if (!childName || !childName.value.trim()) return false;
-        if (childNik && childNik.value.trim()) {
-            const cNik = childNik.value.trim();
-            if (cNik.length !== 16 || isNaN(cNik)) return false;
-        }
-        if (!birthPlace || !birthPlace.value.trim()) return false;
-        if (!birthDate || !birthDate.value) return false;
-        if (!birthOrder || !birthOrder.value || birthOrder.value < 1) return false;
-        if (birthHelper && !birthHelper.value) return false;
-        return true;
-    }
-
-    function isStep2Valid() {
-        const fatherNikVal = fatherNik ? fatherNik.value.trim() : '';
-        if (!fatherNikVal || fatherNikVal.length !== 16 || isNaN(fatherNikVal)) return false;
-        if (!fatherName || !fatherName.value.trim()) return false;
-        if (!fatherBirthDate || !fatherBirthDate.value) return false;
-        if (!fatherJob || !fatherJob.value.trim()) return false;
-
-        const motherNikVal = motherNik ? motherNik.value.trim() : '';
-        if (!motherNikVal || motherNikVal.length !== 16 || isNaN(motherNikVal)) return false;
-        if (!motherName || !motherName.value.trim()) return false;
-        if (!motherBirthDate || !motherBirthDate.value) return false;
-        if (!motherJob || !motherJob.value.trim()) return false;
-        return true;
-    }
-
-    function isStep3Valid() {
-        const nikVal = applicantNik ? applicantNik.value.trim() : '';
-        if (!nikVal || nikVal.length !== 16 || isNaN(nikVal)) return false;
-        if (!applicantName || !applicantName.value.trim()) return false;
-        if (!applicantBirthDate || !applicantBirthDate.value) return false;
-        if (!applicantGender || !applicantGender.value) return false;
-        if (!applicantJob || !applicantJob.value.trim()) return false;
-        if (!address || !address.value.trim()) return false;
-        return true;
-    }
-
-    function isStep4Valid() {
-        if (witness1Nik && witness1Nik.value.trim()) {
-            const val = witness1Nik.value.trim();
-            if (val.length !== 16 || isNaN(val)) return false;
-        }
-        if (witness2Nik && witness2Nik.value.trim()) {
-            const val = witness2Nik.value.trim();
-            if (val.length !== 16 || isNaN(val)) return false;
-        }
-        return true;
-    }
-
-    function updateNextButtonsState() {
-        const setButtonState = (btn, isValid) => {
-            if (!btn) return;
-            btn.disabled = !isValid;
-            if (!isValid) {
-                btn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
-                btn.classList.remove('hover:bg-[#059cb8]', 'cursor-pointer', 'hover:shadow-md');
-                btn.setAttribute('aria-disabled', 'true');
-            } else {
-                btn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
-                btn.classList.add('hover:bg-[#059cb8]', 'cursor-pointer', 'hover:shadow-md');
-                btn.removeAttribute('aria-disabled');
+    // ==========================================
+    // Visual Input Error Helpers & Validation
+    // ==========================================
+    function setInputError(inputEl, errorElId, message) {
+        if (errorElId) {
+            const errorEl = document.getElementById(errorElId);
+            if (errorEl) {
+                if (message) errorEl.textContent = message;
+                errorEl.classList.remove('hidden');
             }
-        };
+        }
+        if (inputEl) {
+            inputEl.classList.add('border-rose-500', 'ring-1', 'ring-rose-500');
+            inputEl.classList.remove('border-slate-300');
+        }
+    }
 
-        setButtonState(btnStep1Next, isStep1Valid());
-        setButtonState(btnStep2Next, isStep2Valid());
-        setButtonState(btnStep3Next, isStep3Valid());
-        setButtonState(btnStep4Next, isStep4Valid());
+    function clearInputError(inputEl, errorElId) {
+        if (errorElId) {
+            const errorEl = document.getElementById(errorElId);
+            if (errorEl) {
+                errorEl.classList.add('hidden');
+            }
+        }
+        if (inputEl) {
+            inputEl.classList.remove('border-rose-500', 'ring-1', 'ring-rose-500', 'border-red-500', 'ring-red-500');
+            inputEl.classList.add('border-slate-300');
+        }
+    }
+
+    function initBirthFormValidation() {
+        // Step 1 realtime clearing
+        if (childName) childName.addEventListener('input', () => clearInputError(childName, 'error-child_name'));
+        if (childNik) childNik.addEventListener('input', () => clearInputError(childNik, 'error-child_nik'));
+        document.querySelectorAll('input[name="gender"]').forEach(r => {
+            r.addEventListener('change', () => {
+                const genderContainer = document.getElementById('gender-group');
+                if (genderContainer) genderContainer.classList.remove('p-1', 'rounded-lg', 'border', 'border-rose-500', 'ring-1', 'ring-rose-500');
+                clearInputError(null, 'error-gender');
+            });
+        });
+        if (birthPlaceType) {
+            birthPlaceType.addEventListener('change', () => {
+                clearInputError(birthPlaceType, 'error-birth_place_type');
+                clearInputError(birthPlaceOther, 'error-birth_place_other');
+            });
+        }
+        if (birthPlaceOther) birthPlaceOther.addEventListener('input', () => clearInputError(birthPlaceOther, 'error-birth_place_other'));
+        if (birthPlace) birthPlace.addEventListener('input', () => clearInputError(birthPlace, 'error-birth_place'));
+        if (birthDate) {
+            birthDate.addEventListener('input', () => clearInputError(birthDate, 'error-birth_date'));
+            birthDate.addEventListener('change', () => clearInputError(birthDate, 'error-birth_date'));
+        }
+        if (birthType) {
+            birthType.addEventListener('change', () => {
+                clearInputError(birthType, 'error-birth_type_custom');
+            });
+        }
+        if (birthTypeCustom) birthTypeCustom.addEventListener('input', () => clearInputError(birthTypeCustom, 'error-birth_type_custom'));
+        if (birthOrder) birthOrder.addEventListener('input', () => clearInputError(birthOrder, 'error-birth_order'));
+        if (birthHelper) {
+            birthHelper.addEventListener('change', () => {
+                clearInputError(birthHelper, 'error-birth_helper');
+                clearInputError(birthHelperOther, 'error-birth_helper_other');
+            });
+        }
+        if (birthHelperOther) birthHelperOther.addEventListener('input', () => clearInputError(birthHelperOther, 'error-birth_helper_other'));
+
+        // Step 2 realtime clearing
+        [
+            { el: fatherNik, err: 'error-father_nik' },
+            { el: fatherName, err: 'error-father_name' },
+            { el: fatherBirthDate, err: 'error-father_birth_date' },
+            { el: fatherJob, err: 'error-father_job' },
+            { el: motherNik, err: 'error-mother_nik' },
+            { el: motherName, err: 'error-mother_name' },
+            { el: motherBirthDate, err: 'error-mother_birth_date' },
+            { el: motherJob, err: 'error-mother_job' }
+        ].forEach(item => {
+            if (item.el) {
+                item.el.addEventListener('input', () => clearInputError(item.el, item.err));
+                item.el.addEventListener('change', () => clearInputError(item.el, item.err));
+            }
+        });
+
+        // Step 3 realtime clearing
+        [
+            { el: applicantName, err: 'error-applicant_name' },
+            { el: applicantNik, err: 'error-applicant_nik' },
+            { el: applicantBirthDate, err: 'error-applicant_birth_date' },
+            { el: applicantGender, err: 'error-applicant_gender' },
+            { el: applicantJob, err: 'error-applicant_job' },
+            { el: address, err: 'error-address' }
+        ].forEach(item => {
+            if (item.el) {
+                item.el.addEventListener('input', () => clearInputError(item.el, item.err));
+                item.el.addEventListener('change', () => clearInputError(item.el, item.err));
+            }
+        });
+
+        // Step 4 realtime clearing
+        [
+            { el: witness1Nik, err: 'error-witness_1_nik' },
+            { el: witness2Nik, err: 'error-witness_2_nik' }
+        ].forEach(item => {
+            if (item.el) {
+                item.el.addEventListener('input', () => clearInputError(item.el, item.err));
+                item.el.addEventListener('change', () => clearInputError(item.el, item.err));
+            }
+        });
     }
 
     // Validation Functions
@@ -3310,48 +3343,100 @@ document.addEventListener('DOMContentLoaded', function () {
         let valid = true;
         let firstInvalid = null;
 
-        ['child_name', 'child_nik', 'birth_place', 'birth_date', 'birth_order', 'birth_helper'].forEach(field => {
-            const err = document.getElementById(`error-${field}`);
-            if (err) err.classList.add('hidden');
-        });
+        // Reset semua error di langkah 1
+        [
+            { input: childName, error: 'error-child_name' },
+            { input: childNik, error: 'error-child_nik' },
+            { input: null, error: 'error-gender' },
+            { input: birthPlaceType, error: 'error-birth_place_type' },
+            { input: birthPlaceOther, error: 'error-birth_place_other' },
+            { input: birthPlace, error: 'error-birth_place' },
+            { input: birthDate, error: 'error-birth_date' },
+            { input: birthTypeCustom, error: 'error-birth_type_custom' },
+            { input: birthOrder, error: 'error-birth_order' },
+            { input: birthHelper, error: 'error-birth_helper' },
+            { input: birthHelperOther, error: 'error-birth_helper_other' }
+        ].forEach(item => clearInputError(item.input, item.error));
 
-        if (!childName.value.trim()) {
-            document.getElementById('error-child_name').classList.remove('hidden');
+        const genderContainer = document.getElementById('gender-group');
+        if (genderContainer) genderContainer.classList.remove('p-1', 'rounded-lg', 'border', 'border-rose-500', 'ring-1', 'ring-rose-500');
+
+        // 1. Nama Lengkap Anak (Wajib)
+        if (!childName || !childName.value.trim()) {
+            setInputError(childName, 'error-child_name', 'Nama lengkap anak wajib diisi.');
             valid = false;
             if (!firstInvalid) firstInvalid = childName;
         }
 
+        // 2. NIK Anak (Opsional, jika diisi harus 16 digit angka)
         if (childNik && childNik.value.trim()) {
             const cNik = childNik.value.trim();
-            if (cNik.length !== 16 || isNaN(cNik)) {
-                document.getElementById('error-child_nik').classList.remove('hidden');
+            if (cNik.length !== 16 || !/^\d{16}$/.test(cNik)) {
+                setInputError(childNik, 'error-child_nik', 'NIK anak harus berupa 16 digit angka.');
                 valid = false;
                 if (!firstInvalid) firstInvalid = childNik;
             }
         }
 
-        if (!birthPlace.value.trim()) {
-            document.getElementById('error-birth_place').classList.remove('hidden');
+        // 3. Jenis Kelamin (Wajib)
+        const selectedGender = document.querySelector('input[name="gender"]:checked');
+        if (!selectedGender) {
+            if (genderContainer) genderContainer.classList.add('p-1', 'rounded-lg', 'border', 'border-rose-500', 'ring-1', 'ring-rose-500');
+            setInputError(null, 'error-gender', 'Jenis kelamin anak wajib dipilih.');
+            valid = false;
+            if (!firstInvalid) firstInvalid = document.querySelector('input[name="gender"]');
+        }
+
+        // 4. Tempat Dilahirkan (Wajib)
+        if (!birthPlaceType || !birthPlaceType.value) {
+            setInputError(birthPlaceType, 'error-birth_place_type', 'Tempat dilahirkan wajib dipilih.');
+            valid = false;
+            if (!firstInvalid) firstInvalid = birthPlaceType;
+        } else if (birthPlaceType.value === 'Lainnya' && (!birthPlaceOther || !birthPlaceOther.value.trim())) {
+            setInputError(birthPlaceOther, 'error-birth_place_other', 'Keterangan tempat dilahirkan lainnya wajib diisi.');
+            valid = false;
+            if (!firstInvalid) firstInvalid = birthPlaceOther;
+        }
+
+        // 5. Tempat Kelahiran (Kabupaten / Kota) (Wajib)
+        if (!birthPlace || !birthPlace.value.trim()) {
+            setInputError(birthPlace, 'error-birth_place', 'Tempat kelahiran wajib diisi.');
             valid = false;
             if (!firstInvalid) firstInvalid = birthPlace;
         }
 
-        if (!birthDate.value) {
-            document.getElementById('error-birth_date').classList.remove('hidden');
+        // 6. Tanggal Lahir (Wajib)
+        if (!birthDate || !birthDate.value) {
+            setInputError(birthDate, 'error-birth_date', 'Tanggal lahir wajib diisi.');
             valid = false;
             if (!firstInvalid) firstInvalid = birthDate;
         }
 
-        if (!birthOrder.value || birthOrder.value < 1) {
-            document.getElementById('error-birth_order').classList.remove('hidden');
+        // 7. Jenis Kelahiran (Jika Input Jumlah)
+        if (birthType && birthType.value === 'Input Jumlah') {
+            if (!birthTypeCustom || !birthTypeCustom.value || parseInt(birthTypeCustom.value, 10) < 2) {
+                setInputError(birthTypeCustom, 'error-birth_type_custom', 'Jumlah anak kembar wajib diisi (minimal 2).');
+                valid = false;
+                if (!firstInvalid) firstInvalid = birthTypeCustom;
+            }
+        }
+
+        // 8. Kelahiran Anak Ke (Wajib, minimal 1)
+        if (!birthOrder || !birthOrder.value || parseInt(birthOrder.value, 10) < 1) {
+            setInputError(birthOrder, 'error-birth_order', 'Kelahiran anak ke- wajib diisi minimal 1.');
             valid = false;
             if (!firstInvalid) firstInvalid = birthOrder;
         }
 
-        if (birthHelper && !birthHelper.value) {
-            document.getElementById('error-birth_helper').classList.remove('hidden');
+        // 9. Penolong Kelahiran (Wajib)
+        if (!birthHelper || !birthHelper.value) {
+            setInputError(birthHelper, 'error-birth_helper', 'Penolong kelahiran wajib dipilih.');
             valid = false;
             if (!firstInvalid) firstInvalid = birthHelper;
+        } else if (birthHelper.value === 'Lainnya' && (!birthHelperOther || !birthHelperOther.value.trim())) {
+            setInputError(birthHelperOther, 'error-birth_helper_other', 'Keterangan penolong kelahiran lainnya wajib diisi.');
+            valid = false;
+            if (!firstInvalid) firstInvalid = birthHelperOther;
         }
 
         if (!valid && firstInvalid) {
@@ -3366,57 +3451,63 @@ document.addEventListener('DOMContentLoaded', function () {
         let valid = true;
         let firstInvalid = null;
 
-        ['father_nik', 'father_name', 'father_birth_date', 'father_job', 'mother_nik', 'mother_name', 'mother_birth_date', 'mother_job'].forEach(field => {
-            const err = document.getElementById(`error-${field}`);
-            if (err) err.classList.add('hidden');
-        });
+        [
+            { input: fatherNik, error: 'error-father_nik' },
+            { input: fatherName, error: 'error-father_name' },
+            { input: fatherBirthDate, error: 'error-father_birth_date' },
+            { input: fatherJob, error: 'error-father_job' },
+            { input: motherNik, error: 'error-mother_nik' },
+            { input: motherName, error: 'error-mother_name' },
+            { input: motherBirthDate, error: 'error-mother_birth_date' },
+            { input: motherJob, error: 'error-mother_job' }
+        ].forEach(item => clearInputError(item.input, item.error));
 
-        const fatherNikVal = fatherNik.value.trim();
-        if (!fatherNikVal || fatherNikVal.length !== 16 || isNaN(fatherNikVal)) {
-            document.getElementById('error-father_nik').classList.remove('hidden');
+        const fatherNikVal = fatherNik ? fatherNik.value.trim() : '';
+        if (!fatherNikVal || fatherNikVal.length !== 16 || !/^\d{16}$/.test(fatherNikVal)) {
+            setInputError(fatherNik, 'error-father_nik', 'NIK Ayah wajib 16 digit angka.');
             valid = false;
             if (!firstInvalid) firstInvalid = fatherNik;
         }
 
-        if (!fatherName.value.trim()) {
-            document.getElementById('error-father_name').classList.remove('hidden');
+        if (!fatherName || !fatherName.value.trim()) {
+            setInputError(fatherName, 'error-father_name', 'Nama lengkap ayah wajib diisi.');
             valid = false;
             if (!firstInvalid) firstInvalid = fatherName;
         }
 
-        if (!fatherBirthDate.value) {
-            document.getElementById('error-father_birth_date').classList.remove('hidden');
+        if (!fatherBirthDate || !fatherBirthDate.value) {
+            setInputError(fatherBirthDate, 'error-father_birth_date', 'Tanggal lahir ayah wajib diisi.');
             valid = false;
             if (!firstInvalid) firstInvalid = fatherBirthDate;
         }
 
-        if (!fatherJob.value.trim()) {
-            document.getElementById('error-father_job').classList.remove('hidden');
+        if (!fatherJob || !fatherJob.value.trim()) {
+            setInputError(fatherJob, 'error-father_job', 'Pekerjaan ayah wajib diisi.');
             valid = false;
             if (!firstInvalid) firstInvalid = fatherJob;
         }
 
-        const motherNikVal = motherNik.value.trim();
-        if (!motherNikVal || motherNikVal.length !== 16 || isNaN(motherNikVal)) {
-            document.getElementById('error-mother_nik').classList.remove('hidden');
+        const motherNikVal = motherNik ? motherNik.value.trim() : '';
+        if (!motherNikVal || motherNikVal.length !== 16 || !/^\d{16}$/.test(motherNikVal)) {
+            setInputError(motherNik, 'error-mother_nik', 'NIK Ibu wajib 16 digit angka.');
             valid = false;
             if (!firstInvalid) firstInvalid = motherNik;
         }
 
-        if (!motherName.value.trim()) {
-            document.getElementById('error-mother_name').classList.remove('hidden');
+        if (!motherName || !motherName.value.trim()) {
+            setInputError(motherName, 'error-mother_name', 'Nama lengkap ibu wajib diisi.');
             valid = false;
             if (!firstInvalid) firstInvalid = motherName;
         }
 
-        if (!motherBirthDate.value) {
-            document.getElementById('error-mother_birth_date').classList.remove('hidden');
+        if (!motherBirthDate || !motherBirthDate.value) {
+            setInputError(motherBirthDate, 'error-mother_birth_date', 'Tanggal lahir ibu wajib diisi.');
             valid = false;
             if (!firstInvalid) firstInvalid = motherBirthDate;
         }
 
-        if (!motherJob.value.trim()) {
-            document.getElementById('error-mother_job').classList.remove('hidden');
+        if (!motherJob || !motherJob.value.trim()) {
+            setInputError(motherJob, 'error-mother_job', 'Pekerjaan ibu wajib diisi.');
             valid = false;
             if (!firstInvalid) firstInvalid = motherJob;
         }
@@ -3433,50 +3524,48 @@ document.addEventListener('DOMContentLoaded', function () {
         let valid = true;
         let firstInvalid = null;
 
-        ['applicant_name', 'applicant_nik', 'applicant_birth_date', 'applicant_gender', 'applicant_job', 'address'].forEach(field => {
-            const err = document.getElementById(`error-${field}`);
-            if (err) err.classList.add('hidden');
-        });
+        [
+            { input: applicantName, error: 'error-applicant_name' },
+            { input: applicantNik, error: 'error-applicant_nik' },
+            { input: applicantBirthDate, error: 'error-applicant_birth_date' },
+            { input: applicantGender, error: 'error-applicant_gender' },
+            { input: applicantJob, error: 'error-applicant_job' },
+            { input: address, error: 'error-address' }
+        ].forEach(item => clearInputError(item.input, item.error));
 
         const nikVal = applicantNik ? applicantNik.value.trim() : '';
-        if (!nikVal || nikVal.length !== 16 || isNaN(nikVal)) {
-            const err = document.getElementById('error-applicant_nik');
-            if (err) err.classList.remove('hidden');
+        if (!nikVal || nikVal.length !== 16 || !/^\d{16}$/.test(nikVal)) {
+            setInputError(applicantNik, 'error-applicant_nik', 'NIK Pelapor wajib 16 digit angka.');
             valid = false;
             if (!firstInvalid) firstInvalid = applicantNik;
         }
 
         if (!applicantName || !applicantName.value.trim()) {
-            const err = document.getElementById('error-applicant_name');
-            if (err) err.classList.remove('hidden');
+            setInputError(applicantName, 'error-applicant_name', 'Nama lengkap pelapor wajib diisi.');
             valid = false;
             if (!firstInvalid) firstInvalid = applicantName;
         }
 
         if (!applicantBirthDate || !applicantBirthDate.value) {
-            const err = document.getElementById('error-applicant_birth_date');
-            if (err) err.classList.remove('hidden');
+            setInputError(applicantBirthDate, 'error-applicant_birth_date', 'Tanggal lahir pelapor wajib diisi.');
             valid = false;
             if (!firstInvalid) firstInvalid = applicantBirthDate;
         }
 
         if (!applicantGender || !applicantGender.value) {
-            const err = document.getElementById('error-applicant_gender');
-            if (err) err.classList.remove('hidden');
+            setInputError(applicantGender, 'error-applicant_gender', 'Jenis kelamin pelapor wajib dipilih.');
             valid = false;
             if (!firstInvalid) firstInvalid = applicantGender;
         }
 
         if (!applicantJob || !applicantJob.value.trim()) {
-            const err = document.getElementById('error-applicant_job');
-            if (err) err.classList.remove('hidden');
+            setInputError(applicantJob, 'error-applicant_job', 'Pekerjaan pelapor wajib diisi.');
             valid = false;
             if (!firstInvalid) firstInvalid = applicantJob;
         }
 
         if (!address || !address.value.trim()) {
-            const err = document.getElementById('error-address');
-            if (err) err.classList.remove('hidden');
+            setInputError(address, 'error-address', 'Alamat pelapor wajib diisi.');
             valid = false;
             if (!firstInvalid) firstInvalid = address;
         }
@@ -3493,15 +3582,15 @@ document.addEventListener('DOMContentLoaded', function () {
         let valid = true;
         let firstInvalid = null;
 
-        ['witness_1_nik', 'witness_2_nik'].forEach(field => {
-            const err = document.getElementById(`error-${field}`);
-            if (err) err.classList.add('hidden');
-        });
+        [
+            { input: witness1Nik, error: 'error-witness_1_nik' },
+            { input: witness2Nik, error: 'error-witness_2_nik' }
+        ].forEach(item => clearInputError(item.input, item.error));
 
         if (witness1Nik && witness1Nik.value.trim()) {
             const val = witness1Nik.value.trim();
-            if (val.length !== 16 || isNaN(val)) {
-                document.getElementById('error-witness_1_nik').classList.remove('hidden');
+            if (val.length !== 16 || !/^\d{16}$/.test(val)) {
+                setInputError(witness1Nik, 'error-witness_1_nik', 'NIK Saksi 1 harus 16 digit angka.');
                 valid = false;
                 if (!firstInvalid) firstInvalid = witness1Nik;
             }
@@ -3509,8 +3598,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (witness2Nik && witness2Nik.value.trim()) {
             const val = witness2Nik.value.trim();
-            if (val.length !== 16 || isNaN(val)) {
-                document.getElementById('error-witness_2_nik').classList.remove('hidden');
+            if (val.length !== 16 || !/^\d{16}$/.test(val)) {
+                setInputError(witness2Nik, 'error-witness_2_nik', 'NIK Saksi 2 harus 16 digit angka.');
                 valid = false;
                 if (!firstInvalid) firstInvalid = witness2Nik;
             }
