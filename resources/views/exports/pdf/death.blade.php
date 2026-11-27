@@ -6,13 +6,13 @@
     <style>
         @page {
             size: A4 portrait;
-            margin: 10mm 14mm 10mm 14mm;
+            margin: 14mm 16mm 14mm 16mm;
         }
         body {
             font-family: 'Times-Roman', 'Times New Roman', Times, serif;
-            font-size: 9.5pt;
+            font-size: 10pt;
             color: #000000;
-            line-height: 1.3;
+            line-height: 1.35;
             margin: 0;
             padding: 0;
         }
@@ -27,75 +27,74 @@
         }
         .header-table {
             width: 100%;
-            table-layout: fixed;
         }
         .header-logo {
-            width: 68px;
-            vertical-align: top;
+            width: 14%;
+            vertical-align: middle;
             text-align: left;
         }
         .header-logo img {
-            width: 54px;
+            width: 58px;
             height: auto;
         }
         .header-text {
+            width: 86%;
             text-align: center;
-            vertical-align: top;
-            padding-right: 50px;
+            vertical-align: middle;
+            padding-right: 12%;
         }
         .header-text h4 {
             margin: 0;
-            font-size: 10pt;
+            font-size: 10.5pt;
             font-weight: bold;
             text-transform: uppercase;
         }
         .header-text h3 {
             margin: 1px 0;
-            font-size: 10.5pt;
+            font-size: 11.5pt;
             font-weight: bold;
             text-transform: uppercase;
         }
         .header-text h2 {
             margin: 1px 0;
-            font-size: 12.5pt;
+            font-size: 13pt;
             font-weight: bold;
             text-transform: uppercase;
         }
         .header-text p {
             margin: 1px 0 0 0;
-            font-size: 7.8pt;
+            font-size: 8pt;
         }
         .double-line {
-            margin-top: 4px;
+            margin-top: 5px;
             border-top: 2.5px solid #000;
             border-bottom: 0.8px solid #000;
             height: 2px;
         }
         .form-title {
             text-align: center;
-            margin: 6px 0 8px 0;
+            margin: 6px 0 10px 0;
         }
         .form-title h1 {
-            font-size: 11.5pt;
+            font-size: 12pt;
             font-weight: bold;
             text-decoration: underline;
             margin: 0;
             text-transform: uppercase;
         }
         .form-title p {
-            font-size: 8.5pt;
-            margin: 2px 0 0 0;
+            font-size: 9pt;
+            margin: 3px 0 0 0;
         }
         .content-table {
             width: 100%;
-            table-layout: fixed;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
         }
         .content-table td {
-            padding: 2.5px 5px;
+            padding: 3.5px 6px;
             vertical-align: top;
-            font-size: 8.2pt;
-            line-height: 1.25;
+            font-size: 9pt;
+            line-height: 1.3;
             border: 1px solid #334155;
             word-wrap: break-word;
             overflow-wrap: break-word;
@@ -105,81 +104,82 @@
             font-weight: bold;
             color: #0f172a;
             text-transform: uppercase;
-            font-size: 8pt;
-            padding: 3px 5px;
+            font-size: 8.5pt;
+            padding: 4px 6px;
         }
         .label-col {
-            width: 33%;
+            width: 34%;
         }
         .val-col {
-            width: 67%;
+            width: 66%;
             font-weight: bold;
         }
         .sig-table {
             width: 100%;
-            table-layout: fixed;
-            margin-top: 8px;
+            margin-top: 10px;
             page-break-inside: avoid;
         }
         .sig-table td {
             width: 50%;
             text-align: center;
             vertical-align: top;
-            font-size: 8.5pt;
+            font-size: 9.5pt;
         }
         .form-sig-space {
-            height: 40px;
+            height: 44px;
         }
 
         /* Styling khusus Surat Keterangan Kematian Resmi */
         .doc-title {
             text-align: center;
-            margin: 8px 0 10px 0;
+            margin: 10px 0 12px 0;
         }
         .doc-title h1 {
-            font-size: 13pt;
+            font-size: 13.5pt;
             font-weight: bold;
             margin: 0;
             text-transform: uppercase;
         }
         .doc-title p {
-            font-size: 9.5pt;
+            font-size: 10pt;
             font-weight: bold;
             margin: 2px 0 0 0;
         }
         .section-title {
-            font-size: 9.5pt;
+            font-size: 10pt;
             font-weight: bold;
             text-transform: uppercase;
-            margin-top: 6px;
-            margin-bottom: 1.5px;
+            margin-top: 8px;
+            margin-bottom: 2px;
         }
         .data-table {
             width: 100%;
-            table-layout: fixed;
         }
         .data-table td {
-            padding: 1px 0;
+            padding: 1.5px 0;
             vertical-align: top;
-            font-size: 9.2pt;
-            line-height: 1.26;
+            font-size: 9.8pt;
+            line-height: 1.32;
             word-wrap: break-word;
             overflow-wrap: break-word;
         }
         .col-num {
-            width: 26px;
+            width: 4%;
         }
         .col-label {
-            width: 185px;
+            width: 30%;
         }
         .col-colon {
-            width: 14px;
+            width: 3%;
+        }
+        .col-val {
+            width: 63%;
         }
         .page-break {
             page-break-before: always;
         }
         .sig-space {
-            height: 56px;
+            height: 60px;
         }
         .uppercase {
             text-transform: uppercase;
@@ -251,14 +251,16 @@
                     <td class="header-logo">
                         <img src="{{ $logoBase64 }}" alt="Logo Sleman">
                     </td>
+                    <td class="header-text">
+                @else
+                    <td class="header-text" style="width: 100%; padding-right: 0;">
                 @endif
-                <td class="header-text">
                     <h4>PEMERINTAH KABUPATEN SLEMAN</h4>
                     <h3>KAPANEWON PAKEM</h3>
                     <h2>PEMERINTAH KALURAHAN PURWOBINANGUN</h2>
                     @if(!empty($aksaraBase64))
-                        <div style="margin: 1px 0;">
-                            <img src="{{ $aksaraBase64 }}" alt="Aksara Jawa" style="height: 12px;">
+                        <div style="margin: 2px 0;">
+                            <img src="{{ $aksaraBase64 }}" alt="Aksara Jawa" style="height: 13px;">
                         </div>
                     @endif
                     <p>Alamat : Jl. Pakem-Turi Km.04 Watuadeg Purwobinangun Pakem Sleman Yogyakarta. 55582</p>
@@ -266,7 +268,7 @@
                 </td>
             </tr>
         </table>
-        <div class="double-line" style="margin-bottom: 8px;"></div>
+        <div class="double-line" style="margin-bottom: 10px;"></div>
 
         <div class="form-title">
             <h1>FORMULIR PELAPORAN &amp; PERMOHONAN AKTA KEMATIAN</h1>
@@ -409,8 +411,10 @@
                     <td class="header-logo">
                         <img src="{{ $logoBase64 }}" alt="Logo Sleman">
                     </td>
+                    <td class="header-text">
+                @else
+                    <td class="header-text" style="width: 100%; padding-right: 0;">
                 @endif
-                <td class="header-text">
                     <h4>PEMERINTAH KABUPATEN SLEMAN</h4>
                     <h3>KAPANEWON PAKEM</h3>
                     <h2>PEMERINTAH KALURAHAN PURWOBINANGUN</h2>
@@ -435,16 +439,16 @@
         </div>
 
         <!-- 3. DATA KEPALA KELUARGA -->
-        <table class="data-table" style="margin-bottom: 6px;">
+        <table class="data-table" style="margin-bottom: 8px;">
             <tr>
-                <td class="col-label" style="width: 211px;">Nama Kepala Keluarga</td>
+                <td style="width: 34%;">Nama Kepala Keluarga</td>
                 <td class="col-colon">:</td>
-                <td class="uppercase">{{ $death->head_of_family_name ?: '-' }}</td>
+                <td style="width: 63%;" class="uppercase">{{ $death->head_of_family_name ?: '-' }}</td>
             </tr>
             <tr>
-                <td class="col-label" style="width: 211px;">Nomor Kartu Keluarga</td>
+                <td style="width: 34%;">Nomor Kartu Keluarga</td>
                 <td class="col-colon">:</td>
-                <td>{{ $death->family_card_no ?: '-' }}</td>
+                <td style="width: 63%;">{{ $death->family_card_no ?: '-' }}</td>
             </tr>
         </table>
 
@@ -455,23 +459,23 @@
                 <td class="col-num">1</td>
                 <td class="col-label">NIK</td>
                 <td class="col-colon">:</td>
-                <td>{{ $death->deceased_nik ?: '-' }}</td>
+                <td class="col-val">{{ $death->deceased_nik ?: '-' }}</td>
             </tr>
             <tr>
                 <td class="col-num">2</td>
                 <td class="col-label">Nama Lengkap</td>
                 <td class="col-colon">:</td>
-                <td class="uppercase">{{ $death->deceased_name ?: '-' }}</td>
+                <td class="col-val uppercase">{{ $death->deceased_name ?: '-' }}</td>
             </tr>
             <tr>
                 <td class="col-num">3</td>
                 <td class="col-label">Jenis Kelamin / Anak ke</td>
                 <td class="col-colon">:</td>
-                <td>
-                    <table style="width: 100%; border-collapse: collapse;">
+                <td class="col-val">
+                    <table style="width: 100%;">
                         <tr>
-                            <td style="padding: 0;">{{ $genderText }}</td>
-                            <td style="padding: 0; text-align: right; width: 135px;">Anak ke {{ $death->deceased_child_order ?: '' }}</td>
+                            <td style="width: 68%; padding: 0;">{{ $genderText }}</td>
+                            <td style="width: 32%; padding: 0; text-align: right;">Anak ke {{ $death->deceased_child_order ?: '' }}</td>
                         </tr>
                     </table>
                 </td>
@@ -480,11 +484,11 @@
                 <td class="col-num">4</td>
                 <td class="col-label">Tempat dan Tanggal Lahir /<br>Umur</td>
                 <td class="col-colon">:</td>
-                <td>
-                    <table style="width: 100%; border-collapse: collapse;">
+                <td class="col-val">
+                    <table style="width: 100%;">
                         <tr>
-                            <td style="padding: 0;" class="uppercase">{{ $death->deceased_birth_place ?: 'SLEMAN' }}, {{ $death->birth_date ? $death->birth_date->format('d-m-Y') : '-' }}</td>
-                            <td style="padding: 0; text-align: right; width: 135px;">Umur {{ $deceasedAge !== null ? $deceasedAge . ' th' : '-' }}</td>
+                            <td style="width: 68%; padding: 0;" class="uppercase">{{ $death->deceased_birth_place ?: 'SLEMAN' }}, {{ $death->birth_date ? $death->birth_date->format('d-m-Y') : '-' }}</td>
+                            <td style="width: 32%; padding: 0; text-align: right;">Umur {{ $deceasedAge !== null ? $deceasedAge . ' th' : '-' }}</td>
                         </tr>
                     </table>
                 </td>
@@ -493,29 +497,29 @@
                 <td class="col-num">5</td>
                 <td class="col-label">Agama</td>
                 <td class="col-colon">:</td>
-                <td class="uppercase">{{ $death->religion ?: '-' }}</td>
+                <td class="col-val uppercase">{{ $death->religion ?: '-' }}</td>
             </tr>
             <tr>
                 <td class="col-num">6</td>
                 <td class="col-label">Pekerjaan</td>
                 <td class="col-colon">:</td>
-                <td class="uppercase">{{ $death->deceased_job ?: '-' }}</td>
+                <td class="col-val uppercase">{{ $death->deceased_job ?: '-' }}</td>
             </tr>
             <tr>
                 <td class="col-num">7</td>
                 <td class="col-label">Alamat</td>
                 <td class="col-colon">:</td>
-                <td class="uppercase">{{ $deceasedFullAddress }}</td>
+                <td class="col-val uppercase">{{ $deceasedFullAddress }}</td>
             </tr>
             <tr>
                 <td class="col-num">8</td>
                 <td class="col-label">Tanggal dan Jam Kematian</td>
                 <td class="col-colon">:</td>
-                <td>
-                    <table style="width: 100%; border-collapse: collapse;">
+                <td class="col-val">
+                    <table style="width: 100%;">
                         <tr>
-                            <td style="padding: 0;">{{ $death->death_date ? $death->death_date->format('d-m-Y') : '-' }}</td>
-                            <td style="padding: 0; text-align: right; width: 135px;">Jam: {{ $death->death_time ? str_replace(':', '.', $death->death_time) . ' WIB' : '-' }}</td>
+                            <td style="width: 60%; padding: 0;">{{ $death->death_date ? $death->death_date->format('d-m-Y') : '-' }}</td>
+                            <td style="width: 40%; padding: 0; text-align: right;">Jam: {{ $death->death_time ? str_replace(':', '.', $death->death_time) . ' WIB' : '-' }}</td>
                         </tr>
                     </table>
                 </td>
@@ -524,19 +528,19 @@
                 <td class="col-num">9</td>
                 <td class="col-label">Sebab Kematian</td>
                 <td class="col-colon">:</td>
-                <td class="uppercase">{{ $death->cause_of_death ?: '-' }}</td>
+                <td class="col-val uppercase">{{ $death->cause_of_death ?: '-' }}</td>
             </tr>
             <tr>
                 <td class="col-num">10</td>
                 <td class="col-label">Tempat Kematian</td>
                 <td class="col-colon">:</td>
-                <td class="uppercase">{{ $death->death_place ?: '-' }}{{ $death->death_location_detail ? ' (' . $death->death_location_detail . ')' : '' }}</td>
+                <td class="col-val uppercase">{{ $death->death_place ?: '-' }}{{ $death->death_location_detail ? ' (' . $death->death_location_detail . ')' : '' }}</td>
             </tr>
             <tr>
                 <td class="col-num">11</td>
                 <td class="col-label">Yang Menerangkan</td>
                 <td class="col-colon">:</td>
-                <td class="uppercase">{{ $death->reported_by_title ?: 'LAINNYA' }}</td>
+                <td class="col-val uppercase">{{ $death->reported_by_title ?: 'LAINNYA' }}</td>
             </tr>
         </table>
 
@@ -549,25 +553,25 @@
                     <td class="col-num">1</td>
                     <td class="col-label">NIK</td>
                     <td class="col-colon">:</td>
-                    <td>{{ $death->mother_nik ?: $dotsPlaceholder }}</td>
+                    <td class="col-val">{{ $death->mother_nik ?: $dotsPlaceholder }}</td>
                 </tr>
                 <tr>
                     <td class="col-num">2</td>
                     <td class="col-label">Nama Lengkap</td>
                     <td class="col-colon">:</td>
-                    <td class="uppercase">{{ $death->mother_name ?: $dotsPlaceholder }}</td>
+                    <td class="col-val uppercase">{{ $death->mother_name ?: $dotsPlaceholder }}</td>
                 </tr>
                 <tr>
                     <td class="col-num">3</td>
                     <td class="col-label">Tempat dan Tanggal Lahir /<br>Umur</td>
                     <td class="col-colon">:</td>
-                    <td class="uppercase">{{ $motherBirth ?: $dotsPlaceholder }}</td>
+                    <td class="col-val uppercase">{{ $motherBirth ?: $dotsPlaceholder }}</td>
                 </tr>
                 <tr>
                     <td class="col-num">4</td>
                     <td class="col-label">Alamat</td>
                     <td class="col-colon">:</td>
-                    <td class="uppercase">{{ $death->mother_address ?: $dotsPlaceholder }}</td>
+                    <td class="col-val uppercase">{{ $death->mother_address ?: $dotsPlaceholder }}</td>
                 </tr>
             </table>
 
@@ -578,25 +582,25 @@
                     <td class="col-num">1</td>
                     <td class="col-label">NIK</td>
                     <td class="col-colon">:</td>
-                    <td>{{ $death->father_nik ?: $dotsPlaceholder }}</td>
+                    <td class="col-val">{{ $death->father_nik ?: $dotsPlaceholder }}</td>
                 </tr>
                 <tr>
                     <td class="col-num">2</td>
                     <td class="col-label">Nama Lengkap</td>
                     <td class="col-colon">:</td>
-                    <td class="uppercase">{{ $death->father_name ?: $dotsPlaceholder }}</td>
+                    <td class="col-val uppercase">{{ $death->father_name ?: $dotsPlaceholder }}</td>
                 </tr>
                 <tr>
                     <td class="col-num">3</td>
                     <td class="col-label">Tempat dan Tanggal Lahir /<br>Umur</td>
                     <td class="col-colon">:</td>
-                    <td class="uppercase">{{ $fatherBirth ?: $dotsPlaceholder }}</td>
+                    <td class="col-val uppercase">{{ $fatherBirth ?: $dotsPlaceholder }}</td>
                 </tr>
                 <tr>
                     <td class="col-num">4</td>
                     <td class="col-label">Alamat</td>
                     <td class="col-colon">:</td>
-                    <td class="uppercase">{{ $death->father_address ?: $dotsPlaceholder }}</td>
+                    <td class="col-val uppercase">{{ $death->father_address ?: $dotsPlaceholder }}</td>
                 </tr>
             </table>
 
@@ -607,25 +611,25 @@
                     <td class="col-num">1</td>
                     <td class="col-label">NIK</td>
                     <td class="col-colon">:</td>
-                    <td>{{ $death->applicant_nik ?: $dotsPlaceholder }}</td>
+                    <td class="col-val">{{ $death->applicant_nik ?: $dotsPlaceholder }}</td>
                 </tr>
                 <tr>
                     <td class="col-num">2</td>
                     <td class="col-label">Nama Lengkap</td>
                     <td class="col-colon">:</td>
-                    <td class="uppercase">{{ $death->applicant_name ?: $dotsPlaceholder }}</td>
+                    <td class="col-val uppercase">{{ $death->applicant_name ?: $dotsPlaceholder }}</td>
                 </tr>
                 <tr>
                     <td class="col-num">3</td>
                     <td class="col-label">Tempat dan Tanggal Lahir /<br>Umur</td>
                     <td class="col-colon">:</td>
-                    <td class="uppercase">{{ $applicantBirth ?: $dotsPlaceholder }}</td>
+                    <td class="col-val uppercase">{{ $applicantBirth ?: $dotsPlaceholder }}</td>
                 </tr>
                 <tr>
                     <td class="col-num">4</td>
                     <td class="col-label">Alamat</td>
                     <td class="col-colon">:</td>
-                    <td class="uppercase">{{ $death->applicant_address ?: $dotsPlaceholder }}</td>
+                    <td class="col-val uppercase">{{ $death->applicant_address ?: $dotsPlaceholder }}</td>
                 </tr>
             </table>
 
@@ -636,25 +640,25 @@
                     <td class="col-num">1</td>
                     <td class="col-label">NIK</td>
                     <td class="col-colon">:</td>
-                    <td>{{ $witness1Nik ?: $dotsPlaceholder }}</td>
+                    <td class="col-val">{{ $witness1Nik ?: $dotsPlaceholder }}</td>
                 </tr>
                 <tr>
                     <td class="col-num">2</td>
                     <td class="col-label">Nama Lengkap</td>
                     <td class="col-colon">:</td>
-                    <td class="uppercase">{{ $witness1Name ?: $dotsPlaceholder }}</td>
+                    <td class="col-val uppercase">{{ $witness1Name ?: $dotsPlaceholder }}</td>
                 </tr>
                 <tr>
                     <td class="col-num">3</td>
                     <td class="col-label">Tempat dan Tanggal Lahir /<br>Umur</td>
                     <td class="col-colon">:</td>
-                    <td class="uppercase">{{ $witness1Birth ?: $dotsPlaceholder }}</td>
+                    <td class="col-val uppercase">{{ $witness1Birth ?: $dotsPlaceholder }}</td>
                 </tr>
                 <tr>
                     <td class="col-num">4</td>
                     <td class="col-label">Alamat</td>
                     <td class="col-colon">:</td>
-                    <td class="uppercase">{{ $death->witness1_address ?: $dotsPlaceholder }}</td>
+                    <td class="col-val uppercase">{{ $death->witness1_address ?: $dotsPlaceholder }}</td>
                 </tr>
             </table>
 
@@ -665,30 +669,30 @@
                     <td class="col-num">1</td>
                     <td class="col-label">NIK</td>
                     <td class="col-colon">:</td>
-                    <td>{{ $death->witness2_nik ?: $dotsPlaceholder }}</td>
+                    <td class="col-val">{{ $death->witness2_nik ?: $dotsPlaceholder }}</td>
                 </tr>
                 <tr>
                     <td class="col-num">2</td>
                     <td class="col-label">Nama Lengkap</td>
                     <td class="col-colon">:</td>
-                    <td class="uppercase">{{ $death->witness2_name ?: $dotsPlaceholder }}</td>
+                    <td class="col-val uppercase">{{ $death->witness2_name ?: $dotsPlaceholder }}</td>
                 </tr>
                 <tr>
                     <td class="col-num">3</td>
                     <td class="col-label">Tempat dan Tanggal Lahir /<br>Umur</td>
                     <td class="col-colon">:</td>
-                    <td class="uppercase">{{ $witness2Birth ?: $dotsPlaceholder }}</td>
+                    <td class="col-val uppercase">{{ $witness2Birth ?: $dotsPlaceholder }}</td>
                 </tr>
                 <tr>
                     <td class="col-num">4</td>
                     <td class="col-label">Alamat</td>
                     <td class="col-colon">:</td>
-                    <td class="uppercase">{{ $death->witness2_address ?: $dotsPlaceholder }}</td>
+                    <td class="col-val uppercase">{{ $death->witness2_address ?: $dotsPlaceholder }}</td>
                 </tr>
             </table>
 
             <!-- 6. TANDA TANGAN -->
-            <table class="avoid-break" style="width: 100%; table-layout: fixed; margin-top: 16px;">
+            <table class="avoid-break" style="width: 100%; margin-top: 20px;">
                 <tr>
                     <td style="width: 55%;"></td>
                     <td style="width: 45%; text-align: left;">

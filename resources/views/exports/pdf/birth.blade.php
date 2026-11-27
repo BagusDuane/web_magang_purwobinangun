@@ -6,13 +6,13 @@
     <style>
         @page {
             size: A4 portrait;
-            margin: 10mm 14mm 10mm 14mm;
+            margin: 14mm 16mm 14mm 16mm;
         }
         body {
             font-family: 'Times-Roman', 'Times New Roman', Times, serif;
-            font-size: 9.5pt;
+            font-size: 10pt;
             color: #000000;
-            line-height: 1.3;
+            line-height: 1.35;
             margin: 0;
             padding: 0;
         }
@@ -27,76 +27,75 @@
         }
         .header-table {
             width: 100%;
-            table-layout: fixed;
         }
         .header-logo {
-            width: 68px;
-            vertical-align: top;
+            width: 14%;
+            vertical-align: middle;
             text-align: left;
         }
         .header-logo img {
-            width: 54px;
+            width: 58px;
             height: auto;
         }
         .header-text {
+            width: 86%;
             text-align: center;
-            vertical-align: top;
-            padding-right: 50px;
+            vertical-align: middle;
+            padding-right: 12%;
         }
         .header-text h4 {
             margin: 0;
-            font-size: 10pt;
+            font-size: 10.5pt;
             font-weight: bold;
             text-transform: uppercase;
         }
         .header-text h3 {
             margin: 1px 0;
-            font-size: 10.5pt;
+            font-size: 11.5pt;
             font-weight: bold;
             text-transform: uppercase;
         }
         .header-text h2 {
             margin: 1px 0;
-            font-size: 12.5pt;
+            font-size: 13pt;
             font-weight: bold;
             text-transform: uppercase;
         }
         .header-text p {
             margin: 1px 0 0 0;
-            font-size: 7.8pt;
+            font-size: 8pt;
         }
         .double-line {
-            margin-top: 4px;
+            margin-top: 5px;
             border-top: 2.5px solid #000;
             border-bottom: 0.8px solid #000;
             height: 2px;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
         }
         .doc-title {
             text-align: center;
-            margin: 4px 0 8px 0;
+            margin: 6px 0 10px 0;
         }
         .doc-title h1 {
-            font-size: 11.5pt;
+            font-size: 12pt;
             font-weight: bold;
             text-decoration: underline;
             margin: 0;
             text-transform: uppercase;
         }
         .doc-title p {
-            font-size: 8.5pt;
-            margin: 2px 0 0 0;
+            font-size: 9pt;
+            margin: 3px 0 0 0;
         }
         .content-table {
             width: 100%;
-            table-layout: fixed;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
         }
         .content-table td {
-            padding: 2.5px 5px;
+            padding: 3.5px 6px;
             vertical-align: top;
-            font-size: 8.2pt;
-            line-height: 1.25;
+            font-size: 9pt;
+            line-height: 1.3;
             border: 1px solid #334155;
             word-wrap: break-word;
             overflow-wrap: break-word;
@@ -106,30 +105,29 @@
             font-weight: bold;
             color: #0f172a;
             text-transform: uppercase;
-            font-size: 8pt;
-            padding: 3px 5px;
+            font-size: 8.5pt;
+            padding: 4px 6px;
         }
         .label-col {
-            width: 33%;
+            width: 34%;
         }
         .val-col {
-            width: 67%;
+            width: 66%;
             font-weight: bold;
         }
         .sig-table {
             width: 100%;
-            table-layout: fixed;
-            margin-top: 6px;
+            margin-top: 10px;
             page-break-inside: avoid;
         }
         .sig-table td {
             width: 50%;
             text-align: center;
             vertical-align: top;
-            font-size: 8.5pt;
+            font-size: 9.5pt;
         }
         .sig-space {
-            height: 38px;
+            height: 46px;
         }
         .page-break {
             page-break-before: always;
@@ -138,10 +136,10 @@
         /* Styling khusus Halaman Terakhir: Surat Keterangan Resmi */
         .sk-title {
             text-align: center;
-            margin: 10px 0 14px 0;
+            margin: 14px 0 18px 0;
         }
         .sk-title h1 {
-            font-size: 13pt;
+            font-size: 13.5pt;
             font-weight: bold;
             text-decoration: underline;
             margin: 0;
@@ -149,43 +147,41 @@
             letter-spacing: 0.5px;
         }
         .sk-title p {
-            font-size: 10pt;
-            margin: 3px 0 0 0;
+            font-size: 10.5pt;
+            margin: 4px 0 0 0;
         }
         .sk-body {
-            font-size: 10pt;
-            line-height: 1.45;
+            font-size: 10.5pt;
+            line-height: 1.5;
         }
         .sk-table {
-            width: 95%;
-            margin-left: 20px;
-            table-layout: fixed;
+            width: 96%;
+            margin-left: 14px;
         }
         .sk-table td {
-            padding: 1.5px 0;
+            padding: 2px 0;
             vertical-align: top;
-            font-size: 10pt;
+            font-size: 10.5pt;
         }
         .sk-indent-table {
-            width: 92%;
-            margin-left: 8%;
-            table-layout: fixed;
+            width: 90%;
+            margin-left: 48px;
             margin-top: 2px;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
         .sk-indent-table td {
-            padding: 1.5px 0;
+            padding: 2px 0;
             vertical-align: top;
-            font-size: 10pt;
+            font-size: 10.5pt;
             word-wrap: break-word;
             overflow-wrap: break-word;
         }
         .sk-paragraph {
             text-align: justify;
-            text-indent: 34px;
-            margin: 8px 0 8px 20px;
-            font-size: 10pt;
-            line-height: 1.45;
+            text-indent: 36px;
+            margin: 10px 0 10px 14px;
+            font-size: 10.5pt;
+            line-height: 1.5;
         }
         .uppercase {
             text-transform: uppercase;
@@ -267,14 +263,16 @@
                     <td class="header-logo">
                         <img src="{{ $logoBase64 }}" alt="Logo Sleman">
                     </td>
+                    <td class="header-text">
+                @else
+                    <td class="header-text" style="width: 100%; padding-right: 0;">
                 @endif
-                <td class="header-text">
                     <h4>PEMERINTAH KABUPATEN SLEMAN</h4>
                     <h3>KAPANEWON PAKEM</h3>
                     <h2>PEMERINTAH KALURAHAN PURWOBINANGUN</h2>
                     @if(!empty($aksaraBase64))
-                        <div style="margin: 1px 0;">
-                            <img src="{{ $aksaraBase64 }}" alt="Aksara Jawa" style="height: 12px;">
+                        <div style="margin: 2px 0;">
+                            <img src="{{ $aksaraBase64 }}" alt="Aksara Jawa" style="height: 13px;">
                         </div>
                     @endif
                     <p>Alamat : Jl. Pakem-Turi Km.04 Watuadeg Purwobinangun Pakem Sleman Yogyakarta. 55582</p>
@@ -416,7 +414,7 @@
                     <strong>Pemohon / Pelapor,</strong>
                     <div class="sig-space">
                         @if(!empty($signatureBase64))
-                            <img src="{{ $signatureBase64 }}" alt="Tanda Tangan Pelapor" style="height: 35px; width: auto;">
+                            <img src="{{ $signatureBase64 }}" alt="Tanda Tangan Pelapor" style="height: 38px; width: auto;">
                         @endif
                     </div>
                     <u><strong>( {{ strtoupper($applicantName) }} )</strong></u>
@@ -436,8 +434,10 @@
                     <td class="header-logo">
                         <img src="{{ $logoBase64 }}" alt="Logo Sleman">
                     </td>
+                    <td class="header-text">
+                @else
+                    <td class="header-text" style="width: 100%; padding-right: 0;">
                 @endif
-                <td class="header-text">
                     <h4>PEMERINTAH KABUPATEN SLEMAN</h4>
                     <h3>KAPANEWON PAKEM</h3>
                     <h2>PEMERINTAH KALURAHAN PURWOBINANGUN</h2>
@@ -447,7 +447,7 @@
                         </div>
                     @endif
                     <p>Alamat : Jl. Pakem-Turi Km.04 Watuadeg Purwobinangun Pakem Sleman Yogyakarta. 55582</p>
-                    <p>Laman : www.purwobinangun.slemankab.go.id Surel : puwobinangun@slemankab.go.id</p>
+                    <p>Laman : www.purwobinangun.slemankab.go.id &nbsp; Surel : puwobinangun@slemankab.go.id</p>
                 </td>
             </tr>
         </table>
@@ -463,16 +463,16 @@
             <!-- Yang bertandatangan di bawah ini -->
             <table class="sk-table">
                 <tr>
-                    <td style="width: 245px;">Yang bertandatangan di bawah ini</td>
-                    <td style="width: 14px;">:</td>
-                    <td></td>
+                    <td style="width: 36%;">Yang bertandatangan di bawah ini</td>
+                    <td style="width: 3%;">:</td>
+                    <td style="width: 61%;"></td>
                 </tr>
             </table>
             <table class="sk-indent-table">
                 <tr>
-                    <td style="width: 150px;">Nama</td>
-                    <td style="width: 14px;">:</td>
-                    <td>...................................................</td>
+                    <td style="width: 24%;">Nama</td>
+                    <td style="width: 3%;">:</td>
+                    <td style="width: 73%;">...................................................</td>
                 </tr>
                 <tr>
                     <td>Jabatan</td>
@@ -482,18 +482,18 @@
             </table>
 
             <!-- Dengan ini menerangkan bahwa -->
-            <table class="sk-table" style="margin-top: 6px;">
+            <table class="sk-table" style="margin-top: 8px;">
                 <tr>
-                    <td style="width: 245px;">Dengan ini menerangkan bahwa</td>
-                    <td style="width: 14px;">:</td>
-                    <td></td>
+                    <td style="width: 36%;">Dengan ini menerangkan bahwa</td>
+                    <td style="width: 3%;">:</td>
+                    <td style="width: 61%;"></td>
                 </tr>
             </table>
             <table class="sk-indent-table">
                 <tr>
-                    <td style="width: 150px;">Nama Lengkap</td>
-                    <td style="width: 14px;">:</td>
-                    <td><strong>{{ $applicantName }}</strong></td>
+                    <td style="width: 24%;">Nama Lengkap</td>
+                    <td style="width: 3%;">:</td>
+                    <td style="width: 73%;"><strong>{{ $applicantName }}</strong></td>
                 </tr>
                 <tr>
                     <td>NIK</td>
@@ -522,17 +522,17 @@
                     </td>
                 </tr>
                 <tr>
-                    <td style="padding-top: 5px;">Pergi ke</td>
-                    <td style="padding-top: 5px;">:</td>
-                    <td style="padding-top: 5px;">
+                    <td style="padding-top: 6px;">Pergi ke</td>
+                    <td style="padding-top: 6px;">:</td>
+                    <td style="padding-top: 6px;">
                         Dinas Kependudukan dan Catatan Sipil<br>
                         Sleman
                     </td>
                 </tr>
                 <tr>
-                    <td style="padding-top: 5px;">Keperluan</td>
-                    <td style="padding-top: 5px;">:</td>
-                    <td style="padding-top: 5px;">Mohon Akta Kelahiran untuk <strong>{{ strtoupper($birth->child_name) }}</strong></td>
+                    <td style="padding-top: 6px;">Keperluan</td>
+                    <td style="padding-top: 6px;">:</td>
+                    <td style="padding-top: 6px;">Mohon Akta Kelahiran untuk <strong>{{ strtoupper($birth->child_name) }}</strong></td>
                 </tr>
             </table>
 
@@ -545,12 +545,12 @@
             </p>
 
             <!-- Tanda Tangan Pengesahan -->
-            <table class="avoid-break" style="width: 100%; table-layout: fixed; margin-top: 18px;">
+            <table class="avoid-break" style="width: 100%; margin-top: 22px;">
                 <tr>
-                    <td style="width: 52%;"></td>
-                    <td style="width: 48%; text-align: left; font-size: 10pt;">
+                    <td style="width: 55%;"></td>
+                    <td style="width: 45%; text-align: left; font-size: 10.5pt;">
                         <p style="margin: 0;">Purwobinangun, {{ $reportDateFormatted }}</p>
-                        <div style="height: 60px;"></div>
+                        <div style="height: 64px;"></div>
                         <p style="margin: 0;">( .................................................... )</p>
                     </td>
                 </tr>
