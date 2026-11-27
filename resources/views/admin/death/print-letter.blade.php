@@ -85,13 +85,20 @@
         /* Borderless clean table layout matching the official template */
         .data-table {
             width: 100%;
+            table-layout: fixed;
             border-collapse: collapse;
+        }
+        .data-table tr, tr {
+            break-inside: avoid;
+            page-break-inside: avoid;
         }
         .data-table td {
             padding: 1.5px 0;
             vertical-align: top;
-            font-size: 10.5pt;
+            font-size: 10pt;
             font-family: 'Times New Roman', Times, serif;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
     </style>
 </head>
@@ -172,7 +179,7 @@
         $applicantBirth = $formatBirthAndAge($death->applicant_birth_place, $death->applicant_birth_date, $death->applicant_age);
         $witness1Birth = $formatBirthAndAge($death->witness1_birth_place, $death->witness1_birth_date, $death->witness1_age);
         $witness2Birth = $formatBirthAndAge($death->witness2_birth_place, $death->witness2_birth_date, $death->witness2_age);
-        $dotsPlaceholder = '.....................................................................................';
+        $dotsPlaceholder = '...................................................................';
         $w1NikVal = $death->witness1_nik ?: ($death->witness_nik ?: '');
         $w1NameVal = $death->witness1_name ?: ($death->witness_name ?: '');
     @endphp
@@ -629,18 +636,15 @@
             </div>
 
             <!-- 6. TANDA TANGAN (SIGNATURE BLOCK) -->
-            <div class="pt-2 flex justify-end">
+            <div class="pt-4 flex justify-end">
                 <div class="text-left w-72 pr-4">
-                    <p>Sleman, {{ $reportDateFormatted }}</p>
-                    <p class="mt-0.5">Mengetahui</p>
-                    <p>a.n Lurah</p>
-                    <p>Kaur Tata Laksana</p>
+                    <p>Purwobinangun, {{ $reportDateFormatted }}</p>
                     
                     <!-- Ruang tanda tangan & cap stempel -->
-                    <div class="h-20"></div>
+                    <div class="h-24"></div>
 
                     <p class="font-medium text-[10pt]">
-                        {{ $officerName }}
+                        ( .................................................... )
                     </p>
                 </div>
             </div>

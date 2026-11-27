@@ -82,14 +82,21 @@
         /* Border table styling for forms */
         .form-table {
             width: 100%;
+            table-layout: fixed;
             border-collapse: collapse;
-            font-size: 8.5pt;
-            line-height: 1.35;
+            font-size: 8.2pt;
+            line-height: 1.3;
+        }
+        .form-table tr {
+            break-inside: avoid;
+            page-break-inside: avoid;
         }
         .form-table th, .form-table td {
             border: 1px solid #000;
-            padding: 3px 6px;
+            padding: 2.5px 6px;
             vertical-align: top;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
         .form-table-nested {
             width: 100%;
@@ -712,12 +719,12 @@
                     <tr>
                         <td class="w-36 align-top">Nama</td>
                         <td class="w-4 align-top">:</td>
-                        <td class="align-top font-medium">R. Heri Suasana</td>
+                        <td class="align-top font-medium">...................................................</td>
                     </tr>
                     <tr>
                         <td class="w-36 align-top">Jabatan</td>
                         <td class="w-4 align-top">:</td>
-                        <td class="align-top font-medium">Lurah Purwobinangun</td>
+                        <td class="align-top font-medium">...................................................</td>
                     </tr>
                 </table>
             </div>
@@ -804,20 +811,17 @@
             </div>
 
             <!-- Tanda Tangan Pengesahan -->
-            <div class="pt-4 flex justify-end">
+            <div class="pt-6 flex justify-end">
                 <div class="text-left w-72 pr-2">
                     <p>
                         Purwobinangun, {{ $reportDate }}
                     </p>
-                    <p class="pl-6 mt-0.5">
-                        Lurah Purwobinangun
-                    </p>
                     
                     <!-- Ruang tanda tangan & cap stempel -->
-                    <div class="h-20"></div>
+                    <div class="h-24"></div>
 
-                    <p class="font-bold pl-9">
-                        R. Heri Suasana
+                    <p class="font-medium">
+                        ( .................................................... )
                     </p>
                 </div>
             </div>

@@ -251,6 +251,9 @@ class CertificateExportTest extends TestCase
         $this->assertStringContainsString('Dinas Kependudukan dan Catatan Sipil', $birthHtml);
         $this->assertStringContainsString('Mohon Akta Kelahiran untuk', $birthHtml);
         $this->assertStringContainsString('ANANDA RIZKY PURWOBINANGUN', $birthHtml);
+        $this->assertStringContainsString('Purwobinangun,', $birthHtml);
+        $this->assertStringContainsString('( .................................................... )', $birthHtml);
+        $this->assertStringNotContainsString('R. Heri Suasana', $birthHtml);
 
         $deathHtml = view('exports.pdf.death', [
             'death' => $this->death,
@@ -262,8 +265,9 @@ class CertificateExportTest extends TestCase
         $this->assertStringContainsString('Mbah Mulyo Santoso', $deathHtml);
         $this->assertStringContainsString('SURAT KETERANGAN KEMATIAN', $deathHtml);
         $this->assertStringContainsString('No. 474.3/', $deathHtml);
-        $this->assertStringContainsString('Kaur Tata Laksana', $deathHtml);
-        $this->assertStringContainsString('Teguh Kurniawan, S.Pi.', $deathHtml);
+        $this->assertStringContainsString('Purwobinangun,', $deathHtml);
+        $this->assertStringContainsString('( .................................................... )', $deathHtml);
+        $this->assertStringNotContainsString('Kaur Tata Laksana', $deathHtml);
 
         // Verify Birth DOCX XML contains both Form Data and Surat Keterangan
         $birthDocxResp = $this->actingAs($this->admin)
@@ -281,6 +285,11 @@ class CertificateExportTest extends TestCase
         $this->assertStringContainsString('SURAT KETERANGAN', $birthDocXml);
         $this->assertStringContainsString('474.1/', $birthDocXml);
         $this->assertStringContainsString('Mohon Akta Kelahiran untuk ANANDA RIZKY PURWOBINANGUN', $birthDocXml);
+        $this->assertStringContainsString('( .................................................... )', $birthDocXml);
+        $this->assertStringNotContainsString('R. Heri Suasana', $birthDocXml);
+        $this->assertStringNotContainsString('<w:noWrap/>', $birthDocXml);
+        $this->assertStringContainsString('<w:tblLayout w:type="fixed"/>', $birthDocXml);
+        $this->assertStringContainsString('<w:cantSplit', $birthDocXml);
 
         // Verify Death DOCX XML contains both Form Data and Surat Keterangan Kematian
         $deathDocxResp = $this->actingAs($this->admin)
@@ -299,6 +308,41 @@ class CertificateExportTest extends TestCase
         $this->assertStringContainsString('474.3/', $deathDocXml);
         $this->assertStringContainsString('MBAH MULYO SANTOSO', $deathDocXml);
         $this->assertStringContainsString('Umur 81 th', $deathDocXml);
-        $this->assertStringContainsString('Teguh Kurniawan, S.Pi', $deathDocXml);
+        $this->assertStringContainsString('Purwobinangun,', $deathDocXml);
+        $this->assertStringContainsString('( .................................................... )', $deathDocXml);
+        $this->assertStringNotContainsString('Kaur Tata Laksana', $deathDocXml);
+        $this->assertStringNotContainsString('<w:noWrap/>', $deathDocXml);
+        $this->assertStringContainsString('<w:tblLayout w:type="fixed"/>', $deathDocXml);
+        $this->assertStringContainsString('<w:cantSplit', $deathDocXml);
+
+        // Verify exact PDF page counts without awkward overflow even with long addresses
+        $this->birth->fill([
+            'father_address' => 'Padukuhan Watuadeg Jl. Pakem-Turi Km 04 Blok Selatan',
+            'father_rt' => '002', 'father_rw' => '005',
+            'father_village' => 'Purwobinangun', 'father_district' => 'Pakem', 'father_city' => 'Sleman', 'father_province' => 'DI Yogyakarta',
+            'mother_address' => 'Padukuhan Watuadeg Jl. Pakem-Turi Km 04 Blok Selatan',
+            'mother_rt' => '002', 'mother_rw' => '005',
+            'mother_village' => 'Purwobinangun', 'mother_district' => 'Pakem', 'mother_city' => 'Sleman', 'mother_province' => 'DI Yogyakarta',
+            'witness_1_name' => 'PURNOMO RAHAYU SANTOSO', 'witness_1_nik' => '3404162303870002', 'witness_1_job' => 'Wiraswasta',
+            'witness_1_address' => 'Padukuhan Kemiri RT 001 / RW 003, Kalurahan Purwobinangun, Kapanewon Pakem, Kabupaten Sleman',
+            'witness_2_name' => 'HARI PUJIANTORO WIBOWO', 'witness_2_nik' => '3404160704760001', 'witness_2_job' => 'Perangkat Desa',
+            'witness_2_address' => 'Padukuhan Candi RT 004 / RW 008, Kalurahan Purwobinangun, Kapanewon Pakem, Kabupaten Sleman',
+        ]);
+        $pdfBirth = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.pdf.birth', [
+            'birth' => $this->birth,
+            'logoBase64' => '',
+            'aksaraBase64' => '',
+            'signatureBase64' => '',
+        ])->setPaper('a4', 'portrait');
+        $pdfBirth->render();
+        $this->assertSame(2, $pdfBirth->getCanvas()->get_page_count());
+
+        $pdfDeath = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.pdf.death', [
+            'death' => $this->death,
+            'logoBase64' => '',
+            'aksaraBase64' => '',
+        ])->setPaper('a4', 'portrait');
+        $pdfDeath->render();
+        $this->assertSame(3, $pdfDeath->getCanvas()->get_page_count());
     }
 }

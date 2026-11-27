@@ -16,6 +16,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\Settings;
 use PhpOffice\PhpWord\SimpleType\Jc;
+use PhpOffice\PhpWord\Style\Table as WordTableStyle;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CertificateExportService
@@ -81,13 +82,19 @@ class CertificateExportService
 
         $phpWord = new PhpWord();
         $phpWord->setDefaultFontName('Times New Roman');
-        $phpWord->setDefaultFontSize(10.5);
+        $phpWord->setDefaultFontSize(10);
+        $phpWord->setDefaultParagraphStyle([
+            'spaceBefore' => 0,
+            'spaceAfter'  => 0,
+            'lineHeight'  => 1.15,
+        ]);
 
         $section = $phpWord->addSection([
-            'marginTop'    => 950,
-            'marginBottom' => 950,
-            'marginLeft'   => 1150,
-            'marginRight'  => 1150,
+            'paperSize'    => 'A4',
+            'marginTop'    => 720,
+            'marginBottom' => 720,
+            'marginLeft'   => 950,
+            'marginRight'  => 950,
         ]);
 
         $romans = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
@@ -157,17 +164,21 @@ class CertificateExportService
         $this->addDocxPurwobinangunKopSurat($section, 'puwobinangun@slemankab.go.id');
 
         $section->addText('FORMULIR PELAPORAN & PERMOHONAN AKTA KELAHIRAN', [
-            'name' => 'Times New Roman', 'size' => 12, 'bold' => true, 'underline' => 'single',
-        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 40]);
+            'name' => 'Times New Roman', 'size' => 11.5, 'bold' => true, 'underline' => 'single',
+        ], ['alignment' => Jc::CENTER, 'spaceBefore' => 40, 'spaceAfter' => 20]);
 
         $section->addText('Nomor Registrasi: ' . $birth->registration_no . '  |  Tanggal Lapor: ' . $reportDateFormatted, [
-            'name' => 'Times New Roman', 'size' => 9.5,
-        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 120]);
+            'name' => 'Times New Roman', 'size' => 8.5,
+        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 90]);
 
         $formTableStyle = [
-            'borderColor' => '334155',
-            'borderSize'  => 4,
-            'cellMargin'  => 55,
+            'borderColor'       => '334155',
+            'borderSize'        => 4,
+            'cellMarginTop'     => 35,
+            'cellMarginBottom'  => 35,
+            'cellMarginLeft'    => 70,
+            'cellMarginRight'   => 70,
+            'layout'            => WordTableStyle::LAYOUT_FIXED,
         ];
         $phpWord->addTableStyle('BirthFormTable', $formTableStyle);
         $table = $section->addTable('BirthFormTable');
@@ -201,24 +212,28 @@ class CertificateExportService
             ['Nama Lengkap & NIK Pelapor', strtoupper($applicantName) . ' (' . $applicantNik . ')'],
             ['Umur, Pekerjaan & Hubungan Pelapor', ($applicantAgeVal !== null ? $applicantAgeVal . ' th' : '-') . ' — ' . $applicantJob . ' (' . ($birth->applicant_relation ?: 'Keluarga') . ')' . ($birth->applicant_phone ? ' | Telp: ' . $birth->applicant_phone : '')],
             ['Alamat Pelapor', $applicantFullAddr],
-            ['Saksi I (Nama / NIK / Umur / Pekerjaan)', strtoupper($birth->witness_1_name ?: '-') . ' / ' . ($birth->witness_1_nik ?: '-') . ($w1AgeVal !== null ? " / {$w1AgeVal} th" : '') . ($birth->witness_1_job ? ' / ' . $birth->witness_1_job : '') . ' — Alamat: ' . $witness1FullAddr],
-            ['Saksi II (Nama / NIK / Umur / Pekerjaan)', strtoupper($birth->witness_2_name ?: '-') . ' / ' . ($birth->witness_2_nik ?: '-') . ($w2AgeVal !== null ? " / {$w2AgeVal} th" : '') . ($birth->witness_2_job ? ' / ' . $birth->witness_2_job : '') . ' — Alamat: ' . $witness2FullAddr],
+            ['Saksi I (Nama / NIK / Umur / Pekerjaan)', [strtoupper($birth->witness_1_name ?: '-') . ' / ' . ($birth->witness_1_nik ?: '-') . ($w1AgeVal !== null ? " / {$w1AgeVal} th" : '') . ($birth->witness_1_job ? ' / ' . $birth->witness_1_job : ''), 'Alamat: ' . $witness1FullAddr]],
+            ['Saksi II (Nama / NIK / Umur / Pekerjaan)', [strtoupper($birth->witness_2_name ?: '-') . ' / ' . ($birth->witness_2_nik ?: '-') . ($w2AgeVal !== null ? " / {$w2AgeVal} th" : '') . ($birth->witness_2_job ? ' / ' . $birth->witness_2_job : ''), 'Alamat: ' . $witness2FullAddr]],
         ];
 
         foreach ($rows as $item) {
-            $table->addRow();
+            $table->addRow(null, ['cantSplit' => true]);
             if (!empty($item[2])) {
-                $cell = $table->addCell(9200, ['gridSpan' => 2, 'bgColor' => 'E2E8F0']);
-                $cell->addText($item[0], ['bold' => true, 'color' => '0F172A', 'size' => 9, 'name' => 'Times New Roman'], ['spaceAfter' => 0]);
+                $cell = $table->addCell(9800, ['gridSpan' => 2, 'bgColor' => 'E2E8F0', 'noWrap' => false]);
+                $cell->addText($item[0], ['bold' => true, 'color' => '0F172A', 'size' => 8.5, 'name' => 'Times New Roman']);
             } else {
-                $c1 = $table->addCell(3200);
-                $c1->addText($item[0], ['size' => 9, 'name' => 'Times New Roman'], ['spaceAfter' => 0]);
-                $c2 = $table->addCell(6000);
-                $c2->addText($item[1], ['size' => 9, 'bold' => true, 'name' => 'Times New Roman'], ['spaceAfter' => 0]);
+                $c1 = $table->addCell(3300, ['noWrap' => false]);
+                $c1->addText($item[0], ['size' => 8.5, 'name' => 'Times New Roman']);
+                $c2 = $table->addCell(6500, ['noWrap' => false]);
+                if (is_array($item[1])) {
+                    $c2->addText($item[1][0], ['size' => 8.5, 'bold' => true, 'name' => 'Times New Roman']);
+                    $c2->addText($item[1][1], ['size' => 8.2, 'name' => 'Times New Roman']);
+                } else {
+                    $c2->addText((string) $item[1], ['size' => 8.5, 'bold' => true, 'name' => 'Times New Roman']);
+                }
             }
         }
 
-        $section->addTextBreak(1);
         $this->addDocxFormSignature($section, $reportDateFormatted, strtoupper($applicantName), $birth->processed_by);
 
         /* ---------------------------------------------------------------------
@@ -229,57 +244,65 @@ class CertificateExportService
         $this->addDocxPurwobinangunKopSurat($section, 'puwobinangun@slemankab.go.id');
 
         $section->addText('SURAT KETERANGAN', [
-            'name' => 'Times New Roman', 'size' => 13.5, 'bold' => true, 'underline' => 'single',
-        ], ['alignment' => Jc::CENTER, 'spaceBefore' => 120, 'spaceAfter' => 40]);
+            'name' => 'Times New Roman', 'size' => 13, 'bold' => true, 'underline' => 'single',
+        ], ['alignment' => Jc::CENTER, 'spaceBefore' => 100, 'spaceAfter' => 30]);
 
         $section->addText("Nomor : 474.1/ {$letterSeq} / {$monthRoman} / {$letterYear}", [
-            'name' => 'Times New Roman', 'size' => 11,
-        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 200]);
+            'name' => 'Times New Roman', 'size' => 10.5,
+        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 150]);
 
-        $noBorder = ['borderColor' => 'FFFFFF', 'borderSize' => 0, 'cellMargin' => 25];
+        $noBorder = [
+            'borderColor'      => 'FFFFFF',
+            'borderSize'       => 0,
+            'cellMarginTop'    => 15,
+            'cellMarginBottom' => 15,
+            'cellMarginLeft'   => 20,
+            'cellMarginRight'  => 20,
+            'layout'           => WordTableStyle::LAYOUT_FIXED,
+        ];
 
         // Yang bertandatangan di bawah ini
         $head1 = $section->addTable($noBorder);
-        $head1->addRow();
-        $head1->addCell(300)->addText('', ['size' => 11]);
-        $head1->addCell(3600)->addText('Yang bertandatangan di bawah ini', ['size' => 11, 'name' => 'Times New Roman'], ['spaceAfter' => 20]);
-        $head1->addCell(200)->addText(':', ['size' => 11, 'name' => 'Times New Roman'], ['spaceAfter' => 20]);
-        $head1->addCell(5100)->addText('', ['size' => 11]);
+        $head1->addRow(null, ['cantSplit' => true]);
+        $head1->addCell(300, ['noWrap' => false])->addText('', ['size' => 10.5]);
+        $head1->addCell(3600, ['noWrap' => false])->addText('Yang bertandatangan di bawah ini', ['size' => 10.5, 'name' => 'Times New Roman']);
+        $head1->addCell(200, ['noWrap' => false])->addText(':', ['size' => 10.5, 'name' => 'Times New Roman']);
+        $head1->addCell(5700, ['noWrap' => false])->addText('', ['size' => 10.5]);
 
         $sub1 = $section->addTable($noBorder);
         foreach ([
-            ['Nama', 'R. Heri Suasana'],
-            ['Jabatan', 'Lurah Purwobinangun'],
+            ['Nama', '...................................................'],
+            ['Jabatan', '...................................................'],
         ] as $row) {
-            $sub1->addRow();
-            $sub1->addCell(1100)->addText('', ['size' => 11]);
-            $sub1->addCell(2200)->addText($row[0], ['size' => 11, 'name' => 'Times New Roman'], ['spaceAfter' => 20]);
-            $sub1->addCell(200)->addText(':', ['size' => 11, 'name' => 'Times New Roman'], ['spaceAfter' => 20]);
-            $sub1->addCell(5700)->addText($row[1], ['size' => 11, 'name' => 'Times New Roman'], ['spaceAfter' => 20]);
+            $sub1->addRow(null, ['cantSplit' => true]);
+            $sub1->addCell(1000, ['noWrap' => false])->addText('', ['size' => 10.5]);
+            $sub1->addCell(2200, ['noWrap' => false])->addText($row[0], ['size' => 10.5, 'name' => 'Times New Roman']);
+            $sub1->addCell(200, ['noWrap' => false])->addText(':', ['size' => 10.5, 'name' => 'Times New Roman']);
+            $sub1->addCell(6400, ['noWrap' => false])->addText($row[1], ['size' => 10.5, 'name' => 'Times New Roman']);
         }
 
         // Dengan ini menerangkan bahwa
         $head2 = $section->addTable($noBorder);
-        $head2->addRow();
-        $head2->addCell(300)->addText('', ['size' => 11]);
-        $head2->addCell(3600)->addText('Dengan ini menerangkan bahwa', ['size' => 11, 'name' => 'Times New Roman'], ['spaceBefore' => 120, 'spaceAfter' => 20]);
-        $head2->addCell(200)->addText(':', ['size' => 11, 'name' => 'Times New Roman'], ['spaceBefore' => 120, 'spaceAfter' => 20]);
-        $head2->addCell(5100)->addText('', ['size' => 11]);
+        $head2->addRow(null, ['cantSplit' => true]);
+        $head2->addCell(300, ['noWrap' => false])->addText('', ['size' => 10.5]);
+        $head2->addCell(3600, ['noWrap' => false])->addText('Dengan ini menerangkan bahwa', ['size' => 10.5, 'name' => 'Times New Roman'], ['spaceBefore' => 90]);
+        $head2->addCell(200, ['noWrap' => false])->addText(':', ['size' => 10.5, 'name' => 'Times New Roman'], ['spaceBefore' => 90]);
+        $head2->addCell(5700, ['noWrap' => false])->addText('', ['size' => 10.5]);
 
         $sub2 = $section->addTable($noBorder);
         $addSkRow = function ($label, $lines, bool $boldFirst = false) use ($sub2) {
-            $sub2->addRow();
-            $sub2->addCell(1100)->addText('', ['size' => 11]);
-            $sub2->addCell(2200)->addText($label, ['size' => 11, 'name' => 'Times New Roman'], ['spaceAfter' => 30]);
-            $sub2->addCell(200)->addText(':', ['size' => 11, 'name' => 'Times New Roman'], ['spaceAfter' => 30]);
-            $valCell = $sub2->addCell(5700);
+            $sub2->addRow(null, ['cantSplit' => true]);
+            $sub2->addCell(1000, ['noWrap' => false])->addText('', ['size' => 10.5]);
+            $sub2->addCell(2200, ['noWrap' => false])->addText($label, ['size' => 10.5, 'name' => 'Times New Roman']);
+            $sub2->addCell(200, ['noWrap' => false])->addText(':', ['size' => 10.5, 'name' => 'Times New Roman']);
+            $valCell = $sub2->addCell(6400, ['noWrap' => false]);
             $linesArr = is_array($lines) ? $lines : [$lines];
             foreach ($linesArr as $idx => $line) {
                 $valCell->addText((string) $line, [
-                    'size' => 11,
+                    'size' => 10.5,
                     'name' => 'Times New Roman',
                     'bold' => $boldFirst && $idx === 0,
-                ], ['spaceAfter' => 25]);
+                ], ['spaceAfter' => 15]);
             }
         };
 
@@ -302,24 +325,23 @@ class CertificateExportService
 
         $section->addText(
             'Sehubungan dengan maksud yang bersangkutan, mohon yang berwenang memberikan bantuan serta fasilitas seperlunya.',
-            ['size' => 11, 'name' => 'Times New Roman'],
-            ['alignment' => Jc::BOTH, 'indentation' => ['firstLine' => 720, 'left' => 300], 'spaceBefore' => 180, 'spaceAfter' => 100]
+            ['size' => 10.5, 'name' => 'Times New Roman'],
+            ['alignment' => Jc::BOTH, 'indentation' => ['firstLine' => 680, 'left' => 300], 'spaceBefore' => 130, 'spaceAfter' => 80, 'lineHeight' => 1.25]
         );
 
         $section->addText(
             'Demikian surat keterangan ini dibuat dengan sebenarnya, untuk dipergunakan sebagaimana mestinya.',
-            ['size' => 11, 'name' => 'Times New Roman'],
-            ['alignment' => Jc::BOTH, 'indentation' => ['firstLine' => 720, 'left' => 300], 'spaceAfter' => 240]
+            ['size' => 10.5, 'name' => 'Times New Roman'],
+            ['alignment' => Jc::BOTH, 'indentation' => ['firstLine' => 680, 'left' => 300], 'spaceAfter' => 180, 'lineHeight' => 1.25]
         );
 
         $skSig = $section->addTable($noBorder);
-        $skSig->addRow();
-        $skSig->addCell(5000);
-        $sigRight = $skSig->addCell(4200);
-        $sigRight->addText('Purwobinangun, ' . $reportDateFormatted, ['size' => 11, 'name' => 'Times New Roman'], ['spaceAfter' => 30]);
-        $sigRight->addText('Lurah Purwobinangun', ['size' => 11, 'name' => 'Times New Roman'], ['indentation' => ['left' => 360], 'spaceAfter' => 40]);
-        $sigRight->addTextBreak(3);
-        $sigRight->addText('R. Heri Suasana', ['size' => 11, 'bold' => true, 'name' => 'Times New Roman'], ['indentation' => ['left' => 520]]);
+        $skSig->addRow(null, ['cantSplit' => true]);
+        $skSig->addCell(5300, ['noWrap' => false]);
+        $sigRight = $skSig->addCell(4500, ['noWrap' => false]);
+        $sigRight->addText('Purwobinangun, ' . $reportDateFormatted, ['size' => 10.5, 'name' => 'Times New Roman']);
+        $sigRight->addText('', ['size' => 10], ['spaceAfter' => 520]);
+        $sigRight->addText('( .................................................... )', ['size' => 10.5, 'name' => 'Times New Roman']);
 
         $filename = 'Surat_Kelahiran_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $birth->registration_no) . '.docx';
 
@@ -395,9 +417,9 @@ class CertificateExportService
         $witness1FullAddr = $formatFullAddress($birth->witness_1_address, $birth->witness_1_rt, $birth->witness_1_rw, $birth->witness_1_village, $birth->witness_1_district, $birth->witness_1_city, $birth->witness_1_province);
         $witness2FullAddr = $formatFullAddress($birth->witness_2_address, $birth->witness_2_rt, $birth->witness_2_rw, $birth->witness_2_village, $birth->witness_2_district, $birth->witness_2_city, $birth->witness_2_province);
 
-        $fatherAgeVal = $birth->father_age ?: ($birth->father_birth_date ? $birth->father_birth_date->diffInYears($birth->birth_date ?? now()) : null);
-        $motherAgeVal = $birth->mother_age ?: ($birth->mother_birth_date ? $birth->mother_birth_date->diffInYears($birth->birth_date ?? now()) : null);
-        $applicantAgeVal = $birth->applicant_age ?: ($birth->applicant_birth_date ? $birth->applicant_birth_date->diffInYears(now()) : null);
+        $fatherAgeVal = $birth->father_age ?: ($birth->father_birth_date ? (int) $birth->father_birth_date->diffInYears($birth->birth_date ?? now()) : null);
+        $motherAgeVal = $birth->mother_age ?: ($birth->mother_birth_date ? (int) $birth->mother_birth_date->diffInYears($birth->birth_date ?? now()) : null);
+        $applicantAgeVal = $birth->applicant_age ?: ($birth->applicant_birth_date ? (int) $birth->applicant_birth_date->diffInYears(now()) : null);
 
         $weightStr = ($birth->weight_kg !== null && $birth->weight_kg !== '')
             ? $birth->weight_kg . ' kg' . ($birth->weight_gram ? ' (' . $birth->weight_gram . ' gram)' : '')
@@ -529,13 +551,19 @@ class CertificateExportService
 
         $phpWord = new PhpWord();
         $phpWord->setDefaultFontName('Times New Roman');
-        $phpWord->setDefaultFontSize(10.5);
+        $phpWord->setDefaultFontSize(10);
+        $phpWord->setDefaultParagraphStyle([
+            'spaceBefore' => 0,
+            'spaceAfter'  => 0,
+            'lineHeight'  => 1.15,
+        ]);
 
         $section = $phpWord->addSection([
-            'marginTop'    => 950,
-            'marginBottom' => 950,
-            'marginLeft'   => 1150,
-            'marginRight'  => 1150,
+            'paperSize'    => 'A4',
+            'marginTop'    => 720,
+            'marginBottom' => 720,
+            'marginLeft'   => 950,
+            'marginRight'  => 950,
         ]);
 
         $romans = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
@@ -563,8 +591,7 @@ class CertificateExportService
         $reportDateFormatted = $death->report_date
             ? Carbon::parse($death->report_date)->translatedFormat('d F Y')
             : ($death->created_at ? $death->created_at->translatedFormat('d F Y') : Carbon::now()->translatedFormat('d F Y'));
-        $officerName = $death->officer_name ?: 'Teguh Kurniawan, S.Pi.';
-        $dotsPlaceholder = '...............................................................................';
+        $dotsPlaceholder = '...................................................................';
 
         $formatBirthAndAge = function ($place, $date, $age) {
             $parts = [];
@@ -596,17 +623,21 @@ class CertificateExportService
         $this->addDocxPurwobinangunKopSurat($section, 'desapurwobinangun@slemankab.go.id');
 
         $section->addText('FORMULIR PELAPORAN & PERMOHONAN AKTA KEMATIAN', [
-            'name' => 'Times New Roman', 'size' => 12, 'bold' => true, 'underline' => 'single',
-        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 40]);
+            'name' => 'Times New Roman', 'size' => 11.5, 'bold' => true, 'underline' => 'single',
+        ], ['alignment' => Jc::CENTER, 'spaceBefore' => 40, 'spaceAfter' => 20]);
 
         $section->addText('Nomor Registrasi: ' . $death->registration_no . '  |  Tanggal Lapor: ' . $reportDateFormatted, [
-            'name' => 'Times New Roman', 'size' => 9.5,
-        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 120]);
+            'name' => 'Times New Roman', 'size' => 8.5,
+        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 90]);
 
         $formTableStyle = [
-            'borderColor' => '334155',
-            'borderSize'  => 4,
-            'cellMargin'  => 55,
+            'borderColor'       => '334155',
+            'borderSize'        => 4,
+            'cellMarginTop'     => 35,
+            'cellMarginBottom'  => 35,
+            'cellMarginLeft'    => 70,
+            'cellMarginRight'   => 70,
+            'layout'            => WordTableStyle::LAYOUT_FIXED,
         ];
         $phpWord->addTableStyle('DeathFormTable', $formTableStyle);
         $formTable = $section->addTable('DeathFormTable');
@@ -639,24 +670,28 @@ class CertificateExportService
             ['V. DATA PELAPOR (AHLI WARIS) & SAKSI', '', true],
             ['Pelapor (Nama / NIK / Hubungan)', strtoupper($death->applicant_name ?: '-') . ' / ' . ($death->applicant_nik ?: '-') . ' (' . ($death->applicant_relation ?: 'Ahli Waris / Keluarga') . ')' . ($death->applicant_phone ? ' | Telp: ' . $death->applicant_phone : '')],
             ['TTL / Pekerjaan / Alamat Pelapor', ($applicantBirth ?: '-') . ' — ' . ($death->applicant_job ?: '-') . ' — ' . ($death->applicant_address ?: '-')],
-            ['Saksi I (Nama / NIK / TTL / Alamat)', strtoupper($witness1Name ?: '-') . ' / ' . ($witness1Nik ?: '-') . ($witness1Birth ? ' / ' . $witness1Birth : '') . ' — Alamat: ' . ($death->witness1_address ?: '-')],
-            ['Saksi II (Nama / NIK / TTL / Alamat)', strtoupper($death->witness2_name ?: '-') . ' / ' . ($death->witness2_nik ?: '-') . ($witness2Birth ? ' / ' . $witness2Birth : '') . ' — Alamat: ' . ($death->witness2_address ?: '-')],
+            ['Saksi I (Nama / NIK / TTL / Alamat)', [strtoupper($witness1Name ?: '-') . ' / ' . ($witness1Nik ?: '-') . ($witness1Birth ? ' / ' . $witness1Birth : ''), 'Alamat: ' . ($death->witness1_address ?: '-')]],
+            ['Saksi II (Nama / NIK / TTL / Alamat)', [strtoupper($death->witness2_name ?: '-') . ' / ' . ($death->witness2_nik ?: '-') . ($witness2Birth ? ' / ' . $witness2Birth : ''), 'Alamat: ' . ($death->witness2_address ?: '-')]],
         ];
 
         foreach ($formRows as $item) {
-            $formTable->addRow();
+            $formTable->addRow(null, ['cantSplit' => true]);
             if (!empty($item[2])) {
-                $cell = $formTable->addCell(9200, ['gridSpan' => 2, 'bgColor' => 'E2E8F0']);
-                $cell->addText($item[0], ['bold' => true, 'color' => '0F172A', 'size' => 9, 'name' => 'Times New Roman'], ['spaceAfter' => 0]);
+                $cell = $formTable->addCell(9800, ['gridSpan' => 2, 'bgColor' => 'E2E8F0', 'noWrap' => false]);
+                $cell->addText($item[0], ['bold' => true, 'color' => '0F172A', 'size' => 8.5, 'name' => 'Times New Roman']);
             } else {
-                $c1 = $formTable->addCell(3200);
-                $c1->addText($item[0], ['size' => 9, 'name' => 'Times New Roman'], ['spaceAfter' => 0]);
-                $c2 = $formTable->addCell(6000);
-                $c2->addText($item[1], ['size' => 9, 'bold' => true, 'name' => 'Times New Roman'], ['spaceAfter' => 0]);
+                $c1 = $formTable->addCell(3300, ['noWrap' => false]);
+                $c1->addText($item[0], ['size' => 8.5, 'name' => 'Times New Roman']);
+                $c2 = $formTable->addCell(6500, ['noWrap' => false]);
+                if (is_array($item[1])) {
+                    $c2->addText($item[1][0], ['size' => 8.5, 'bold' => true, 'name' => 'Times New Roman']);
+                    $c2->addText($item[1][1], ['size' => 8.2, 'name' => 'Times New Roman']);
+                } else {
+                    $c2->addText((string) $item[1], ['size' => 8.5, 'bold' => true, 'name' => 'Times New Roman']);
+                }
             }
         }
 
-        $section->addTextBreak(1);
         $this->addDocxFormSignature($section, $reportDateFormatted, strtoupper($death->applicant_name ?: '-'), $death->processed_by);
 
         /* ---------------------------------------------------------------------
@@ -667,50 +702,54 @@ class CertificateExportService
         $this->addDocxPurwobinangunKopSurat($section, 'desapurwobinangun@slemankab.go.id');
 
         $section->addText('SURAT KETERANGAN KEMATIAN', [
-            'name' => 'Times New Roman', 'size' => 14, 'bold' => true,
-        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 20]);
+            'name' => 'Times New Roman', 'size' => 13.5, 'bold' => true,
+        ], ['alignment' => Jc::CENTER, 'spaceBefore' => 60, 'spaceAfter' => 20]);
 
         $section->addText("No. 474.3/{$letterNumberSeq}/{$monthRoman}/{$letterYear}", [
-            'name' => 'Times New Roman', 'size' => 10.5, 'bold' => true,
-        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 140]);
+            'name' => 'Times New Roman', 'size' => 10, 'bold' => true,
+        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 120]);
 
         $borderlessTableStyle = [
-            'borderColor' => 'FFFFFF',
-            'borderSize'  => 0,
-            'cellMargin'  => 20,
+            'borderColor'      => 'FFFFFF',
+            'borderSize'       => 0,
+            'cellMarginTop'    => 15,
+            'cellMarginBottom' => 15,
+            'cellMarginLeft'   => 15,
+            'cellMarginRight'  => 15,
+            'layout'           => WordTableStyle::LAYOUT_FIXED,
         ];
         $phpWord->addTableStyle('BorderlessKK', $borderlessTableStyle);
         $kkTable = $section->addTable('BorderlessKK');
 
-        $kkTable->addRow();
-        $kkTable->addCell(3450)->addText('Nama Kepala Keluarga', ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
-        $kkTable->addCell(200)->addText(':', ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
-        $kkTable->addCell(5550)->addText(strtoupper($death->head_of_family_name ?: '-'), ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
+        $kkTable->addRow(null, ['cantSplit' => true]);
+        $kkTable->addCell(3400, ['noWrap' => false])->addText('Nama Kepala Keluarga', ['size' => 9.5, 'name' => 'Times New Roman']);
+        $kkTable->addCell(200, ['noWrap' => false])->addText(':', ['size' => 9.5, 'name' => 'Times New Roman']);
+        $kkTable->addCell(6200, ['noWrap' => false])->addText(strtoupper($death->head_of_family_name ?: '-'), ['size' => 9.5, 'name' => 'Times New Roman']);
 
-        $kkTable->addRow();
-        $kkTable->addCell(3450)->addText('Nomor Kartu Keluarga', ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
-        $kkTable->addCell(200)->addText(':', ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
-        $kkTable->addCell(5550)->addText($death->family_card_no ?: '-', ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
+        $kkTable->addRow(null, ['cantSplit' => true]);
+        $kkTable->addCell(3400, ['noWrap' => false])->addText('Nomor Kartu Keluarga', ['size' => 9.5, 'name' => 'Times New Roman']);
+        $kkTable->addCell(200, ['noWrap' => false])->addText(':', ['size' => 9.5, 'name' => 'Times New Roman']);
+        $kkTable->addCell(6200, ['noWrap' => false])->addText($death->family_card_no ?: '-', ['size' => 9.5, 'name' => 'Times New Roman']);
 
         // Section JENAZAH
-        $section->addText('JENAZAH', ['size' => 10.5, 'bold' => true, 'name' => 'Times New Roman'], ['spaceBefore' => 100, 'spaceAfter' => 40]);
+        $section->addText('JENAZAH', ['size' => 10, 'bold' => true, 'name' => 'Times New Roman'], ['spaceBefore' => 80, 'spaceAfter' => 30]);
 
         $phpWord->addTableStyle('BorderlessJenazah', $borderlessTableStyle);
         $jTable = $section->addTable('BorderlessJenazah');
 
         $addDocxRow = function ($table, string $num, $label, string $val, ?string $valRight = null) {
-            $table->addRow();
-            $table->addCell(400)->addText($num, ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
-            $labelCell = $table->addCell(3050);
+            $table->addRow(null, ['cantSplit' => true]);
+            $table->addCell(400, ['noWrap' => false])->addText($num, ['size' => 9.5, 'name' => 'Times New Roman']);
+            $labelCell = $table->addCell(3000, ['noWrap' => false]);
             foreach ((is_array($label) ? $label : [$label]) as $line) {
-                $labelCell->addText($line, ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 10]);
+                $labelCell->addText($line, ['size' => 9.5, 'name' => 'Times New Roman']);
             }
-            $table->addCell(200)->addText(':', ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
+            $table->addCell(200, ['noWrap' => false])->addText(':', ['size' => 9.5, 'name' => 'Times New Roman']);
             if ($valRight !== null) {
-                $table->addCell(3550)->addText($val, ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
-                $table->addCell(2000)->addText($valRight, ['size' => 10, 'name' => 'Times New Roman'], ['alignment' => Jc::RIGHT, 'spaceAfter' => 15]);
+                $table->addCell(4100, ['noWrap' => false])->addText($val, ['size' => 9.5, 'name' => 'Times New Roman']);
+                $table->addCell(2100, ['noWrap' => false])->addText($valRight, ['size' => 9.5, 'name' => 'Times New Roman'], ['alignment' => Jc::RIGHT]);
             } else {
-                $table->addCell(5550, ['gridSpan' => 2])->addText($val, ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
+                $table->addCell(6200, ['gridSpan' => 2, 'noWrap' => false])->addText($val, ['size' => 9.5, 'name' => 'Times New Roman']);
             }
         };
 
@@ -733,9 +772,9 @@ class CertificateExportService
         // Lanjutan Surat Keterangan Kematian: IBU, AYAH, PELAPOR, SAKSI 1, SAKSI 2 & TANDA TANGAN
         $section->addPageBreak();
 
-        $addSectionBlock = function ($title, $nik, $name, $birth, $address, $spaceBefore = 80) use ($section, $addDocxRow, $dotsPlaceholder) {
-            $section->addText($title, ['size' => 10.5, 'bold' => true, 'name' => 'Times New Roman'], ['spaceBefore' => $spaceBefore, 'spaceAfter' => 40]);
-            $table = $section->addTable(['borderColor' => 'FFFFFF', 'borderSize' => 0, 'cellMargin' => 20]);
+        $addSectionBlock = function ($title, $nik, $name, $birth, $address, $spaceBefore = 65) use ($section, $addDocxRow, $dotsPlaceholder, $borderlessTableStyle) {
+            $section->addText($title, ['size' => 10, 'bold' => true, 'name' => 'Times New Roman'], ['spaceBefore' => $spaceBefore, 'spaceAfter' => 20]);
+            $table = $section->addTable($borderlessTableStyle);
             $addDocxRow($table, '1', 'NIK', $nik ?: $dotsPlaceholder);
             $addDocxRow($table, '2', 'Nama Lengkap', $name ? strtoupper($name) : $dotsPlaceholder);
             $addDocxRow($table, '3', ['Tempat dan Tanggal Lahir /', 'Umur'], $birth ? strtoupper($birth) : $dotsPlaceholder);
@@ -748,8 +787,7 @@ class CertificateExportService
         $addSectionBlock('SAKSI 1', $witness1Nik, $witness1Name, $witness1Birth, $death->witness1_address);
         $addSectionBlock('SAKSI 2', $death->witness2_nik, $death->witness2_name, $witness2Birth, $death->witness2_address);
 
-        $section->addTextBreak(1);
-        $this->addDocxDeathSignature($section, $reportDateFormatted, $officerName);
+        $this->addDocxDeathSignature($section, $reportDateFormatted);
 
         $filename = 'Surat_Kematian_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $death->registration_no) . '.docx';
 
@@ -979,62 +1017,75 @@ class CertificateExportService
     {
         $logoPath = public_path('images/logo-sleman.png');
         $aksaraPath = public_path('images/aksara-purwobinangun.jpg');
-        $kopTable = $section->addTable(['borderColor' => 'FFFFFF', 'borderSize' => 0, 'cellMargin' => 20]);
-        $kopTable->addRow();
+
+        $kopTable = $section->addTable([
+            'borderColor'       => 'FFFFFF',
+            'borderSize'        => 0,
+            'borderBottomColor' => '000000',
+            'borderBottomSize'  => 18,
+            'cellMarginTop'     => 10,
+            'cellMarginBottom'  => 45,
+            'cellMarginLeft'    => 10,
+            'cellMarginRight'   => 10,
+            'layout'            => WordTableStyle::LAYOUT_FIXED,
+        ]);
+        $kopTable->addRow(null, ['cantSplit' => true]);
 
         if (file_exists($logoPath)) {
-            $c1 = $kopTable->addCell(1350);
-            $c1->addImage($logoPath, ['width' => 52, 'height' => 64, 'alignment' => Jc::CENTER]);
-            $c2 = $kopTable->addCell(7850);
+            $c1 = $kopTable->addCell(1300, ['noWrap' => false]);
+            $c1->addImage($logoPath, ['width' => 46, 'height' => 56, 'alignment' => Jc::CENTER]);
+            $c2 = $kopTable->addCell(8500, ['noWrap' => false]);
         } else {
-            $c2 = $kopTable->addCell(9200);
+            $c2 = $kopTable->addCell(9800, ['noWrap' => false]);
         }
 
-        $c2->addText('PEMERINTAH KABUPATEN SLEMAN', ['size' => 10.5, 'bold' => true, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceAfter' => 10]);
-        $c2->addText('KAPANEWON PAKEM', ['size' => 11.5, 'bold' => true, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceAfter' => 10]);
-        $c2->addText('PEMERINTAH KALURAHAN PURWOBINANGUN', ['size' => 13.5, 'bold' => true, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceAfter' => 20]);
+        $c2->addText('PEMERINTAH KABUPATEN SLEMAN', ['size' => 10, 'bold' => true, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'lineHeight' => 1.1]);
+        $c2->addText('KAPANEWON PAKEM', ['size' => 11, 'bold' => true, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'lineHeight' => 1.1]);
+        $c2->addText('PEMERINTAH KALURAHAN PURWOBINANGUN', ['size' => 13, 'bold' => true, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceAfter' => 15, 'lineHeight' => 1.1]);
 
         if (file_exists($aksaraPath)) {
-            $c2->addImage($aksaraPath, ['height' => 12, 'width' => 170, 'alignment' => Jc::CENTER]);
+            $c2->addImage($aksaraPath, ['height' => 11, 'width' => 155, 'alignment' => Jc::CENTER]);
         }
 
-        $c2->addText('Alamat : Jl. Pakem-Turi Km.04 Watuadeg Purwobinangun Pakem Sleman Yogyakarta. 55582', ['size' => 8, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceAfter' => 10]);
-        $c2->addText('Laman : www.purwobinangun.slemankab.go.id   Surel : ' . $email, ['size' => 8, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceAfter' => 30]);
-
-        $section->addLine(['weight' => 2.5, 'width' => 460, 'height' => 0, 'color' => '000000']);
-        $section->addTextBreak(1);
+        $c2->addText('Alamat : Jl. Pakem-Turi Km.04 Watuadeg Purwobinangun Pakem Sleman Yogyakarta. 55582', ['size' => 7.8, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'lineHeight' => 1.1]);
+        $c2->addText('Laman : www.purwobinangun.slemankab.go.id   Surel : ' . $email, ['size' => 7.8, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'lineHeight' => 1.1]);
     }
 
     private function addDocxFormSignature($section, string $dateFormatted, string $applicantName, ?string $processedBy = null): void
     {
-        $sigTable = $section->addTable(['borderColor' => 'FFFFFF', 'borderSize' => 0]);
-        $sigTable->addRow();
+        $sigTable = $section->addTable([
+            'borderColor' => 'FFFFFF',
+            'borderSize'  => 0,
+            'layout'      => WordTableStyle::LAYOUT_FIXED,
+        ]);
+        $sigTable->addRow(null, ['cantSplit' => true]);
 
-        $c1 = $sigTable->addCell(4600);
-        $c1->addText('Sleman, ' . $dateFormatted, ['size' => 9.5, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceAfter' => 10]);
-        $c1->addText('Petugas Penerima Berkas,', ['size' => 9.5, 'bold' => true, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceAfter' => 10]);
-        $c1->addTextBreak(2);
-        $c1->addText('( ' . ($processedBy ?: '...................................................') . ' )', ['size' => 9.5, 'underline' => 'single', 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER]);
+        $c1 = $sigTable->addCell(4900, ['noWrap' => false]);
+        $c1->addText('Sleman, ' . $dateFormatted, ['size' => 9, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceBefore' => 80]);
+        $c1->addText('Petugas Penerima Berkas,', ['size' => 9, 'bold' => true, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER]);
+        $c1->addText('', ['size' => 9], ['spaceAfter' => 420]);
+        $c1->addText('( ' . ($processedBy ?: '...................................................') . ' )', ['size' => 9, 'underline' => 'single', 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER]);
 
-        $c2 = $sigTable->addCell(4600);
-        $c2->addText('Sleman, ' . $dateFormatted, ['size' => 9.5, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceAfter' => 10]);
-        $c2->addText('Pemohon / Pelapor,', ['size' => 9.5, 'bold' => true, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceAfter' => 10]);
-        $c2->addTextBreak(2);
-        $c2->addText('( ' . $applicantName . ' )', ['size' => 9.5, 'bold' => true, 'underline' => 'single', 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER]);
+        $c2 = $sigTable->addCell(4900, ['noWrap' => false]);
+        $c2->addText('Sleman, ' . $dateFormatted, ['size' => 9, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceBefore' => 80]);
+        $c2->addText('Pemohon / Pelapor,', ['size' => 9, 'bold' => true, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER]);
+        $c2->addText('', ['size' => 9], ['spaceAfter' => 420]);
+        $c2->addText('( ' . $applicantName . ' )', ['size' => 9, 'bold' => true, 'underline' => 'single', 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER]);
     }
 
-    private function addDocxDeathSignature($section, string $dateFormatted, string $officerName): void
+    private function addDocxDeathSignature($section, string $dateFormatted): void
     {
-        $sigTable = $section->addTable(['borderColor' => 'FFFFFF', 'borderSize' => 0]);
-        $sigTable->addRow();
+        $sigTable = $section->addTable([
+            'borderColor' => 'FFFFFF',
+            'borderSize'  => 0,
+            'layout'      => WordTableStyle::LAYOUT_FIXED,
+        ]);
+        $sigTable->addRow(null, ['cantSplit' => true]);
 
-        $sigTable->addCell(5300);
-        $c2 = $sigTable->addCell(3900);
-        $c2->addText('Sleman, ' . $dateFormatted, ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 10]);
-        $c2->addText('Mengetahui', ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 10]);
-        $c2->addText('a.n Lurah', ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 10]);
-        $c2->addText('Kaur Tata Laksana', ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 10]);
-        $c2->addTextBreak(3);
-        $c2->addText($officerName, ['size' => 10, 'bold' => true, 'name' => 'Times New Roman']);
+        $sigTable->addCell(5500, ['noWrap' => false]);
+        $c2 = $sigTable->addCell(4300, ['noWrap' => false]);
+        $c2->addText('Purwobinangun, ' . $dateFormatted, ['size' => 9.5, 'name' => 'Times New Roman'], ['spaceBefore' => 140]);
+        $c2->addText('', ['size' => 9.5], ['spaceAfter' => 500]);
+        $c2->addText('( .................................................... )', ['size' => 9.5, 'name' => 'Times New Roman']);
     }
 }
