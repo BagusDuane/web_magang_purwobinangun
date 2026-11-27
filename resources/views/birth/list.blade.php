@@ -143,10 +143,10 @@
                     <table class="w-full text-left text-xs">
                         <thead class="bg-slate-100 text-slate-700 uppercase font-bold text-[11px] border-b border-slate-200">
                             <tr>
-                                <th class="px-4 py-3">Jenis & No. Registrasi</th>
-                                <th class="px-4 py-3">Nama Yang Dimohonkan</th>
-                                <th class="px-4 py-3">Data Pemohon</th>
-                                <th class="px-4 py-3">Peristiwa (Tgl / Tempat)</th>
+                                <th class="px-4 py-3">No Reg</th>
+                                <th class="px-4 py-3">Dimohonkan</th>
+                                <th class="px-4 py-3">Pemohon</th>
+                                <th class="px-4 py-3">Peristiwa & Tgl</th>
                                 <th class="px-4 py-3">Tanggal Pengajuan</th>
                                 <th class="px-4 py-3 text-center">Status</th>
                                 <th class="px-4 py-3 text-center">Aksi</th>
@@ -155,23 +155,15 @@
                         <tbody class="divide-y divide-slate-200 bg-white">
                             @foreach($submissions as $sub)
                                 <tr class="hover:bg-teal-50/20 transition">
-                                    <!-- Kolom 1: Jenis & No. Registrasi -->
+                                    <!-- Kolom 1: No Reg -->
                                     <td class="px-4 py-3.5">
-                                        <div class="font-extrabold flex items-center gap-1.5 {{ $sub->certificate_type === 'birth' ? 'text-[#095b8c]' : 'text-rose-700' }}">
-                                            <i class="fa-solid fa-receipt text-slate-400"></i>
+                                        <div class="font-extrabold flex items-center gap-1.5 text-slate-800">
                                             <span>{{ $sub->registration_no }}</span>
                                         </div>
-                                        <span class="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full mt-1 {{ $sub->certificate_type === 'birth' ? 'bg-teal-50 text-teal-700 border border-teal-200' : 'bg-rose-50 text-rose-700 border border-rose-200' }}">
-                                            <i class="fa-solid {{ $sub->certificate_type === 'birth' ? 'fa-baby' : 'fa-book-skull' }} text-[9px]"></i>
-                                            {{ $sub->certificate_type_name }}
-                                        </span>
                                     </td>
 
-                                    <!-- Kolom 2: Nama Yang Dimohonkan (Subjek) -->
+                                    <!-- Kolom 2: Dimohonkan -->
                                     <td class="px-4 py-3.5">
-                                        <p class="text-[10px] uppercase font-semibold text-slate-400">
-                                            {{ $sub->certificate_type === 'birth' ? 'Nama Anak' : 'Almarhum/ah' }}
-                                        </p>
                                         <p class="font-bold text-slate-900">{{ $sub->subject_name }}</p>
                                         <span class="text-[10px] inline-flex items-center gap-1 {{ $sub->gender === 'L' ? 'text-blue-600 bg-blue-50' : 'text-pink-600 bg-pink-50' }} px-1.5 py-0.5 rounded font-semibold mt-0.5">
                                             <i class="fa-solid {{ $sub->gender === 'L' ? 'fa-mars' : 'fa-venus' }}"></i>
@@ -179,32 +171,23 @@
                                         </span>
                                     </td>
 
-                                    <!-- Kolom 3: Data Pemohon / Pelapor -->
+                                    <!-- Kolom 3: Pemohon -->
                                     <td class="px-4 py-3.5">
-                                        <p class="font-semibold text-slate-800">
-                                            {{ $sub->applicant_name }}
-                                            @if($sub->applicant_relation)
-                                                <span class="text-slate-500 font-normal text-[11px]">({{ $sub->applicant_relation }})</span>
-                                            @endif
-                                        </p>
-                                        <p class="text-[10px] text-slate-500">NIK: {{ substr($sub->applicant_nik, 0, 6) }}******{{ substr($sub->applicant_nik, -4) }}</p>
-                                        <p class="text-[10px] text-slate-500"><i class="fa-brands fa-whatsapp text-emerald-600"></i> {{ $sub->applicant_phone }}</p>
+                                        <p class="font-semibold text-slate-800">{{ $sub->applicant_name }}</p>
                                     </td>
 
-                                    <!-- Kolom 4: Peristiwa (Tgl / Tempat) -->
+                                    <!-- Kolom 4: Peristiwa & Tgl -->
                                     <td class="px-4 py-3.5">
                                         <span class="text-[10px] font-semibold flex items-center gap-1 {{ $sub->certificate_type === 'birth' ? 'text-teal-700' : 'text-rose-700' }}">
                                             <i class="fa-solid {{ $sub->certificate_type === 'birth' ? 'fa-cake-candles' : 'fa-cross' }} text-[9px]"></i>
                                             {{ $sub->certificate_type === 'birth' ? 'Tgl Lahir:' : 'Tgl Wafat:' }}
                                         </span>
                                         <p class="font-medium text-slate-800">{{ $sub->event_date ? $sub->event_date->translatedFormat('d M Y') : '-' }}</p>
-                                        <p class="text-[10px] text-slate-500">{{ $sub->event_place ?: '-' }}</p>
                                     </td>
 
                                     <!-- Kolom 5: Tanggal Pengajuan -->
                                     <td class="px-4 py-3.5">
                                         <p class="text-slate-700 font-medium">{{ $sub->created_at->translatedFormat('d M Y') }}</p>
-                                        <span class="text-[10px] text-slate-400 block">{{ $sub->created_at->diffForHumans() }}</span>
                                     </td>
 
                                     <!-- Kolom 6: Status -->
