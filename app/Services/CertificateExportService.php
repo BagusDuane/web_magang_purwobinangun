@@ -105,6 +105,7 @@ class CertificateExportService
         $reportDateFormatted = $refDate->translatedFormat('d F Y');
 
         $childDob = $birth->birth_date ? Carbon::parse($birth->birth_date) : null;
+        $childDobFormatted = $childDob ? ($birth->birth_day ? strtoupper($birth->birth_day) . ' / ' : '') . $childDob->translatedFormat('d F Y') : '-';
         $genderText = $birth->gender === 'L' ? 'LAKI-LAKI' : ($birth->gender === 'P' ? 'PEREMPUAN' : '-');
 
         $formatFullAddress = function (?string $addr, ?string $rt, ?string $rw, ?string $village, ?string $district, ?string $city, ?string $province, ?string $padukuhan = null): string {
@@ -135,6 +136,9 @@ class CertificateExportService
         $applicantAgeVal = $birth->applicant_age ?: ($birth->applicant_birth_date ? (int) $birth->applicant_birth_date->diffInYears(now()) : null);
         $w1AgeVal = $birth->witness_1_age ?: ($birth->witness_1_birth_date ? (int) $birth->witness_1_birth_date->diffInYears(now()) : null);
         $w2AgeVal = $birth->witness_2_age ?: ($birth->witness_2_birth_date ? (int) $birth->witness_2_birth_date->diffInYears(now()) : null);
+        $applicantAge = $applicantAgeVal;
+        $w1Age = $w1AgeVal;
+        $w2Age = $w2AgeVal;
 
         $applicantName = $birth->applicant_name ?: ($birth->father_name ?: ($birth->mother_name ?: '-'));
         $applicantNik = $birth->applicant_nik ?: ($birth->father_nik ?: ($birth->mother_nik ?: '-'));
