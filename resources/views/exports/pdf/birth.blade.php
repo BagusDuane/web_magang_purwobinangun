@@ -781,8 +781,7 @@
                     <td style="padding-top: 4px;">Keperluan</td>
                     <td style="padding-top: 4px;">:</td>
                     <td style="padding-top: 4px;">
-                        Mohon Akta Kelahiran untuk<br>
-                        <div style="text-align: center; font-weight: bold; margin-top: 2px;">{{ strtoupper($birth->child_name) }}</div>
+                        Mohon Akta Kelahiran untuk <strong>{{ strtoupper($birth->child_name) }}</strong>
                     </td>
                 </tr>
             </table>
