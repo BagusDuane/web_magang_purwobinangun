@@ -816,6 +816,9 @@
                     <p>
                         Purwobinangun, {{ $reportDate }}
                     </p>
+                    <p>
+                        a.n Lurah Purwobinangun
+                    </p>
                     
                     <!-- Ruang tanda tangan & cap stempel -->
                     <div class="h-24"></div>

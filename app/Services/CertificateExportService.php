@@ -105,6 +105,7 @@ class CertificateExportService
         $reportDateFormatted = $refDate->translatedFormat('d F Y');
 
         $childDob = $birth->birth_date ? Carbon::parse($birth->birth_date) : null;
+        $childDobFormatted = $childDob ? ($birth->birth_day ? strtoupper($birth->birth_day) . ' / ' : '') . $childDob->translatedFormat('d F Y') : '-';
         $genderText = $birth->gender === 'L' ? 'LAKI-LAKI' : ($birth->gender === 'P' ? 'PEREMPUAN' : '-');
 
         $formatFullAddress = function (?string $addr, ?string $rt, ?string $rw, ?string $village, ?string $district, ?string $city, ?string $province, ?string $padukuhan = null): string {
@@ -135,6 +136,9 @@ class CertificateExportService
         $applicantAgeVal = $birth->applicant_age ?: ($birth->applicant_birth_date ? (int) $birth->applicant_birth_date->diffInYears(now()) : null);
         $w1AgeVal = $birth->witness_1_age ?: ($birth->witness_1_birth_date ? (int) $birth->witness_1_birth_date->diffInYears(now()) : null);
         $w2AgeVal = $birth->witness_2_age ?: ($birth->witness_2_birth_date ? (int) $birth->witness_2_birth_date->diffInYears(now()) : null);
+        $applicantAge = $applicantAgeVal;
+        $w1Age = $w1AgeVal;
+        $w2Age = $w2AgeVal;
 
         $applicantName = $birth->applicant_name ?: ($birth->father_name ?: ($birth->mother_name ?: '-'));
         $applicantNik = $birth->applicant_nik ?: ($birth->father_nik ?: ($birth->mother_nik ?: '-'));
@@ -159,95 +163,233 @@ class CertificateExportService
             : ($birth->weight_kg ? $birth->weight_kg . ' kg' : '-');
 
         /* ---------------------------------------------------------------------
-         * HALAMAN 1: KOP SURAT & DATA KELUARGA / BIODATA BAYI (BAGIAN I & II)
+         * HALAMAN 1: PERMOHONAN AKTA KELAHIRAN & DOKUMEN PERSYARATAN (BERKAS WARGA)
          * --------------------------------------------------------------------- */
-        $this->addDocxPurwobinangunKopSurat($section, 'puwobinangun@slemankab.go.id');
+        $noBorder = [
+            'borderColor'      => 'FFFFFF',
+            'borderSize'       => 0,
+            'cellMarginTop'    => 10,
+            'cellMarginBottom' => 10,
+            'cellMarginLeft'   => 15,
+            'cellMarginRight'  => 15,
+            'layout'           => WordTableStyle::LAYOUT_FIXED,
+        ];
 
-        $section->addText('FORMULIR PELAPORAN & PERMOHONAN AKTA KELAHIRAN', [
-            'name' => 'Times New Roman', 'size' => 12.5, 'bold' => true, 'underline' => 'single',
-        ], ['alignment' => Jc::CENTER, 'spaceBefore' => 80, 'spaceAfter' => 40]);
+        $headP1 = $section->addTable($noBorder);
+        $headP1->addRow(null, ['cantSplit' => true]);
+        $cNo = $headP1->addCell(5000, ['noWrap' => false]);
+        $cNo->addText('No. : ' . $birth->registration_no, ['size' => 8.5, 'name' => 'Times New Roman', 'bold' => true, 'underline' => 'single']);
+        $cLabel = $headP1->addCell(4800, ['noWrap' => false]);
+        $cLabel->addText('Formulir Permohonan Warga - Halaman 1', ['size' => 8, 'color' => '64748B', 'name' => 'Times New Roman'], ['alignment' => Jc::RIGHT]);
 
-        $section->addText('Nomor Registrasi: ' . $birth->registration_no . '  |  Tanggal Lapor: ' . $reportDateFormatted, [
-            'name' => 'Times New Roman', 'size' => 9.5,
-        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 160]);
+        $section->addText('PERMOHONAN AKTA KELAHIRAN', [
+            'name' => 'Times New Roman', 'size' => 11.5, 'bold' => true,
+        ], ['alignment' => Jc::CENTER, 'spaceBefore' => 70, 'spaceAfter' => 100]);
 
         $formTableStyle = [
-            'borderColor'       => '334155',
+            'borderColor'       => '000000',
             'borderSize'        => 4,
-            'cellMarginTop'     => 85,
-            'cellMarginBottom'  => 85,
-            'cellMarginLeft'    => 100,
-            'cellMarginRight'   => 100,
+            'cellMarginTop'     => 40,
+            'cellMarginBottom'  => 40,
+            'cellMarginLeft'    => 70,
+            'cellMarginRight'   => 70,
             'layout'            => WordTableStyle::LAYOUT_FIXED,
         ];
         $phpWord->addTableStyle('BirthFormTable', $formTableStyle);
 
-        $renderBirthTableRows = function ($tableObj, array $items): void {
-            foreach ($items as $item) {
-                $tableObj->addRow(null, ['cantSplit' => true]);
-                if (!empty($item[2])) {
-                    $cell = $tableObj->addCell(9800, ['gridSpan' => 2, 'bgColor' => 'E2E8F0', 'noWrap' => false]);
-                    $cell->addText($item[0], ['bold' => true, 'color' => '0F172A', 'size' => 9.5, 'name' => 'Times New Roman'], ['lineHeight' => 1.25]);
-                } else {
-                    $c1 = $tableObj->addCell(3400, ['noWrap' => false]);
-                    $c1->addText($item[0], ['size' => 9.5, 'name' => 'Times New Roman'], ['lineHeight' => 1.25]);
-                    $c2 = $tableObj->addCell(6400, ['noWrap' => false]);
-                    if (is_array($item[1])) {
-                        $c2->addText($item[1][0], ['size' => 9.5, 'bold' => true, 'name' => 'Times New Roman'], ['lineHeight' => 1.25, 'spaceAfter' => 30]);
-                        $c2->addText($item[1][1], ['size' => 9, 'name' => 'Times New Roman'], ['lineHeight' => 1.25]);
-                    } else {
-                        $c2->addText((string) $item[1], ['size' => 9.5, 'bold' => true, 'name' => 'Times New Roman'], ['lineHeight' => 1.25]);
-                    }
-                }
+        $tableP1 = $section->addTable('BirthFormTable');
+        $rowsP1 = [
+            ['DATA KELUARGA', '', true],
+            ['1', 'Nomor Kartu Keluarga (KK)', $birth->family_card_no ?: '-'],
+            ['2', 'Nama Kepala Keluarga', strtoupper($birth->father_name ?: ($birth->mother_name ?: $applicantName))],
+
+            ['DATA ANAK', '', true],
+            ['1', 'NIK Anak (bila ada)', $birth->child_nik ?: '-'],
+            ['2', 'Nama Lengkap Anak', strtoupper($birth->child_name)],
+            ['3', 'Tempat dan Tanggal Lahir', strtoupper($birth->birth_place ?: 'SLEMAN') . ', ' . ($childDob ? $childDob->translatedFormat('d F Y') : '-')],
+            ['4', 'Anak ke / Jenis Kelamin', 'Anak ke : ' . ($birth->birth_order ?: '1') . '  |  Jenis Kelamin : ' . $genderText],
+
+            ['DATA IBU KANDUNG', '', true],
+            ['1', 'NIK', $birth->mother_nik ?: '-'],
+            ['2', 'Nama Lengkap', strtoupper($birth->mother_name ?: '-')],
+            ['3', 'Alamat', $birth->mother_address ?: ($applicantFullAddr ?: '-')],
+            ['4', 'Kawin Sah', 'Tanggal : ' . ($birth->marriage_date ? Carbon::parse($birth->marriage_date)->translatedFormat('d F Y') : '-')],
+
+            ['DATA AYAH KANDUNG', '', true],
+            ['1', 'NIK', $birth->father_nik ?: '-'],
+            ['2', 'Nama Lengkap', strtoupper($birth->father_name ?: '-')],
+            ['3', 'Alamat (Sesuai KTP)', $birth->father_address ?: ($applicantFullAddr ?: '-')],
+
+            ['DATA PELAPOR', '', true],
+            ['1', 'NIK', $birth->applicant_nik ?: '-'],
+            ['2', 'Nama Lengkap', strtoupper($birth->applicant_name ?: '-')],
+            ['3', 'Alamat (Sesuai KTP)', $birth->applicant_address ?: $applicantFullAddr],
+            ['4', 'Nomor HP/Telepon', $birth->applicant_phone ?: '-'],
+            ['5', 'Tanggal Lapor', $reportDateFormatted],
+            ['6', 'Hubungan dengan Bayi', $birth->applicant_relation ? ucfirst($birth->applicant_relation) : 'Orang Tua / Pemohon'],
+        ];
+
+        foreach ($rowsP1 as $row) {
+            $tableP1->addRow(null, ['cantSplit' => true]);
+            if (!empty($row[2]) && $row[2] === true) {
+                $c = $tableP1->addCell(9800, ['gridSpan' => 3, 'bgColor' => 'F1F5F9', 'noWrap' => false]);
+                $c->addText($row[0], ['bold' => true, 'size' => 8.5, 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+            } else {
+                $c1 = $tableP1->addCell(600, ['noWrap' => false]);
+                $c1->addText($row[0], ['size' => 8, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'lineHeight' => 1.15]);
+                $c2 = $tableP1->addCell(3400, ['noWrap' => false]);
+                $c2->addText($row[1], ['size' => 8, 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+                $c3 = $tableP1->addCell(5800, ['noWrap' => false]);
+                $c3->addText(': ' . $row[2], ['size' => 8, 'bold' => in_array($row[1], ['Nomor Kartu Keluarga (KK)', 'Nama Kepala Keluarga', 'Nama Lengkap Anak']), 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
             }
-        };
+        }
 
-        $tablePage1 = $section->addTable('BirthFormTable');
-        $rowsPage1 = [
-            ['I. DATA KELUARGA & PENDAFTARAN', '', true],
-            ['Nomor Registrasi', $birth->registration_no],
-            ['Nomor Kartu Keluarga (KK)', $birth->family_card_no ?: '-'],
-            ['Nama Kepala Keluarga', strtoupper($birth->father_name ?: ($birth->mother_name ?: $applicantName))],
-
-            ['II. BIODATA LENGKAP BAYI / ANAK', '', true],
-            ['Nama Lengkap Bayi / Anak', strtoupper($birth->child_name)],
-            ['NIK Bayi / Anak', $birth->child_nik ?: '-'],
-            ['Jenis Kelamin', $genderText],
-            ['Tempat Dilahirkan / Kabupaten-Kota', ($birth->birth_place_type ?: '-') . ' — ' . strtoupper($birth->birth_place ?: 'SLEMAN')],
-            ['Hari, Tanggal & Pukul Kelahiran', ($birth->birth_day ? strtoupper($birth->birth_day) . ', ' : '') . ($childDob ? $childDob->translatedFormat('d F Y') : '-') . ($birth->birth_time ? ' — Pukul ' . $birth->birth_time . ' WIB' : '')],
-            ['Jenis Kelahiran / Kelahiran Anak Ke', ($birth->birth_type ?: 'Tunggal') . ' / Anak ke-' . ($birth->birth_order ?: '1')],
-            ['Penolong Kelahiran', $birth->birth_helper ?: '-'],
-            ['Berat & Panjang Bayi', $weightStr . ' / ' . ($birth->length_cm ? $birth->length_cm . ' cm' : '-')],
+        // Dokumen Persyaratan
+        $checkDocs = [
+            ['Surat Keterangan Lahir dari dokter/ bidan/ penolong kelahiran', !empty($birth->doc_birth_cert)],
+            ['Surat Keterangan Kelahiran dari Kalurahan', true],
+            ['Fotokopi buku nikah/ kutipan akta perkawinan orangtua (dilegalisir)', !empty($birth->doc_marriage_cert)],
+            ['Fotokopi Kartu Keluarga (KK) orangtua/wali', !empty($birth->doc_family_card)],
+            ['Fotokopi KTP-el orangtua/wali/pelapor', !empty($birth->doc_parents_ktp)],
+            ['Fotokopi KTP-el 2 (Dua) orang saksi', !empty($birth->doc_witness_ktp)],
+            ['SPTJM Kebenaran Data Kelahiran', false],
+            ['SPTJM Kebenaran Sebagai Pasangan Suami Istri', false],
         ];
-        $renderBirthTableRows($tablePage1, $rowsPage1);
 
-        /* ---------------------------------------------------------------------
-         * HALAMAN 2: DATA ORANG TUA, PELAPOR & SAKSI (BAGIAN III & IV)
-         * --------------------------------------------------------------------- */
-        $section->addPageBreak();
+        $tableDocs = $section->addTable('BirthFormTable');
+        $tableDocs->addRow(null, ['cantSplit' => true]);
+        $h1 = $tableDocs->addCell(7800, ['gridSpan' => 2, 'bgColor' => 'F1F5F9', 'noWrap' => false]);
+        $h1->addText('DOKUMEN PERSYARATAN (DIPERIKSA OLEH PETUGAS)', ['bold' => true, 'size' => 8.5, 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+        $h2 = $tableDocs->addCell(2000, ['bgColor' => 'F1F5F9', 'noWrap' => false]);
+        $h2->addText('STATUS', ['bold' => true, 'size' => 8.5, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'lineHeight' => 1.15]);
 
-        $tablePage2 = $section->addTable('BirthFormTable');
-        $rowsPage2 = [
-            ['III. DATA KEDUA ORANG TUA KANDUNG', '', true],
-            ['Nama Lengkap & NIK Ayah', strtoupper($birth->father_name ?: '-') . ' (' . ($birth->father_nik ?: '-') . ')'],
-            ['Tgl Lahir / Umur & Pekerjaan Ayah', ($birth->father_birth_date ? $birth->father_birth_date->translatedFormat('d F Y') : '-') . ($fatherAgeVal !== null ? " ({$fatherAgeVal} th)" : '') . ' — ' . ($birth->father_job ?: '-') . ' (' . ($birth->father_citizenship ?: 'WNI') . ')'],
-            ['Alamat Ayah', $fatherFullAddr],
-            ['Nama Lengkap & NIK Ibu Kandung', strtoupper($birth->mother_name ?: '-') . ' (' . ($birth->mother_nik ?: '-') . ')'],
-            ['Tgl Lahir / Umur & Pekerjaan Ibu', ($birth->mother_birth_date ? $birth->mother_birth_date->translatedFormat('d F Y') : '-') . ($motherAgeVal !== null ? " ({$motherAgeVal} th)" : '') . ' — ' . ($birth->mother_job ?: '-') . ' (' . ($birth->mother_citizenship ?: 'WNI') . ')'],
-            ['Alamat Ibu Kandung', $motherFullAddr],
-            ['Tanggal Pencatatan Perkawinan', $birth->marriage_date ? Carbon::parse($birth->marriage_date)->translatedFormat('d F Y') : '-'],
-
-            ['IV. DATA PELAPOR & SAKSI KELAHIRAN', '', true],
-            ['Nama Lengkap & NIK Pelapor', strtoupper($applicantName) . ' (' . $applicantNik . ')'],
-            ['Umur, Pekerjaan & Hubungan Pelapor', ($applicantAgeVal !== null ? $applicantAgeVal . ' th' : '-') . ' — ' . $applicantJob . ' (' . ($birth->applicant_relation ?: 'Keluarga') . ')' . ($birth->applicant_phone ? ' | Telp: ' . $birth->applicant_phone : '')],
-            ['Alamat Pelapor', $applicantFullAddr],
-            ['Saksi I (Nama / NIK / Umur / Pekerjaan)', [strtoupper($birth->witness_1_name ?: '-') . ' / ' . ($birth->witness_1_nik ?: '-') . ($w1AgeVal !== null ? " / {$w1AgeVal} th" : '') . ($birth->witness_1_job ? ' / ' . $birth->witness_1_job : ''), 'Alamat: ' . $witness1FullAddr]],
-            ['Saksi II (Nama / NIK / Umur / Pekerjaan)', [strtoupper($birth->witness_2_name ?: '-') . ' / ' . ($birth->witness_2_nik ?: '-') . ($w2AgeVal !== null ? " / {$w2AgeVal} th" : '') . ($birth->witness_2_job ? ' / ' . $birth->witness_2_job : ''), 'Alamat: ' . $witness2FullAddr]],
-        ];
-        $renderBirthTableRows($tablePage2, $rowsPage2);
+        foreach ($checkDocs as $d) {
+            $tableDocs->addRow(null, ['cantSplit' => true]);
+            $cChk = $tableDocs->addCell(600, ['noWrap' => false]);
+            $cChk->addText($d[1] ? '[v]' : '[ ]', ['size' => 8, 'bold' => true, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'lineHeight' => 1.15]);
+            $cTitle = $tableDocs->addCell(7200, ['noWrap' => false]);
+            $cTitle->addText($d[0], ['size' => 8, 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+            $cStat = $tableDocs->addCell(2000, ['noWrap' => false]);
+            $cStat->addText($d[1] ? 'Ada / Terlampir' : '-', ['size' => 8, 'bold' => $d[1], 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'lineHeight' => 1.15]);
+        }
 
         $section->addTextBreak(1);
         $this->addDocxFormSignature($section, $reportDateFormatted, strtoupper($applicantName), $birth->processed_by);
+
+        /* ---------------------------------------------------------------------
+         * HALAMAN 2: FORMULIR PELAPORAN KELAHIRAN (KODE F-2.02)
+         * --------------------------------------------------------------------- */
+        $section->addPageBreak();
+
+        $headP2 = $section->addTable($noBorder);
+        $headP2->addRow(null, ['cantSplit' => true]);
+        $cCode = $headP2->addCell(5000, ['noWrap' => false]);
+        $cCode->addText('Kode F-2.02', ['size' => 8.5, 'name' => 'Times New Roman', 'bold' => true]);
+        $cLabel2 = $headP2->addCell(4800, ['noWrap' => false]);
+        $cLabel2->addText('Formulir Pelaporan Kelahiran - Halaman 2', ['size' => 8, 'color' => '64748B', 'name' => 'Times New Roman'], ['alignment' => Jc::RIGHT]);
+
+        $section->addText('FORMULIR PELAPORAN KELAHIRAN', [
+            'name' => 'Times New Roman', 'size' => 11, 'bold' => true,
+        ], ['alignment' => Jc::CENTER, 'spaceBefore' => 60, 'spaceAfter' => 20]);
+        $section->addText('(Untuk Mendapatkan Akta Kelahiran)', [
+            'name' => 'Times New Roman', 'size' => 8.5, 'italic' => true,
+        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 20]);
+        $section->addText('PEMERINTAH KABUPATEN SLEMAN', [
+            'name' => 'Times New Roman', 'size' => 9.5, 'bold' => true,
+        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 80]);
+
+        $tableP2 = $section->addTable('BirthFormTable');
+        $rowsP2 = [
+            ['1', 'Nomor Kartu Keluarga (KK)', $birth->family_card_no ?: '-'],
+            ['2', 'Nama Kepala Keluarga', strtoupper($birth->father_name ?: ($birth->mother_name ?: $applicantName))],
+
+            ['BAYI / ANAK', '', true],
+            ['1', 'NIK', $birth->child_nik ?: '-'],
+            ['2', 'Nama Lengkap', strtoupper($birth->child_name)],
+            ['3', 'Jenis Kelamin', $genderText],
+            ['4', 'Tempat Dilahirkan', strtoupper($birth->birth_place ?: 'SLEMAN')],
+            ['5', 'Tempat Kelahiran (Kategori)', ($birth->birth_place_type ? strtoupper($birth->birth_place_type) : 'RUMAH / RS') . ' (1.RS/RB 2.Puskesmas 3.Polindes 4.Rumah 5.Lainnya)'],
+            ['6', 'Hari / Tgl, Bln, Thn Lahir', $childDobFormatted],
+            ['7', 'Waktu / Jam Kelahiran', ($birth->birth_time ?: '-') . ($birth->birth_time ? ' WIB' : '')],
+            ['8', 'Jenis Kelahiran', ($birth->birth_type ? strtoupper($birth->birth_type) : 'TUNGGAL') . ' (1.Tunggal 2.Kembar 2 3.Kembar 3 4.Kembar 4)'],
+            ['9', 'Kelahiran Ke', (string) ($birth->birth_order ?: '1')],
+            ['10', 'Penolong Kelahiran', ($birth->birth_helper ? strtoupper($birth->birth_helper) : 'DOKTER / BIDAN') . ' (1.Dokter 2.Bidan/Perawat 3.Dukun 4.Lainnya)'],
+            ['11', 'Berat & Panjang Bayi', 'Berat: ' . ($birth->weight_gram ?: ($birth->weight_kg ? $birth->weight_kg * 1000 : '-')) . ' gram | Panjang: ' . ($birth->length_cm ?: '-') . ' cm'],
+
+            ['IBU KANDUNG', '', true],
+            ['1', 'NIK', $birth->mother_nik ?: '-'],
+            ['2', 'Nama Lengkap', strtoupper($birth->mother_name ?: '-')],
+            ['3', 'Tempat & Tanggal Lahir / Umur', ($birth->mother_birth_date ? Carbon::parse($birth->mother_birth_date)->translatedFormat('d F Y') : '-') . ($birth->mother_age ? " • Umur: {$birth->mother_age} tahun" : '')],
+            ['4', 'Pekerjaan', $birth->mother_job ?: '-'],
+            ['5', 'Alamat (Sesuai KTP)', $birth->mother_address ?: ($applicantFullAddr ?: '-')],
+            ['6', 'Kewarganegaraan', $birth->mother_citizenship ?: 'WNI'],
+
+            ['AYAH KANDUNG', '', true],
+            ['1', 'NIK', $birth->father_nik ?: '-'],
+            ['2', 'Nama Lengkap', strtoupper($birth->father_name ?: '-')],
+            ['3', 'Tempat & Tanggal Lahir / Umur', ($birth->father_birth_date ? Carbon::parse($birth->father_birth_date)->translatedFormat('d F Y') : '-') . ($birth->father_age ? " • Umur: {$birth->father_age} tahun" : '')],
+            ['4', 'Pekerjaan', $birth->father_job ?: '-'],
+            ['5', 'Alamat (Sesuai KTP)', $birth->father_address ?: ($applicantFullAddr ?: '-')],
+            ['6', 'Kewarganegaraan', $birth->father_citizenship ?: 'WNI'],
+
+            ['PELAPOR', '', true],
+            ['1', 'NIK', $birth->applicant_nik ?: '-'],
+            ['2', 'Nama Lengkap', strtoupper($birth->applicant_name ?: '-')],
+            ['3', 'Umur / Pekerjaan', ($applicantAge ? "{$applicantAge} Tahun" : '-') . ' | ' . ($birth->applicant_job ?: '-')],
+            ['4', 'Alamat (Sesuai KTP)', $birth->applicant_address ?: $applicantFullAddr],
+            ['5', 'Tanggal Lapor', $reportDateFormatted],
+        ];
+
+        foreach ($rowsP2 as $row) {
+            $tableP2->addRow(null, ['cantSplit' => true]);
+            if (!empty($row[2]) && $row[2] === true) {
+                $c = $tableP2->addCell(9800, ['gridSpan' => 3, 'bgColor' => 'F1F5F9', 'noWrap' => false]);
+                $c->addText($row[0], ['bold' => true, 'size' => 8.5, 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+            } else {
+                $c1 = $tableP2->addCell(600, ['noWrap' => false]);
+                $c1->addText($row[0], ['size' => 8, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'lineHeight' => 1.15]);
+                $c2 = $tableP2->addCell(3400, ['noWrap' => false]);
+                $c2->addText($row[1], ['size' => 8, 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+                $c3 = $tableP2->addCell(5800, ['noWrap' => false]);
+                $c3->addText(': ' . $row[2], ['size' => 8, 'bold' => in_array($row[1], ['Nomor Kartu Keluarga (KK)', 'Nama Kepala Keluarga', 'Nama Lengkap Anak']), 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+            }
+        }
+
+        // Saksi I & II
+        $tableWitness = $section->addTable('BirthFormTable');
+        $tableWitness->addRow(null, ['cantSplit' => true]);
+        $hw1 = $tableWitness->addCell(4900, ['bgColor' => 'F1F5F9', 'noWrap' => false]);
+        $hw1->addText('SAKSI I', ['bold' => true, 'size' => 8.5, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'lineHeight' => 1.15]);
+        $hw2 = $tableWitness->addCell(4900, ['bgColor' => 'F1F5F9', 'noWrap' => false]);
+        $hw2->addText('SAKSI II', ['bold' => true, 'size' => 8.5, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'lineHeight' => 1.15]);
+
+        $tableWitness->addRow(null, ['cantSplit' => true]);
+        $cw1 = $tableWitness->addCell(4900, ['noWrap' => false]);
+        $cw1->addText('NIK                   : ' . ($birth->witness_1_nik ?: '-'), ['size' => 8, 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+        $cw1->addText('Nama Lengkap  : ' . strtoupper($birth->witness_1_name ?: '-'), ['size' => 8, 'bold' => true, 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+        $cw1->addText('Umur                : ' . ($w1Age ? "{$w1Age} Tahun" : '-'), ['size' => 8, 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+        $cw1->addText('Pekerjaan         : ' . ($birth->witness_1_job ?: '-'), ['size' => 8, 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+        $cw1->addText('Alamat              : ' . ($birth->witness_1_address ?: 'Purwobinangun, Pakem, Sleman'), ['size' => 8, 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+
+        $cw2 = $tableWitness->addCell(4900, ['noWrap' => false]);
+        $cw2->addText('NIK                   : ' . ($birth->witness_2_nik ?: '-'), ['size' => 8, 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+        $cw2->addText('Nama Lengkap  : ' . strtoupper($birth->witness_2_name ?: '-'), ['size' => 8, 'bold' => true, 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+        $cw2->addText('Umur                : ' . ($w2Age ? "{$w2Age} Tahun" : '-'), ['size' => 8, 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+        $cw2->addText('Pekerjaan         : ' . ($birth->witness_2_job ?: '-'), ['size' => 8, 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+        $cw2->addText('Alamat              : ' . ($birth->witness_2_address ?: 'Purwobinangun, Pakem, Sleman'), ['size' => 8, 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+
+        // Data Administrasi
+        $tableAdm = $section->addTable('BirthFormTable');
+        $tableAdm->addRow(null, ['cantSplit' => true]);
+        $cadm1 = $tableAdm->addCell(6800, ['noWrap' => false]);
+        $cadm1->addText('DATA ADMINISTRASI:', ['size' => 8, 'bold' => true, 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+        $cadm1->addText('Jenis Pelaporan: Permohonan Akta Kelahiran Baru', ['size' => 8, 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+        $cadm1->addText('Nama Petugas Register: ' . ($birth->processor ? $birth->processor->name : 'Petugas Registrasi'), ['size' => 8, 'name' => 'Times New Roman'], ['lineHeight' => 1.15]);
+
+        $cadm2 = $tableAdm->addCell(3000, ['noWrap' => false]);
+        $cadm2->addText('Paraf Petugas:', ['size' => 8, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'lineHeight' => 1.15]);
+        $cadm2->addText('', ['size' => 8], ['spaceAfter' => 200]);
+        $cadm2->addText('( .................... )', ['size' => 8, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'lineHeight' => 1.15]);
 
         /* ---------------------------------------------------------------------
          * HALAMAN TERAKHIR: SURAT KETERANGAN RESMI KALURAHAN PURWOBINANGUN
@@ -350,11 +492,12 @@ class CertificateExportService
 
         $skSig = $section->addTable($noBorder);
         $skSig->addRow(null, ['cantSplit' => true]);
-        $skSig->addCell(5300, ['noWrap' => false]);
-        $sigRight = $skSig->addCell(4500, ['noWrap' => false]);
-        $sigRight->addText('Purwobinangun, ' . $reportDateFormatted, ['size' => 10.5, 'name' => 'Times New Roman']);
+        $skSig->addCell(5000, ['noWrap' => false]);
+        $sigRight = $skSig->addCell(4800, ['noWrap' => false]);
+        $sigRight->addText('Purwobinangun, ' . $reportDateFormatted, ['size' => 10.5, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER]);
+        $sigRight->addText('a.n Lurah Purwobinangun', ['size' => 10.5, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER]);
         $sigRight->addText('', ['size' => 10], ['spaceAfter' => 520]);
-        $sigRight->addText('( .................................................... )', ['size' => 10.5, 'name' => 'Times New Roman']);
+        $sigRight->addText('( .................................................... )', ['size' => 10.5, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER]);
 
         $filename = 'Surat_Kelahiran_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $birth->registration_no) . '.docx';
 

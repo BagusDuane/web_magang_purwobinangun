@@ -244,7 +244,10 @@ class CertificateExportTest extends TestCase
             'signatureBase64' => '',
         ])->render();
 
-        $this->assertStringContainsString('FORMULIR PELAPORAN &amp; PERMOHONAN AKTA KELAHIRAN', $birthHtml);
+        $this->assertStringContainsString('PERMOHONAN AKTA KELAHIRAN', $birthHtml);
+        $this->assertStringContainsString('FORMULIR PELAPORAN KELAHIRAN', $birthHtml);
+        $this->assertStringContainsString('Kode F-2.02', $birthHtml);
+        $this->assertStringContainsString('DOKUMEN PERSYARATAN', $birthHtml);
         $this->assertStringContainsString('Ananda Rizky Purwobinangun', $birthHtml);
         $this->assertStringContainsString('SURAT KETERANGAN', $birthHtml);
         $this->assertStringContainsString('Nomor : 474.1/', $birthHtml);
@@ -252,8 +255,11 @@ class CertificateExportTest extends TestCase
         $this->assertStringContainsString('Mohon Akta Kelahiran untuk', $birthHtml);
         $this->assertStringContainsString('ANANDA RIZKY PURWOBINANGUN', $birthHtml);
         $this->assertStringContainsString('Purwobinangun,', $birthHtml);
+        $this->assertStringContainsString('a.n Lurah Purwobinangun', $birthHtml);
         $this->assertStringContainsString('( .................................................... )', $birthHtml);
         $this->assertStringNotContainsString('R. Heri Suasana', $birthHtml);
+        $this->assertStringNotContainsString('Kaur Tata Laksana', $birthHtml);
+        $this->assertStringNotContainsString('TEGUH KURNIAWAN', $birthHtml);
 
         $deathHtml = view('exports.pdf.death', [
             'death' => $this->death,
@@ -281,12 +287,19 @@ class CertificateExportTest extends TestCase
         $zipBirth->close();
         @unlink($tmpBirthDocx);
 
-        $this->assertStringContainsString('FORMULIR PELAPORAN &amp; PERMOHONAN AKTA KELAHIRAN', $birthDocXml);
+        $this->assertStringContainsString('PERMOHONAN AKTA KELAHIRAN', $birthDocXml);
+        $this->assertStringContainsString('FORMULIR PELAPORAN KELAHIRAN', $birthDocXml);
+        $this->assertStringContainsString('Kode F-2.02', $birthDocXml);
+        $this->assertStringContainsString('DOKUMEN PERSYARATAN', $birthDocXml);
         $this->assertStringContainsString('SURAT KETERANGAN', $birthDocXml);
         $this->assertStringContainsString('474.1/', $birthDocXml);
-        $this->assertStringContainsString('Mohon Akta Kelahiran untuk ANANDA RIZKY PURWOBINANGUN', $birthDocXml);
+        $this->assertStringContainsString('Mohon Akta Kelahiran untuk', $birthDocXml);
+        $this->assertStringContainsString('ANANDA RIZKY PURWOBINANGUN', $birthDocXml);
+        $this->assertStringContainsString('a.n Lurah Purwobinangun', $birthDocXml);
         $this->assertStringContainsString('( .................................................... )', $birthDocXml);
         $this->assertStringNotContainsString('R. Heri Suasana', $birthDocXml);
+        $this->assertStringNotContainsString('Kaur Tata Laksana', $birthDocXml);
+        $this->assertStringNotContainsString('TEGUH KURNIAWAN', $birthDocXml);
         $this->assertStringNotContainsString('<w:noWrap/>', $birthDocXml);
         $this->assertStringContainsString('<w:tblLayout w:type="fixed"/>', $birthDocXml);
         $this->assertStringContainsString('<w:cantSplit', $birthDocXml);
