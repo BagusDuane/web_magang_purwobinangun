@@ -159,31 +159,51 @@ class CertificateExportService
             : ($birth->weight_kg ? $birth->weight_kg . ' kg' : '-');
 
         /* ---------------------------------------------------------------------
-         * BAGIAN 1: FORMULIR DATA ISIAN PENGAJUAN AKTA KELAHIRAN
+         * HALAMAN 1: KOP SURAT & DATA KELUARGA / BIODATA BAYI (BAGIAN I & II)
          * --------------------------------------------------------------------- */
         $this->addDocxPurwobinangunKopSurat($section, 'puwobinangun@slemankab.go.id');
 
         $section->addText('FORMULIR PELAPORAN & PERMOHONAN AKTA KELAHIRAN', [
-            'name' => 'Times New Roman', 'size' => 11.5, 'bold' => true, 'underline' => 'single',
-        ], ['alignment' => Jc::CENTER, 'spaceBefore' => 40, 'spaceAfter' => 20]);
+            'name' => 'Times New Roman', 'size' => 12.5, 'bold' => true, 'underline' => 'single',
+        ], ['alignment' => Jc::CENTER, 'spaceBefore' => 80, 'spaceAfter' => 40]);
 
         $section->addText('Nomor Registrasi: ' . $birth->registration_no . '  |  Tanggal Lapor: ' . $reportDateFormatted, [
-            'name' => 'Times New Roman', 'size' => 8.5,
-        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 90]);
+            'name' => 'Times New Roman', 'size' => 9.5,
+        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 160]);
 
         $formTableStyle = [
             'borderColor'       => '334155',
             'borderSize'        => 4,
-            'cellMarginTop'     => 35,
-            'cellMarginBottom'  => 35,
-            'cellMarginLeft'    => 70,
-            'cellMarginRight'   => 70,
+            'cellMarginTop'     => 85,
+            'cellMarginBottom'  => 85,
+            'cellMarginLeft'    => 100,
+            'cellMarginRight'   => 100,
             'layout'            => WordTableStyle::LAYOUT_FIXED,
         ];
         $phpWord->addTableStyle('BirthFormTable', $formTableStyle);
-        $table = $section->addTable('BirthFormTable');
 
-        $rows = [
+        $renderBirthTableRows = function ($tableObj, array $items): void {
+            foreach ($items as $item) {
+                $tableObj->addRow(null, ['cantSplit' => true]);
+                if (!empty($item[2])) {
+                    $cell = $tableObj->addCell(9800, ['gridSpan' => 2, 'bgColor' => 'E2E8F0', 'noWrap' => false]);
+                    $cell->addText($item[0], ['bold' => true, 'color' => '0F172A', 'size' => 9.5, 'name' => 'Times New Roman'], ['lineHeight' => 1.25]);
+                } else {
+                    $c1 = $tableObj->addCell(3400, ['noWrap' => false]);
+                    $c1->addText($item[0], ['size' => 9.5, 'name' => 'Times New Roman'], ['lineHeight' => 1.25]);
+                    $c2 = $tableObj->addCell(6400, ['noWrap' => false]);
+                    if (is_array($item[1])) {
+                        $c2->addText($item[1][0], ['size' => 9.5, 'bold' => true, 'name' => 'Times New Roman'], ['lineHeight' => 1.25, 'spaceAfter' => 30]);
+                        $c2->addText($item[1][1], ['size' => 9, 'name' => 'Times New Roman'], ['lineHeight' => 1.25]);
+                    } else {
+                        $c2->addText((string) $item[1], ['size' => 9.5, 'bold' => true, 'name' => 'Times New Roman'], ['lineHeight' => 1.25]);
+                    }
+                }
+            }
+        };
+
+        $tablePage1 = $section->addTable('BirthFormTable');
+        $rowsPage1 = [
             ['I. DATA KELUARGA & PENDAFTARAN', '', true],
             ['Nomor Registrasi', $birth->registration_no],
             ['Nomor Kartu Keluarga (KK)', $birth->family_card_no ?: '-'],
@@ -198,7 +218,16 @@ class CertificateExportService
             ['Jenis Kelahiran / Kelahiran Anak Ke', ($birth->birth_type ?: 'Tunggal') . ' / Anak ke-' . ($birth->birth_order ?: '1')],
             ['Penolong Kelahiran', $birth->birth_helper ?: '-'],
             ['Berat & Panjang Bayi', $weightStr . ' / ' . ($birth->length_cm ? $birth->length_cm . ' cm' : '-')],
+        ];
+        $renderBirthTableRows($tablePage1, $rowsPage1);
 
+        /* ---------------------------------------------------------------------
+         * HALAMAN 2: DATA ORANG TUA, PELAPOR & SAKSI (BAGIAN III & IV)
+         * --------------------------------------------------------------------- */
+        $section->addPageBreak();
+
+        $tablePage2 = $section->addTable('BirthFormTable');
+        $rowsPage2 = [
             ['III. DATA KEDUA ORANG TUA KANDUNG', '', true],
             ['Nama Lengkap & NIK Ayah', strtoupper($birth->father_name ?: '-') . ' (' . ($birth->father_nik ?: '-') . ')'],
             ['Tgl Lahir / Umur & Pekerjaan Ayah', ($birth->father_birth_date ? $birth->father_birth_date->translatedFormat('d F Y') : '-') . ($fatherAgeVal !== null ? " ({$fatherAgeVal} th)" : '') . ' — ' . ($birth->father_job ?: '-') . ' (' . ($birth->father_citizenship ?: 'WNI') . ')'],
@@ -215,25 +244,9 @@ class CertificateExportService
             ['Saksi I (Nama / NIK / Umur / Pekerjaan)', [strtoupper($birth->witness_1_name ?: '-') . ' / ' . ($birth->witness_1_nik ?: '-') . ($w1AgeVal !== null ? " / {$w1AgeVal} th" : '') . ($birth->witness_1_job ? ' / ' . $birth->witness_1_job : ''), 'Alamat: ' . $witness1FullAddr]],
             ['Saksi II (Nama / NIK / Umur / Pekerjaan)', [strtoupper($birth->witness_2_name ?: '-') . ' / ' . ($birth->witness_2_nik ?: '-') . ($w2AgeVal !== null ? " / {$w2AgeVal} th" : '') . ($birth->witness_2_job ? ' / ' . $birth->witness_2_job : ''), 'Alamat: ' . $witness2FullAddr]],
         ];
+        $renderBirthTableRows($tablePage2, $rowsPage2);
 
-        foreach ($rows as $item) {
-            $table->addRow(null, ['cantSplit' => true]);
-            if (!empty($item[2])) {
-                $cell = $table->addCell(9800, ['gridSpan' => 2, 'bgColor' => 'E2E8F0', 'noWrap' => false]);
-                $cell->addText($item[0], ['bold' => true, 'color' => '0F172A', 'size' => 8.5, 'name' => 'Times New Roman']);
-            } else {
-                $c1 = $table->addCell(3300, ['noWrap' => false]);
-                $c1->addText($item[0], ['size' => 8.5, 'name' => 'Times New Roman']);
-                $c2 = $table->addCell(6500, ['noWrap' => false]);
-                if (is_array($item[1])) {
-                    $c2->addText($item[1][0], ['size' => 8.5, 'bold' => true, 'name' => 'Times New Roman']);
-                    $c2->addText($item[1][1], ['size' => 8.2, 'name' => 'Times New Roman']);
-                } else {
-                    $c2->addText((string) $item[1], ['size' => 8.5, 'bold' => true, 'name' => 'Times New Roman']);
-                }
-            }
-        }
-
+        $section->addTextBreak(1);
         $this->addDocxFormSignature($section, $reportDateFormatted, strtoupper($applicantName), $birth->processed_by);
 
         /* ---------------------------------------------------------------------

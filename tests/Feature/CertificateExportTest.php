@@ -335,7 +335,7 @@ class CertificateExportTest extends TestCase
             'signatureBase64' => '',
         ])->setPaper('a4', 'portrait');
         $pdfBirth->render();
-        $this->assertSame(2, $pdfBirth->getCanvas()->get_page_count());
+        $this->assertSame(3, $pdfBirth->getCanvas()->get_page_count());
 
         $pdfDeath = \Barryvdh\DomPDF\Facade\Pdf::loadView('exports.pdf.death', [
             'death' => $this->death,

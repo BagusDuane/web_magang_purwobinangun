@@ -74,28 +74,28 @@
         }
         .doc-title {
             text-align: center;
-            margin: 6px 0 10px 0;
+            margin: 10px 0 14px 0;
         }
         .doc-title h1 {
-            font-size: 12pt;
+            font-size: 12.5pt;
             font-weight: bold;
             text-decoration: underline;
             margin: 0;
             text-transform: uppercase;
         }
         .doc-title p {
-            font-size: 9pt;
-            margin: 3px 0 0 0;
+            font-size: 9.5pt;
+            margin: 4px 0 0 0;
         }
         .content-table {
             width: 100%;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
         }
         .content-table td {
-            padding: 3.5px 6px;
+            padding: 6.5px 9px;
             vertical-align: top;
-            font-size: 9pt;
-            line-height: 1.3;
+            font-size: 9.8pt;
+            line-height: 1.45;
             border: 1px solid #334155;
             word-wrap: break-word;
             overflow-wrap: break-word;
@@ -105,29 +105,31 @@
             font-weight: bold;
             color: #0f172a;
             text-transform: uppercase;
-            font-size: 8.5pt;
-            padding: 4px 6px;
+            font-size: 9.2pt;
+            padding: 6px 9px;
+            letter-spacing: 0.2px;
         }
         .label-col {
-            width: 34%;
+            width: 35%;
         }
         .val-col {
-            width: 66%;
+            width: 65%;
             font-weight: bold;
         }
         .sig-table {
             width: 100%;
-            margin-top: 10px;
+            margin-top: 24px;
             page-break-inside: avoid;
         }
         .sig-table td {
             width: 50%;
             text-align: center;
             vertical-align: top;
-            font-size: 9.5pt;
+            font-size: 10pt;
+            line-height: 1.45;
         }
         .sig-space {
-            height: 46px;
+            height: 54px;
         }
         .page-break {
             page-break-before: always;
@@ -341,7 +343,14 @@
                 <td class="label-col">Berat &amp; Panjang Bayi</td>
                 <td class="val-col">{{ $weightStr }} / {{ $birth->length_cm ? $birth->length_cm . ' cm' : '-' }}</td>
             </tr>
+        </table>
+    </div>
 
+    <!-- =========================================================================
+         HALAMAN 2: DATA ORANG TUA, PELAPOR & SAKSI KELAHIRAN
+    ========================================================================== -->
+    <div class="page-break">
+        <table class="content-table">
             <!-- III. DATA KEDUA ORANG TUA -->
             <tr class="section-header">
                 <td colspan="2">III. DATA KEDUA ORANG TUA KANDUNG</td>
@@ -414,7 +423,7 @@
                     <strong>Pemohon / Pelapor,</strong>
                     <div class="sig-space">
                         @if(!empty($signatureBase64))
-                            <img src="{{ $signatureBase64 }}" alt="Tanda Tangan Pelapor" style="height: 38px; width: auto;">
+                            <img src="{{ $signatureBase64 }}" alt="Tanda Tangan Pelapor" style="height: 46px; width: auto;">
                         @endif
                     </div>
                     <u><strong>( {{ strtoupper($applicantName) }} )</strong></u>
