@@ -730,13 +730,13 @@ class CertificateExportService
 
         $deceasedAge = null;
         if ($death->birth_date && $death->death_date) {
-            $deceasedAge = (int) $death->birth_date->diffInYears($death->death_date);
+            $deceasedAge = abs((int) $death->birth_date->diffInYears($death->death_date));
         } elseif ($death->birth_date) {
-            $deceasedAge = (int) $death->birth_date->diffInYears(now());
+            $deceasedAge = abs((int) $death->birth_date->diffInYears(now()));
         }
 
-        $motherAge = $death->mother_birth_date ? (int) $death->mother_birth_date->diffInYears($death->death_date ?? now()) : null;
-        $fatherAge = $death->father_birth_date ? (int) $death->father_birth_date->diffInYears($death->death_date ?? now()) : null;
+        $motherAge = $death->mother_birth_date ? abs((int) $death->mother_birth_date->diffInYears($death->death_date ?? now())) : null;
+        $fatherAge = $death->father_birth_date ? abs((int) $death->father_birth_date->diffInYears($death->death_date ?? now())) : null;
 
         $genderText = $death->gender === 'L' ? 'LAKI - LAKI' : ($death->gender === 'P' ? 'PEREMPUAN' : '-');
         $deceasedFullAddress = $death->deceased_address ?: (
@@ -763,6 +763,8 @@ class CertificateExportService
             }
             return $base ?: '';
         };
+
+        $childOrderFormatted = $this->formatChildOrder($death->deceased_child_order);
 
         $motherBirth = $formatBirthAndAge($death->mother_birth_place, $death->mother_birth_date, $motherAge);
         $fatherBirth = $formatBirthAndAge($death->father_birth_place, $death->father_birth_date, $fatherAge);
@@ -807,7 +809,7 @@ class CertificateExportService
             ['II. BIODATA LENGKAP JENAZAH', '', true],
             ['NIK Jenazah', $death->deceased_nik ?: '-'],
             ['Nama Lengkap Jenazah', strtoupper($death->deceased_name ?: '-')],
-            ['Jenis Kelamin / Anak Ke', $genderText . ($death->deceased_child_order ? ' / Anak ke-' . $death->deceased_child_order : '')],
+            ['Jenis Kelamin / Anak Ke', $genderText . ($childOrderFormatted ? ' / ' . $childOrderFormatted : '')],
             ['Tempat, Tanggal Lahir / Umur', strtoupper($death->deceased_birth_place ?: 'SLEMAN') . ', ' . ($death->birth_date ? $death->birth_date->translatedFormat('d F Y') : '-') . ($deceasedAge !== null ? " ({$deceasedAge} Tahun)" : '')],
             ['Agama & Pekerjaan', strtoupper($death->religion ?: '-') . ' — ' . strtoupper($death->deceased_job ?: '-')],
             ['Alamat Lengkap Jenazah', strtoupper($deceasedFullAddress)],
@@ -902,8 +904,8 @@ class CertificateExportService
             }
             $table->addCell(200, ['noWrap' => false])->addText(':', ['size' => 9.5, 'name' => 'Times New Roman']);
             if ($valRight !== null) {
-                $table->addCell(4100, ['noWrap' => false])->addText($val, ['size' => 9.5, 'name' => 'Times New Roman']);
-                $table->addCell(2100, ['noWrap' => false])->addText($valRight, ['size' => 9.5, 'name' => 'Times New Roman'], ['alignment' => Jc::RIGHT]);
+                $table->addCell(3500, ['noWrap' => false])->addText($val, ['size' => 9.5, 'name' => 'Times New Roman']);
+                $table->addCell(2700, ['noWrap' => false])->addText($valRight, ['size' => 9.5, 'name' => 'Times New Roman']);
             } else {
                 $table->addCell(6200, ['gridSpan' => 2, 'noWrap' => false])->addText($val, ['size' => 9.5, 'name' => 'Times New Roman']);
             }
@@ -911,9 +913,9 @@ class CertificateExportService
 
         $addDocxRow($jTable, '1', 'NIK', $death->deceased_nik ?: '-');
         $addDocxRow($jTable, '2', 'Nama Lengkap', strtoupper($death->deceased_name ?: '-'));
-        $addDocxRow($jTable, '3', 'Jenis Kelamin / Anak ke', $genderText, 'Anak ke ' . ($death->deceased_child_order ?: ''));
+        $addDocxRow($jTable, '3', 'Jenis Kelamin / Anak ke', $genderText . ($childOrderFormatted ? ' / ' . $childOrderFormatted : ''));
         $deceasedBirthStr = strtoupper($death->deceased_birth_place ?: 'SLEMAN') . ', ' . ($death->birth_date ? $death->birth_date->format('d-m-Y') : '-');
-        $addDocxRow($jTable, '4', ['Tempat dan Tanggal Lahir /', 'Umur'], $deceasedBirthStr, 'Umur ' . ($deceasedAge !== null ? $deceasedAge . ' th' : '-'));
+        $addDocxRow($jTable, '4', 'Tempat, Tanggal Lahir / Umur', $deceasedBirthStr, 'Umur ' . ($deceasedAge !== null ? $deceasedAge . ' th' : '-'));
         $addDocxRow($jTable, '5', 'Agama', strtoupper($death->religion ?: '-'));
         $addDocxRow($jTable, '6', 'Pekerjaan', strtoupper($death->deceased_job ?: '-'));
         $addDocxRow($jTable, '7', 'Alamat', strtoupper($deceasedFullAddress));
@@ -933,7 +935,7 @@ class CertificateExportService
             $table = $section->addTable($borderlessTableStyle);
             $addDocxRow($table, '1', 'NIK', $nik ?: $dotsPlaceholder);
             $addDocxRow($table, '2', 'Nama Lengkap', $name ? strtoupper($name) : $dotsPlaceholder);
-            $addDocxRow($table, '3', ['Tempat dan Tanggal Lahir /', 'Umur'], $birth ? strtoupper($birth) : $dotsPlaceholder);
+            $addDocxRow($table, '3', 'Tempat, Tanggal Lahir / Umur', $birth ? strtoupper($birth) : $dotsPlaceholder);
             $addDocxRow($table, '4', 'Alamat', $address ? strtoupper($address) : $dotsPlaceholder);
         };
 
@@ -1003,13 +1005,13 @@ class CertificateExportService
 
         $deceasedAge = null;
         if ($death->birth_date && $death->death_date) {
-            $deceasedAge = (int) $death->birth_date->diffInYears($death->death_date);
+            $deceasedAge = abs((int) $death->birth_date->diffInYears($death->death_date));
         } elseif ($death->birth_date) {
-            $deceasedAge = (int) $death->birth_date->diffInYears(now());
+            $deceasedAge = abs((int) $death->birth_date->diffInYears(now()));
         }
 
-        $motherAge = $death->mother_birth_date ? (int) $death->mother_birth_date->diffInYears($death->death_date ?? now()) : null;
-        $fatherAge = $death->father_birth_date ? (int) $death->father_birth_date->diffInYears($death->death_date ?? now()) : null;
+        $motherAge = $death->mother_birth_date ? abs((int) $death->mother_birth_date->diffInYears($death->death_date ?? now())) : null;
+        $fatherAge = $death->father_birth_date ? abs((int) $death->father_birth_date->diffInYears($death->death_date ?? now())) : null;
 
         $deathDateFormatted = $death->death_date ? ($death->death_day ? strtoupper($death->death_day) . ', ' : '') . $death->death_date->translatedFormat('d F Y') : '-';
         $deceasedFullAddress = $death->deceased_address ?: ('Padukuhan ' . ($death->padukuhan ?: '-') . ', RT ' . ($death->rt ?: '-') . ' / RW ' . ($death->rw ?: '-') . ', Purwobinangun, Pakem, Sleman');
@@ -1029,6 +1031,7 @@ class CertificateExportService
             return $str;
         };
 
+        $childOrderFormatted = $this->formatChildOrder($death->deceased_child_order);
         $witness1Nik = $death->witness1_nik ?: ($death->witness_nik ?: '-');
         $witness1Name = $death->witness1_name ?: ($death->witness_name ?: '-');
 
@@ -1044,7 +1047,7 @@ class CertificateExportService
             ['section' => 'II. DATA JENAZAH (YANG MENINGGAL)'],
             ['7', 'NIK Jenazah', $death->deceased_nik ?: '-'],
             ['8', 'Nama Lengkap Jenazah', strtoupper($death->deceased_name ?: '-')],
-            ['9', 'Jenis Kelamin / Anak Ke', ($death->gender === 'L' ? 'LAKI-LAKI' : ($death->gender === 'P' ? 'PEREMPUAN' : '-')) . ($death->deceased_child_order ? ' / Anak ke-' . $death->deceased_child_order : '')],
+            ['9', 'Jenis Kelamin / Anak Ke', ($death->gender === 'L' ? 'LAKI-LAKI' : ($death->gender === 'P' ? 'PEREMPUAN' : '-')) . ($childOrderFormatted ? ' / ' . $childOrderFormatted : '')],
             ['10', 'Tempat, Tanggal Lahir / Umur', $formatBirthInfo($death->deceased_birth_place ?: 'Sleman', $death->birth_date, $deceasedAge)],
             ['11', 'Agama', strtoupper($death->religion ?: '-')],
             ['12', 'Pekerjaan', strtoupper($death->deceased_job ?: '-')],
@@ -1243,5 +1246,35 @@ class CertificateExportService
         $c2->addText('Purwobinangun, ' . $dateFormatted, ['size' => 9.5, 'name' => 'Times New Roman'], ['spaceBefore' => 140]);
         $c2->addText('', ['size' => 9.5], ['spaceAfter' => 500]);
         $c2->addText('( .................................................... )', ['size' => 9.5, 'name' => 'Times New Roman']);
+    }
+
+    private function formatChildOrder($order): string
+    {
+        if ($order === null || $order === '') {
+            return '';
+        }
+        $words = [
+            1 => 'Satu', 2 => 'Dua', 3 => 'Tiga', 4 => 'Empat', 5 => 'Lima',
+            6 => 'Enam', 7 => 'Tujuh', 8 => 'Delapan', 9 => 'Sembilan', 10 => 'Sepuluh',
+            11 => 'Sebelas', 12 => 'Dua Belas', 13 => 'Tiga Belas', 14 => 'Empat Belas', 15 => 'Lima Belas',
+        ];
+        $str = trim((string) $order);
+        if (preg_match('/^(\d+)\s*\((.*?)\)$/i', $str)) {
+            return $str;
+        }
+        if (is_numeric($str)) {
+            $num = (int) $str;
+            return isset($words[$num]) ? "{$num} ({$words[$num]})" : (string) $num;
+        }
+        foreach ($words as $n => $w) {
+            if (strcasecmp($str, $w) === 0) {
+                return "{$n} ({$w})";
+            }
+        }
+        if (preg_match('/\b(\d+)\b/', $str, $m)) {
+            $num = (int) $m[1];
+            return isset($words[$num]) ? "{$num} ({$words[$num]})" : $str;
+        }
+        return $str;
     }
 }

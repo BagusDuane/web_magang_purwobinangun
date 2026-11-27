@@ -261,12 +261,14 @@ class CertificateExportTest extends TestCase
         $this->assertStringNotContainsString('Kaur Tata Laksana', $birthHtml);
         $this->assertStringNotContainsString('TEGUH KURNIAWAN', $birthHtml);
 
+        $this->death->update(['deceased_child_order' => 1]);
         $deathHtml = view('exports.pdf.death', [
             'death' => $this->death,
             'logoBase64' => '',
             'aksaraBase64' => '',
         ])->render();
 
+        $this->assertStringContainsString('LAKI - LAKI / 1 (Satu)', $deathHtml);
         $this->assertStringContainsString('FORMULIR PELAPORAN &amp; PERMOHONAN AKTA KEMATIAN', $deathHtml);
         $this->assertStringContainsString('Mbah Mulyo Santoso', $deathHtml);
         $this->assertStringContainsString('SURAT KETERANGAN KEMATIAN', $deathHtml);
@@ -320,6 +322,7 @@ class CertificateExportTest extends TestCase
         $this->assertStringContainsString('SURAT KETERANGAN KEMATIAN', $deathDocXml);
         $this->assertStringContainsString('474.3/', $deathDocXml);
         $this->assertStringContainsString('MBAH MULYO SANTOSO', $deathDocXml);
+        $this->assertStringContainsString('LAKI - LAKI / 1 (Satu)', $deathDocXml);
         $this->assertStringContainsString('Umur 81 th', $deathDocXml);
         $this->assertStringContainsString('Purwobinangun,', $deathDocXml);
         $this->assertStringContainsString('( .................................................... )', $deathDocXml);

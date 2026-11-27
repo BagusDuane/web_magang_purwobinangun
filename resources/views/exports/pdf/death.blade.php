@@ -197,13 +197,13 @@
 
         $deceasedAge = null;
         if ($death->birth_date && $death->death_date) {
-            $deceasedAge = (int) $death->birth_date->diffInYears($death->death_date);
+            $deceasedAge = abs((int) $death->birth_date->diffInYears($death->death_date));
         } elseif ($death->birth_date) {
-            $deceasedAge = (int) $death->birth_date->diffInYears(now());
+            $deceasedAge = abs((int) $death->birth_date->diffInYears(now()));
         }
 
-        $motherAge = $death->mother_birth_date ? (int) $death->mother_birth_date->diffInYears($death->death_date ?? now()) : null;
-        $fatherAge = $death->father_birth_date ? (int) $death->father_birth_date->diffInYears($death->death_date ?? now()) : null;
+        $motherAge = $death->mother_birth_date ? abs((int) $death->mother_birth_date->diffInYears($death->death_date ?? now())) : null;
+        $fatherAge = $death->father_birth_date ? abs((int) $death->father_birth_date->diffInYears($death->death_date ?? now())) : null;
 
         $genderText = $death->gender === 'L' ? 'LAKI - LAKI' : ($death->gender === 'P' ? 'PEREMPUAN' : '-');
         $deceasedFullAddress = $death->deceased_address ?: (
@@ -239,6 +239,31 @@
 
         $witness1Nik = $death->witness1_nik ?: ($death->witness_nik ?: '');
         $witness1Name = $death->witness1_name ?: ($death->witness_name ?: '');
+
+        $formatChildOrder = function ($order): string {
+            if ($order === null || $order === '') {
+                return '';
+            }
+            $words = [
+                1 => 'Satu', 2 => 'Dua', 3 => 'Tiga', 4 => 'Empat', 5 => 'Lima',
+                6 => 'Enam', 7 => 'Tujuh', 8 => 'Delapan', 9 => 'Sembilan', 10 => 'Sepuluh',
+                11 => 'Sebelas', 12 => 'Dua Belas', 13 => 'Tiga Belas', 14 => 'Empat Belas', 15 => 'Lima Belas',
+            ];
+            $str = trim((string) $order);
+            if (preg_match('/^(\d+)\s*\((.*?)\)$/i', $str)) {
+                return $str;
+            }
+            if (is_numeric($str)) {
+                $num = (int) $str;
+                return isset($words[$num]) ? "{$num} ({$words[$num]})" : (string) $num;
+            }
+            if (preg_match('/\b(\d+)\b/', $str, $m)) {
+                $num = (int) $m[1];
+                return isset($words[$num]) ? "{$num} ({$words[$num]})" : $str;
+            }
+            return $str;
+        };
+        $childOrderFormatted = $formatChildOrder($death->deceased_child_order);
     @endphp
 
     <!-- =========================================================================
@@ -307,7 +332,7 @@
             </tr>
             <tr>
                 <td class="label-col">Jenis Kelamin / Anak Ke</td>
-                <td class="val-col">{{ $genderText }}{{ $death->deceased_child_order ? ' / Anak ke-' . $death->deceased_child_order : '' }}</td>
+                <td class="val-col">{{ $genderText }}{{ $childOrderFormatted ? ' / ' . $childOrderFormatted : '' }}</td>
             </tr>
             <tr>
                 <td class="label-col">Tempat, Tanggal Lahir / Umur</td>
@@ -471,27 +496,13 @@
                 <td class="col-num">3</td>
                 <td class="col-label">Jenis Kelamin / Anak ke</td>
                 <td class="col-colon">:</td>
-                <td class="col-val">
-                    <table style="width: 100%;">
-                        <tr>
-                            <td style="width: 68%; padding: 0;">{{ $genderText }}</td>
-                            <td style="width: 32%; padding: 0; text-align: right;">Anak ke {{ $death->deceased_child_order ?: '' }}</td>
-                        </tr>
-                    </table>
-                </td>
+                <td class="col-val">{{ $genderText }}{{ $childOrderFormatted ? ' / ' . $childOrderFormatted : '' }}</td>
             </tr>
             <tr>
                 <td class="col-num">4</td>
-                <td class="col-label">Tempat dan Tanggal Lahir /<br>Umur</td>
+                <td class="col-label">Tempat dan Tanggal Lahir / Umur</td>
                 <td class="col-colon">:</td>
-                <td class="col-val">
-                    <table style="width: 100%;">
-                        <tr>
-                            <td style="width: 68%; padding: 0;" class="uppercase">{{ $death->deceased_birth_place ?: 'SLEMAN' }}, {{ $death->birth_date ? $death->birth_date->format('d-m-Y') : '-' }}</td>
-                            <td style="width: 32%; padding: 0; text-align: right;">Umur {{ $deceasedAge !== null ? $deceasedAge . ' th' : '-' }}</td>
-                        </tr>
-                    </table>
-                </td>
+                <td class="col-val">{{ ucwords(strtolower($death->deceased_birth_place ?: 'Sleman')) }}, {{ $death->birth_date ? $death->birth_date->format('d - m - Y') : '-' }}{{ $deceasedAge !== null ? ' / ' . $deceasedAge . ' tahun' : '' }}</td>
             </tr>
             <tr>
                 <td class="col-num">5</td>
@@ -516,10 +527,10 @@
                 <td class="col-label">Tanggal dan Jam Kematian</td>
                 <td class="col-colon">:</td>
                 <td class="col-val">
-                    <table style="width: 100%;">
+                    <table style="width: 100%; border-collapse: collapse;">
                         <tr>
-                            <td style="width: 60%; padding: 0;">{{ $death->death_date ? $death->death_date->format('d-m-Y') : '-' }}</td>
-                            <td style="width: 40%; padding: 0; text-align: right;">Jam: {{ $death->death_time ? str_replace(':', '.', $death->death_time) . ' WIB' : '-' }}</td>
+                            <td style="width: 55%; padding: 0;">{{ $death->death_date ? $death->death_date->format('d-m-Y') : '-' }}</td>
+                            <td style="width: 45%; padding: 0;">Jam: {{ $death->death_time ? str_replace(':', '.', $death->death_time) . ' WIB' : '-' }}</td>
                         </tr>
                     </table>
                 </td>
@@ -563,7 +574,7 @@
                 </tr>
                 <tr>
                     <td class="col-num">3</td>
-                    <td class="col-label">Tempat dan Tanggal Lahir /<br>Umur</td>
+                    <td class="col-label">Tempat, Tanggal Lahir / Umur</td>
                     <td class="col-colon">:</td>
                     <td class="col-val uppercase">{{ $motherBirth ?: $dotsPlaceholder }}</td>
                 </tr>
@@ -592,7 +603,7 @@
                 </tr>
                 <tr>
                     <td class="col-num">3</td>
-                    <td class="col-label">Tempat dan Tanggal Lahir /<br>Umur</td>
+                    <td class="col-label">Tempat, Tanggal Lahir / Umur</td>
                     <td class="col-colon">:</td>
                     <td class="col-val uppercase">{{ $fatherBirth ?: $dotsPlaceholder }}</td>
                 </tr>
@@ -621,7 +632,7 @@
                 </tr>
                 <tr>
                     <td class="col-num">3</td>
-                    <td class="col-label">Tempat dan Tanggal Lahir /<br>Umur</td>
+                    <td class="col-label">Tempat, Tanggal Lahir / Umur</td>
                     <td class="col-colon">:</td>
                     <td class="col-val uppercase">{{ $applicantBirth ?: $dotsPlaceholder }}</td>
                 </tr>
@@ -650,7 +661,7 @@
                 </tr>
                 <tr>
                     <td class="col-num">3</td>
-                    <td class="col-label">Tempat dan Tanggal Lahir /<br>Umur</td>
+                    <td class="col-label">Tempat, Tanggal Lahir / Umur</td>
                     <td class="col-colon">:</td>
                     <td class="col-val uppercase">{{ $witness1Birth ?: $dotsPlaceholder }}</td>
                 </tr>
@@ -679,7 +690,7 @@
                 </tr>
                 <tr>
                     <td class="col-num">3</td>
-                    <td class="col-label">Tempat dan Tanggal Lahir /<br>Umur</td>
+                    <td class="col-label">Tempat, Tanggal Lahir / Umur</td>
                     <td class="col-colon">:</td>
                     <td class="col-val uppercase">{{ $witness2Birth ?: $dotsPlaceholder }}</td>
                 </tr>
