@@ -223,8 +223,8 @@
 
                             <!-- Kolom 4: Keterangan Aktivitas -->
                             <td class="py-3.5 px-4 align-top border-r border-slate-200">
-                                <p class="text-xs font-semibold text-slate-800 leading-relaxed">
-                                    {{ $log->description }}
+                                <p class="text-xs font-bold text-slate-800">
+                                    {{ $log->title ?: ($log->action_label ?: $log->description) }}
                                 </p>
 
                                 @if($log->reference_no)
@@ -234,21 +234,6 @@
                                             {{ $log->reference_no }}
                                         </span>
                                     </div>
-                                @endif
-
-                                @if(!empty($log->metadata) && is_array($log->metadata))
-                                    <details class="mt-1.5 text-[11px] text-slate-500 cursor-pointer">
-                                        <summary class="hover:text-[#0b7c89] select-none text-[10px] uppercase font-bold tracking-wider text-slate-400">
-                                            Rincian Tambahan
-                                        </summary>
-                                        <div class="bg-slate-50 border border-slate-200 rounded p-2 mt-1 space-y-0.5 font-mono text-[10px] text-slate-600">
-                                            @foreach($log->metadata as $key => $val)
-                                                @if(is_scalar($val) && !in_array($key, ['ip_address', 'user_agent']))
-                                                    <div><strong class="text-slate-700">{{ str_replace('_', ' ', $key) }}:</strong> {{ $val }}</div>
-                                                @endif
-                                            @endforeach
-                                        </div>
-                                    </details>
                                 @endif
                             </td>
 

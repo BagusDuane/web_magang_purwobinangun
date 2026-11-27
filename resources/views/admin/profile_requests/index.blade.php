@@ -138,9 +138,18 @@
                                     </span>
                                 </td>
                                 <td class="px-4 py-3.5 text-center">
-                                    <a href="{{ route('admin.profile_requests.show', $req) }}" class="inline-flex items-center gap-1 bg-[#0b7c89] hover:bg-[#065b65] text-white font-bold text-[11px] px-3 py-1.5 rounded-lg transition shadow-2xs" title="Periksa Komparasi & Verifikasi">
-                                        <i class="fa-solid fa-eye"></i> Periksa Data
-                                    </a>
+                                    <div class="flex items-center justify-center gap-1.5">
+                                        <a href="{{ route('admin.profile_requests.show', $req) }}" class="inline-flex items-center gap-1 bg-[#0b7c89] hover:bg-[#065b65] text-white font-bold text-[11px] px-3 py-1.5 rounded-lg transition shadow-2xs" title="Periksa Komparasi & Verifikasi">
+                                            <i class="fa-solid fa-eye"></i> Periksa Data
+                                        </a>
+                                        <form action="{{ route('admin.profile_requests.destroy', $req) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin MENGHAPUS permohonan perubahan data warga ({{ $req->name }}) ini?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="inline-flex items-center gap-1 bg-rose-600 hover:bg-rose-700 text-white font-bold text-[11px] px-2.5 py-1.5 rounded-lg transition shadow-2xs cursor-pointer" title="Hapus Permohonan">
+                                                <i class="fa-solid fa-trash-can"></i> Hapus
+                                            </button>
+                                        </form>
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach

@@ -11,10 +11,17 @@
         <a href="{{ route('admin.profile_requests.index') }}" class="inline-flex items-center gap-2 text-xs font-bold text-[#0b7c89] hover:underline bg-white px-3.5 py-2 rounded-xl border border-slate-200 shadow-2xs">
             <i class="fa-solid fa-arrow-left"></i> Kembali ke Daftar Pengajuan
         </a>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-wrap">
             <a href="{{ route('admin.citizens.show', $user) }}" class="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 px-3 py-1.5 rounded-xl shadow-2xs transition">
                 <i class="fa-solid fa-user"></i> Lihat Profil Akun Warga
             </a>
+            <form action="{{ route('admin.profile_requests.destroy', $profileRequest) }}" method="POST" class="inline" onsubmit="return confirm('Apakah Anda yakin ingin MENGHAPUS permohonan perubahan data warga ({{ $profileRequest->name }}) ini?');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="inline-flex items-center gap-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 px-3 py-1.5 rounded-xl shadow-2xs transition cursor-pointer" title="Hapus Permohonan">
+                    <i class="fa-solid fa-trash-can"></i> Hapus Permohonan
+                </button>
+            </form>
             <span class="text-xs text-slate-500">Status Pengajuan:</span>
             <span class="inline-block text-xs font-bold px-3 py-1 rounded-full border {{ $profileRequest->status_badge_class }}">
                 {{ $profileRequest->status_label }}

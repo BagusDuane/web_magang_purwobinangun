@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class AdminProfileRequestController extends Controller
 {
@@ -216,5 +217,44 @@ class AdminProfileRequestController extends Controller
             return redirect()->route('admin.profile_requests.show', $profileRequest)
                 ->with('success', 'Permohonan perubahan data warga (' . $profileRequest->name . ') telah ditolak dengan catatan yang diberikan.');
         }
+    }
+
+    public function destroy(ProfileUpdateRequest $profileRequest)
+    {
+        $applicantName = $profileRequest->name;
+        $requestNik = $profileRequest->nik;
+        $familyCardNo = $profileRequest->family_card_no;
+        $adminUser = Auth::user();
+
+        DB::transaction(function () use ($profileRequest, $applicantName, $requestNik, $familyCardNo, $adminUser) {
+            // Hapus berkas kartu keluarga fisik pengajuan jika ada dan tidak dipakai oleh data aktif user saat ini
+            if ($profileRequest->doc_family_card) {
+                $userCurrentDoc = $profileRequest->user?->doc_family_card;
+                if ($profileRequest->doc_family_card !== $userCurrentDoc) {
+                    $cleanPath = ltrim(preg_replace('#^(public/|storage/)#', '', $profileRequest->doc_family_card), '/\\');
+                    if (Storage::disk('public')->exists($cleanPath)) {
+                        Storage::disk('public')->delete($cleanPath);
+                    }
+                }
+            }
+
+            ActivityLog::record([
+                'user_id' => $adminUser->id,
+                'user_name' => $adminUser->name,
+                'user_role' => 'admin',
+                'action_type' => 'delete',
+                'module' => 'profile_update',
+                'title' => 'Permohonan Perubahan Data Dihapus',
+                'description' => 'Penghapusan data permohonan perubahan data warga (' . $applicantName . ' - NIK: ' . $requestNik . ').',
+                'reference_no' => $familyCardNo,
+                'subject_type' => ProfileUpdateRequest::class,
+                'subject_id' => $profileRequest->id,
+            ]);
+
+            $profileRequest->delete();
+        });
+
+        return redirect()->route('admin.profile_requests.index')
+            ->with('success', 'Permohonan perubahan data warga (' . $applicantName . ') berhasil dihapus dari sistem.');
     }
 }

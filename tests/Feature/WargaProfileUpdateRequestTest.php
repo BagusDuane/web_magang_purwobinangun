@@ -420,4 +420,33 @@ class WargaProfileUpdateRequestTest extends TestCase
         $viewRes->assertSee('fa-solid fa-xmark');
         $viewRes->assertSee('dismissProfileNotification');
     }
+
+    public function test_admin_can_delete_profile_request()
+    {
+        $admin = $this->createAdmin();
+        $warga = $this->createActiveWarga();
+
+        $profileReq = ProfileUpdateRequest::create([
+            'user_id' => $warga->id,
+            'nik' => $warga->nik,
+            'family_card_no' => $warga->family_card_no,
+            'name' => 'Permohonan Dihapus',
+            'birth_place' => 'Sleman',
+            'birth_date' => '1990-01-01',
+            'gender' => 'L',
+            'family_relationship' => 'Kepala Keluarga',
+            'phone' => '081299998888',
+            'email' => 'hapus@example.com',
+            'address' => 'Watuadeg',
+            'rt' => '01',
+            'rw' => '05',
+            'status' => 'pending',
+        ]);
+
+        $response = $this->actingAs($admin)->delete(route('admin.profile_requests.destroy', $profileReq));
+
+        $response->assertRedirect(route('admin.profile_requests.index'));
+        $response->assertSessionHas('success');
+        $this->assertDatabaseMissing('profile_update_requests', ['id' => $profileReq->id]);
+    }
 }

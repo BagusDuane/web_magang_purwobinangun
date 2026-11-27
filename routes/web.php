@@ -147,6 +147,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/', [AdminProfileRequestController::class, 'index'])->name('index');
             Route::get('/{profileRequest}', [AdminProfileRequestController::class, 'show'])->name('show');
             Route::post('/{profileRequest}/verify', [AdminProfileRequestController::class, 'verify'])->name('verify');
+            Route::delete('/{profileRequest}', [AdminProfileRequestController::class, 'destroy'])->name('destroy');
         });
 
         // Arsip Pengajuan & Akun Ditolak / Dinonaktifkan
