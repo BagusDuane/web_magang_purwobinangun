@@ -106,8 +106,8 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host "[OK] Dependensi composer berhasil diinstal." -ForegroundColor Green
 }
 
-# 6. Generate APP_KEY & Storage Link & Cache
-Write-Host "`n=== [5/6] Inisialisasi Kunci & Storage Laravel ===" -ForegroundColor Cyan
+# 6. Generate APP_KEY, Database, Storage Link & Cache
+Write-Host "`n=== [5/6] Inisialisasi Kunci, Database & Storage Laravel ===" -ForegroundColor Cyan
 $envContent = Get-Content ".env" -Raw
 if ($envContent -notmatch "APP_KEY=base64:") {
     Write-Host "Menghasilkan APP_KEY..." -ForegroundColor Gray
@@ -115,6 +115,17 @@ if ($envContent -notmatch "APP_KEY=base64:") {
 } else {
     Write-Host "[OK] APP_KEY sudah tersedia." -ForegroundColor Green
 }
+
+# Pastikan file database.sqlite tersedia jika menggunakan koneksi SQLite
+if ($envContent -match "DB_CONNECTION=sqlite" -or (-not (Test-Path "database/database.sqlite"))) {
+    if (-not (Test-Path "database/database.sqlite")) {
+        New-Item -ItemType File -Path "database/database.sqlite" -Force | Out-Null
+        Write-Host "[OK] File database/database.sqlite berhasil dibuat." -ForegroundColor Green
+    }
+}
+
+Write-Host "Menjalankan migrasi database (php artisan migrate)..." -ForegroundColor Gray
+php artisan migrate --force --ansi
 
 Write-Host "Menghubungkan storage (php artisan storage:link)..." -ForegroundColor Gray
 php artisan storage:link --ansi
