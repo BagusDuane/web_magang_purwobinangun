@@ -715,15 +715,18 @@ class BirthCertificateController extends Controller
         }
 
         // Simpan Tanda Tangan Digital Pemohon (Base64 PNG atau File)
-        if ($request->filled('applicant_signature') || $request->hasFile('applicant_signature')) {
+        $sigInput = $request->input('applicant_signature');
+        $isNewDataImage = is_string($sigInput) && str_starts_with($sigInput, 'data:image');
+        $isNewSigFile = $request->hasFile('applicant_signature');
+
+        if ($isNewDataImage || $isNewSigFile) {
             if ($isRevision && $existingBirth && !empty($existingBirth->applicant_signature) && !str_starts_with($existingBirth->applicant_signature, 'data:image')) {
                 $oldSigPath = ltrim(preg_replace('#^(public/|storage/)#', '', $existingBirth->applicant_signature), '/\\');
                 if (Storage::disk('public')->exists($oldSigPath)) {
                     Storage::disk('public')->delete($oldSigPath);
                 }
             }
-            $sigInput = $request->input('applicant_signature');
-            if ($sigInput && str_starts_with($sigInput, 'data:image')) {
+            if ($isNewDataImage) {
                 try {
                     $imageParts = explode(';base64,', $sigInput);
                     if (count($imageParts) === 2) {
@@ -738,11 +741,13 @@ class BirthCertificateController extends Controller
                     \Illuminate\Support\Facades\Log::warning('Gagal menyimpan file tanda tangan digital: ' . $e->getMessage());
                     $data['applicant_signature'] = $sigInput;
                 }
-            } elseif ($request->hasFile('applicant_signature')) {
+            } else {
                 $data['applicant_signature'] = $request->file('applicant_signature')->store('signatures', 'public');
             }
         } elseif ($isRevision && $existingBirth && !empty($existingBirth->applicant_signature)) {
             $data['applicant_signature'] = $existingBirth->applicant_signature;
+        } else {
+            unset($data['applicant_signature']);
         }
 
         if ($isRevision && $existingBirth) {

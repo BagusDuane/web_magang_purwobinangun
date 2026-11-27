@@ -396,7 +396,7 @@ class CertificateExportService
          * --------------------------------------------------------------------- */
         $section->addPageBreak();
 
-        $this->addDocxPurwobinangunKopSurat($section, 'puwobinangun@slemankab.go.id');
+        $this->addDocxPurwobinangunKopSurat($section, 'purwobinangun@slemankab.go.id');
 
         $section->addText('SURAT KETERANGAN', [
             'name' => 'Times New Roman', 'size' => 13, 'bold' => true, 'underline' => 'single',
