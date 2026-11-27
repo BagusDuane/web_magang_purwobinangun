@@ -57,15 +57,19 @@ class CertificateExportService
     public function exportBirthPdf(BirthCertificate $birth)
     {
         $logoBase64 = $this->getLogoBase64();
+        $aksaraBase64 = $this->getAksaraBase64();
+        $signatureBase64 = $this->getApplicantSignatureBase64($birth->applicant_signature);
         $filename = 'Surat_Kelahiran_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $birth->registration_no) . '.pdf';
 
         $pdf = Pdf::loadView('exports.pdf.birth', [
             'birth' => $birth,
             'logoBase64' => $logoBase64,
+            'aksaraBase64' => $aksaraBase64,
+            'signatureBase64' => $signatureBase64,
         ])->setPaper('a4', 'portrait')->setOption([
             'isHtml5ParserEnabled' => true,
             'isRemoteEnabled' => true,
-            'defaultFont' => 'sans-serif',
+            'defaultFont' => 'times-roman',
         ]);
 
         return $pdf->download($filename);
@@ -76,91 +80,246 @@ class CertificateExportService
         Settings::setOutputEscapingEnabled(true);
 
         $phpWord = new PhpWord();
-        $phpWord->setDefaultFontName('Calibri');
-        $phpWord->setDefaultFontSize(11);
+        $phpWord->setDefaultFontName('Times New Roman');
+        $phpWord->setDefaultFontSize(10.5);
 
         $section = $phpWord->addSection([
-            'marginTop'    => 1100,
-            'marginBottom' => 1100,
-            'marginLeft'   => 1200,
-            'marginRight'  => 1200,
+            'marginTop'    => 950,
+            'marginBottom' => 950,
+            'marginLeft'   => 1150,
+            'marginRight'  => 1150,
         ]);
 
-        // Kop Surat
-        $this->addDocxKopSurat($section);
+        $romans = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+        $refDate = $birth->created_at ?: now();
+        $monthRoman = $romans[(int) $refDate->format('n')] ?? 'I';
+        $letterYear = $refDate->format('Y');
+        $letterSeq = (int) substr($birth->registration_no, -4) ?: 1;
+        $reportDateFormatted = $refDate->translatedFormat('d F Y');
 
-        // Judul Dokumen
-        $section->addText('SURAT KETERANGAN KELAHIRAN', [
-            'name' => 'Calibri', 'size' => 14, 'bold' => true, 'underline' => 'single',
-        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 60]);
+        $childDob = $birth->birth_date ? Carbon::parse($birth->birth_date) : null;
+        $genderText = $birth->gender === 'L' ? 'LAKI-LAKI' : ($birth->gender === 'P' ? 'PEREMPUAN' : '-');
 
-        $section->addText('Nomor Registrasi: ' . $birth->registration_no, [
-            'name' => 'Calibri', 'size' => 10, 'italic' => true,
-        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 200]);
+        $formatFullAddress = function (?string $addr, ?string $rt, ?string $rw, ?string $village, ?string $district, ?string $city, ?string $province, ?string $padukuhan = null): string {
+            $parts = [];
+            if ($addr) {
+                $parts[] = trim($addr);
+            } elseif ($padukuhan) {
+                $parts[] = 'Padukuhan ' . trim($padukuhan);
+            }
+            if ($rt || $rw) {
+                $parts[] = 'RT ' . ($rt ?: '-') . ' / RW ' . ($rw ?: '-');
+            }
+            $region = array_filter([$village, $district, $city, $province]);
+            if (!empty($region)) {
+                $parts[] = implode(', ', $region);
+            }
+            return !empty($parts) ? implode(', ', $parts) : '-';
+        };
 
-        $section->addText('Pemerintah Kalurahan Purwobinangun dengan ini menerangkan bahwa telah tercatat pelaporan peristiwa kelahiran warga dengan rincian data sebagai berikut:', [
-            'size' => 10.5,
-        ], ['spaceAfter' => 140]);
+        $fatherFullAddr = $formatFullAddress($birth->father_address, $birth->father_rt, $birth->father_rw, $birth->father_village, $birth->father_district, $birth->father_city, $birth->father_province);
+        $motherFullAddr = $formatFullAddress($birth->mother_address, $birth->mother_rt, $birth->mother_rw, $birth->mother_village, $birth->mother_district, $birth->mother_city, $birth->mother_province);
+        $applicantFullAddr = $formatFullAddress($birth->address, $birth->rt, $birth->rw, $birth->applicant_village ?: 'Purwobinangun', $birth->applicant_district ?: 'Pakem', $birth->applicant_city ?: 'Sleman', $birth->applicant_province ?: 'DI Yogyakarta', $birth->padukuhan);
+        $witness1FullAddr = $formatFullAddress($birth->witness_1_address, $birth->witness_1_rt, $birth->witness_1_rw, $birth->witness_1_village, $birth->witness_1_district, $birth->witness_1_city, $birth->witness_1_province);
+        $witness2FullAddr = $formatFullAddress($birth->witness_2_address, $birth->witness_2_rt, $birth->witness_2_rw, $birth->witness_2_village, $birth->witness_2_district, $birth->witness_2_city, $birth->witness_2_province);
 
-        // Tabel Data
-        $tableStyle = [
-            'borderColor' => 'D0D5DD',
-            'borderSize'  => 6,
-            'cellMargin'  => 80,
+        $fatherAgeVal = $birth->father_age ?: ($birth->father_birth_date ? (int) $birth->father_birth_date->diffInYears($childDob ?? now()) : null);
+        $motherAgeVal = $birth->mother_age ?: ($birth->mother_birth_date ? (int) $birth->mother_birth_date->diffInYears($childDob ?? now()) : null);
+        $applicantAgeVal = $birth->applicant_age ?: ($birth->applicant_birth_date ? (int) $birth->applicant_birth_date->diffInYears(now()) : null);
+        $w1AgeVal = $birth->witness_1_age ?: ($birth->witness_1_birth_date ? (int) $birth->witness_1_birth_date->diffInYears(now()) : null);
+        $w2AgeVal = $birth->witness_2_age ?: ($birth->witness_2_birth_date ? (int) $birth->witness_2_birth_date->diffInYears(now()) : null);
+
+        $applicantName = $birth->applicant_name ?: ($birth->father_name ?: ($birth->mother_name ?: '-'));
+        $applicantNik = $birth->applicant_nik ?: ($birth->father_nik ?: ($birth->mother_nik ?: '-'));
+        $applicantJob = $birth->applicant_job ?: ($birth->father_job ?: ($birth->mother_job ?: '-'));
+
+        $applicantDobObj = $birth->applicant_birth_date ?: ($birth->father_birth_date ?: $birth->mother_birth_date);
+        $applicantDobFormatted = $applicantDobObj ? Carbon::parse($applicantDobObj)->translatedFormat('d F Y') : '-';
+
+        $applicantStreetParts = [];
+        if ($birth->padukuhan) {
+            $applicantStreetParts[] = $birth->padukuhan;
+        } elseif ($birth->address) {
+            $applicantStreetParts[] = $birth->address;
+        }
+        if ($birth->rt || $birth->rw) {
+            $applicantStreetParts[] = 'RT ' . str_pad((string) ($birth->rt ?: '0'), 3, '0', STR_PAD_LEFT) . ' RW ' . str_pad((string) ($birth->rw ?: '0'), 3, '0', STR_PAD_LEFT);
+        }
+        $applicantStreetLine = !empty($applicantStreetParts) ? implode(' ', $applicantStreetParts) : ($birth->father_address ?: ($birth->mother_address ?: '-'));
+
+        $weightStr = $birth->weight_gram
+            ? $birth->weight_gram . ' gram' . ($birth->weight_kg ? ' (' . $birth->weight_kg . ' kg)' : '')
+            : ($birth->weight_kg ? $birth->weight_kg . ' kg' : '-');
+
+        /* ---------------------------------------------------------------------
+         * BAGIAN 1: FORMULIR DATA ISIAN PENGAJUAN AKTA KELAHIRAN
+         * --------------------------------------------------------------------- */
+        $this->addDocxPurwobinangunKopSurat($section, 'puwobinangun@slemankab.go.id');
+
+        $section->addText('FORMULIR PELAPORAN & PERMOHONAN AKTA KELAHIRAN', [
+            'name' => 'Times New Roman', 'size' => 12, 'bold' => true, 'underline' => 'single',
+        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 40]);
+
+        $section->addText('Nomor Registrasi: ' . $birth->registration_no . '  |  Tanggal Lapor: ' . $reportDateFormatted, [
+            'name' => 'Times New Roman', 'size' => 9.5,
+        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 120]);
+
+        $formTableStyle = [
+            'borderColor' => '334155',
+            'borderSize'  => 4,
+            'cellMargin'  => 55,
         ];
-        $phpWord->addTableStyle('BirthTable', $tableStyle);
-        $table = $section->addTable('BirthTable');
+        $phpWord->addTableStyle('BirthFormTable', $formTableStyle);
+        $table = $section->addTable('BirthFormTable');
 
         $rows = [
             ['I. DATA KELUARGA & PENDAFTARAN', '', true],
             ['Nomor Registrasi', $birth->registration_no],
             ['Nomor Kartu Keluarga (KK)', $birth->family_card_no ?: '-'],
-            ['Tanggal Pengajuan', $birth->created_at ? $birth->created_at->translatedFormat('d F Y') : '-'],
+            ['Nama Kepala Keluarga', strtoupper($birth->father_name ?: ($birth->mother_name ?: $applicantName))],
 
-            ['II. DATA ANAK / BAYI', '', true],
-            ['Nama Lengkap Anak', strtoupper($birth->child_name)],
-            ['NIK Anak (jika ada)', $birth->child_nik ?: '-'],
-            ['Jenis Kelamin', $birth->gender === 'L' ? 'LAKI-LAKI' : ($birth->gender === 'P' ? 'PEREMPUAN' : '-')],
-            ['Tempat Lahir', strtoupper($birth->birth_place ?: 'Sleman')],
-            ['Hari & Tanggal Lahir', ($birth->birth_day ? strtoupper($birth->birth_day) . ', ' : '') . ($birth->birth_date ? Carbon::parse($birth->birth_date)->translatedFormat('d F Y') : '-')],
-            ['Waktu / Jam Lahir', $birth->birth_time ? $birth->birth_time . ' WIB' : '-'],
-            ['Anak Ke / Jenis Kelahiran', ($birth->birth_order ? 'Anak ke-' . $birth->birth_order : '-') . ' / ' . ($birth->birth_type ?: 'Tunggal')],
-            ['Berat & Panjang Bayi', ($birth->weight_kg ?: '-') . ' kg (' . ($birth->weight_gram ?: '-') . ' gram) / ' . ($birth->length_cm ?: '-') . ' cm'],
-            ['Tempat Bersalin / Penolong', ($birth->birth_place_type ?: '-') . ' / ' . ($birth->birth_helper ?: '-')],
+            ['II. BIODATA LENGKAP BAYI / ANAK', '', true],
+            ['Nama Lengkap Bayi / Anak', strtoupper($birth->child_name)],
+            ['NIK Bayi / Anak', $birth->child_nik ?: '-'],
+            ['Jenis Kelamin', $genderText],
+            ['Tempat Dilahirkan / Kabupaten-Kota', ($birth->birth_place_type ?: '-') . ' — ' . strtoupper($birth->birth_place ?: 'SLEMAN')],
+            ['Hari, Tanggal & Pukul Kelahiran', ($birth->birth_day ? strtoupper($birth->birth_day) . ', ' : '') . ($childDob ? $childDob->translatedFormat('d F Y') : '-') . ($birth->birth_time ? ' — Pukul ' . $birth->birth_time . ' WIB' : '')],
+            ['Jenis Kelahiran / Kelahiran Anak Ke', ($birth->birth_type ?: 'Tunggal') . ' / Anak ke-' . ($birth->birth_order ?: '1')],
+            ['Penolong Kelahiran', $birth->birth_helper ?: '-'],
+            ['Berat & Panjang Bayi', $weightStr . ' / ' . ($birth->length_cm ? $birth->length_cm . ' cm' : '-')],
 
-            ['III. DATA ORANG TUA', '', true],
-            ['Nama Lengkap Ayah', strtoupper($birth->father_name ?: '-')],
-            ['NIK Ayah', $birth->father_nik ?: '-'],
-            ['Pekerjaan / Alamat Ayah', ($birth->father_job ?: '-') . ' / ' . ($birth->father_address ?: '-')],
-            ['Nama Lengkap Ibu Kandung', strtoupper($birth->mother_name ?: '-')],
-            ['NIK Ibu Kandung', $birth->mother_nik ?: '-'],
-            ['Pekerjaan / Alamat Ibu', ($birth->mother_job ?: '-') . ' / ' . ($birth->mother_address ?: '-')],
+            ['III. DATA KEDUA ORANG TUA KANDUNG', '', true],
+            ['Nama Lengkap & NIK Ayah', strtoupper($birth->father_name ?: '-') . ' (' . ($birth->father_nik ?: '-') . ')'],
+            ['Tgl Lahir / Umur & Pekerjaan Ayah', ($birth->father_birth_date ? $birth->father_birth_date->translatedFormat('d F Y') : '-') . ($fatherAgeVal !== null ? " ({$fatherAgeVal} th)" : '') . ' — ' . ($birth->father_job ?: '-') . ' (' . ($birth->father_citizenship ?: 'WNI') . ')'],
+            ['Alamat Ayah', $fatherFullAddr],
+            ['Nama Lengkap & NIK Ibu Kandung', strtoupper($birth->mother_name ?: '-') . ' (' . ($birth->mother_nik ?: '-') . ')'],
+            ['Tgl Lahir / Umur & Pekerjaan Ibu', ($birth->mother_birth_date ? $birth->mother_birth_date->translatedFormat('d F Y') : '-') . ($motherAgeVal !== null ? " ({$motherAgeVal} th)" : '') . ' — ' . ($birth->mother_job ?: '-') . ' (' . ($birth->mother_citizenship ?: 'WNI') . ')'],
+            ['Alamat Ibu Kandung', $motherFullAddr],
             ['Tanggal Pencatatan Perkawinan', $birth->marriage_date ? Carbon::parse($birth->marriage_date)->translatedFormat('d F Y') : '-'],
 
-            ['IV. DATA PELAPOR & SAKSI', '', true],
-            ['Nama Pelapor', strtoupper($birth->applicant_name ?: '-')],
-            ['NIK Pelapor', $birth->applicant_nik ?: '-'],
-            ['Hubungan dengan Bayi', $birth->applicant_relation ?: 'Orang Tua / Keluarga'],
-            ['Saksi I (Nama / NIK)', ($birth->witness_1_name ?: '-') . ' / ' . ($birth->witness_1_nik ?: '-')],
-            ['Saksi II (Nama / NIK)', ($birth->witness_2_name ?: '-') . ' / ' . ($birth->witness_2_nik ?: '-')],
+            ['IV. DATA PELAPOR & SAKSI KELAHIRAN', '', true],
+            ['Nama Lengkap & NIK Pelapor', strtoupper($applicantName) . ' (' . $applicantNik . ')'],
+            ['Umur, Pekerjaan & Hubungan Pelapor', ($applicantAgeVal !== null ? $applicantAgeVal . ' th' : '-') . ' — ' . $applicantJob . ' (' . ($birth->applicant_relation ?: 'Keluarga') . ')' . ($birth->applicant_phone ? ' | Telp: ' . $birth->applicant_phone : '')],
+            ['Alamat Pelapor', $applicantFullAddr],
+            ['Saksi I (Nama / NIK / Umur / Pekerjaan)', strtoupper($birth->witness_1_name ?: '-') . ' / ' . ($birth->witness_1_nik ?: '-') . ($w1AgeVal !== null ? " / {$w1AgeVal} th" : '') . ($birth->witness_1_job ? ' / ' . $birth->witness_1_job : '') . ' — Alamat: ' . $witness1FullAddr],
+            ['Saksi II (Nama / NIK / Umur / Pekerjaan)', strtoupper($birth->witness_2_name ?: '-') . ' / ' . ($birth->witness_2_nik ?: '-') . ($w2AgeVal !== null ? " / {$w2AgeVal} th" : '') . ($birth->witness_2_job ? ' / ' . $birth->witness_2_job : '') . ' — Alamat: ' . $witness2FullAddr],
         ];
 
         foreach ($rows as $item) {
             $table->addRow();
             if (!empty($item[2])) {
-                $cell = $table->addCell(9000, ['gridSpan' => 2, 'bgColor' => 'E8F2F7']);
-                $cell->addText($item[0], ['bold' => true, 'color' => '095B8C', 'size' => 10]);
+                $cell = $table->addCell(9200, ['gridSpan' => 2, 'bgColor' => 'E2E8F0']);
+                $cell->addText($item[0], ['bold' => true, 'color' => '0F172A', 'size' => 9, 'name' => 'Times New Roman'], ['spaceAfter' => 0]);
             } else {
-                $c1 = $table->addCell(3400);
-                $c1->addText($item[0], ['size' => 9.5, 'color' => '333333']);
-                $c2 = $table->addCell(5600);
-                $c2->addText($item[1], ['size' => 9.5, 'bold' => true]);
+                $c1 = $table->addCell(3200);
+                $c1->addText($item[0], ['size' => 9, 'name' => 'Times New Roman'], ['spaceAfter' => 0]);
+                $c2 = $table->addCell(6000);
+                $c2->addText($item[1], ['size' => 9, 'bold' => true, 'name' => 'Times New Roman'], ['spaceAfter' => 0]);
             }
         }
 
-        // Tanda Tangan
         $section->addTextBreak(1);
-        $this->addDocxSignature($section, $birth->created_at ? $birth->created_at->translatedFormat('d F Y') : Carbon::now()->translatedFormat('d F Y'));
+        $this->addDocxFormSignature($section, $reportDateFormatted, strtoupper($applicantName), $birth->processed_by);
+
+        /* ---------------------------------------------------------------------
+         * HALAMAN TERAKHIR: SURAT KETERANGAN RESMI KALURAHAN PURWOBINANGUN
+         * --------------------------------------------------------------------- */
+        $section->addPageBreak();
+
+        $this->addDocxPurwobinangunKopSurat($section, 'puwobinangun@slemankab.go.id');
+
+        $section->addText('SURAT KETERANGAN', [
+            'name' => 'Times New Roman', 'size' => 13.5, 'bold' => true, 'underline' => 'single',
+        ], ['alignment' => Jc::CENTER, 'spaceBefore' => 120, 'spaceAfter' => 40]);
+
+        $section->addText("Nomor : 474.1/ {$letterSeq} / {$monthRoman} / {$letterYear}", [
+            'name' => 'Times New Roman', 'size' => 11,
+        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 200]);
+
+        $noBorder = ['borderColor' => 'FFFFFF', 'borderSize' => 0, 'cellMargin' => 25];
+
+        // Yang bertandatangan di bawah ini
+        $head1 = $section->addTable($noBorder);
+        $head1->addRow();
+        $head1->addCell(300)->addText('', ['size' => 11]);
+        $head1->addCell(3600)->addText('Yang bertandatangan di bawah ini', ['size' => 11, 'name' => 'Times New Roman'], ['spaceAfter' => 20]);
+        $head1->addCell(200)->addText(':', ['size' => 11, 'name' => 'Times New Roman'], ['spaceAfter' => 20]);
+        $head1->addCell(5100)->addText('', ['size' => 11]);
+
+        $sub1 = $section->addTable($noBorder);
+        foreach ([
+            ['Nama', 'R. Heri Suasana'],
+            ['Jabatan', 'Lurah Purwobinangun'],
+        ] as $row) {
+            $sub1->addRow();
+            $sub1->addCell(1100)->addText('', ['size' => 11]);
+            $sub1->addCell(2200)->addText($row[0], ['size' => 11, 'name' => 'Times New Roman'], ['spaceAfter' => 20]);
+            $sub1->addCell(200)->addText(':', ['size' => 11, 'name' => 'Times New Roman'], ['spaceAfter' => 20]);
+            $sub1->addCell(5700)->addText($row[1], ['size' => 11, 'name' => 'Times New Roman'], ['spaceAfter' => 20]);
+        }
+
+        // Dengan ini menerangkan bahwa
+        $head2 = $section->addTable($noBorder);
+        $head2->addRow();
+        $head2->addCell(300)->addText('', ['size' => 11]);
+        $head2->addCell(3600)->addText('Dengan ini menerangkan bahwa', ['size' => 11, 'name' => 'Times New Roman'], ['spaceBefore' => 120, 'spaceAfter' => 20]);
+        $head2->addCell(200)->addText(':', ['size' => 11, 'name' => 'Times New Roman'], ['spaceBefore' => 120, 'spaceAfter' => 20]);
+        $head2->addCell(5100)->addText('', ['size' => 11]);
+
+        $sub2 = $section->addTable($noBorder);
+        $addSkRow = function ($label, $lines, bool $boldFirst = false) use ($sub2) {
+            $sub2->addRow();
+            $sub2->addCell(1100)->addText('', ['size' => 11]);
+            $sub2->addCell(2200)->addText($label, ['size' => 11, 'name' => 'Times New Roman'], ['spaceAfter' => 30]);
+            $sub2->addCell(200)->addText(':', ['size' => 11, 'name' => 'Times New Roman'], ['spaceAfter' => 30]);
+            $valCell = $sub2->addCell(5700);
+            $linesArr = is_array($lines) ? $lines : [$lines];
+            foreach ($linesArr as $idx => $line) {
+                $valCell->addText((string) $line, [
+                    'size' => 11,
+                    'name' => 'Times New Roman',
+                    'bold' => $boldFirst && $idx === 0,
+                ], ['spaceAfter' => 25]);
+            }
+        };
+
+        $addSkRow('Nama Lengkap', $applicantName, true);
+        $addSkRow('NIK', $applicantNik);
+        $addSkRow('Tanggal Lahir', $applicantDobFormatted);
+        $addSkRow('Pekerjaan', $applicantJob);
+        $addSkRow('Alamat', [
+            $applicantStreetLine,
+            'Kalurahan ' . ($birth->applicant_village ?: 'Purwobinangun'),
+            'Kapanewon ' . ($birth->applicant_district ?: 'Pakem'),
+            'Kabupaten ' . ($birth->applicant_city ?: 'Sleman'),
+            'Provinsi ' . ($birth->applicant_province ?: 'DI Yogyakarta'),
+        ]);
+        $addSkRow('Pergi ke', [
+            'Dinas Kependudukan dan Catatan Sipil',
+            'Sleman',
+        ]);
+        $addSkRow('Keperluan', 'Mohon Akta Kelahiran untuk ' . strtoupper($birth->child_name));
+
+        $section->addText(
+            'Sehubungan dengan maksud yang bersangkutan, mohon yang berwenang memberikan bantuan serta fasilitas seperlunya.',
+            ['size' => 11, 'name' => 'Times New Roman'],
+            ['alignment' => Jc::BOTH, 'indentation' => ['firstLine' => 720, 'left' => 300], 'spaceBefore' => 180, 'spaceAfter' => 100]
+        );
+
+        $section->addText(
+            'Demikian surat keterangan ini dibuat dengan sebenarnya, untuk dipergunakan sebagaimana mestinya.',
+            ['size' => 11, 'name' => 'Times New Roman'],
+            ['alignment' => Jc::BOTH, 'indentation' => ['firstLine' => 720, 'left' => 300], 'spaceAfter' => 240]
+        );
+
+        $skSig = $section->addTable($noBorder);
+        $skSig->addRow();
+        $skSig->addCell(5000);
+        $sigRight = $skSig->addCell(4200);
+        $sigRight->addText('Purwobinangun, ' . $reportDateFormatted, ['size' => 11, 'name' => 'Times New Roman'], ['spaceAfter' => 30]);
+        $sigRight->addText('Lurah Purwobinangun', ['size' => 11, 'name' => 'Times New Roman'], ['indentation' => ['left' => 360], 'spaceAfter' => 40]);
+        $sigRight->addTextBreak(3);
+        $sigRight->addText('R. Heri Suasana', ['size' => 11, 'bold' => true, 'name' => 'Times New Roman'], ['indentation' => ['left' => 520]]);
 
         $filename = 'Surat_Kelahiran_' . preg_replace('/[^A-Za-z0-9_-]/', '_', $birth->registration_no) . '.docx';
 
@@ -373,70 +532,48 @@ class CertificateExportService
         $phpWord->setDefaultFontSize(10.5);
 
         $section = $phpWord->addSection([
-            'marginTop'    => 1100,
-            'marginBottom' => 1100,
-            'marginLeft'   => 1200,
-            'marginRight'  => 1200,
+            'marginTop'    => 950,
+            'marginBottom' => 950,
+            'marginLeft'   => 1150,
+            'marginRight'  => 1150,
         ]);
 
-        // Kop Surat Resmi Kalurahan Purwobinangun
-        $this->addDocxDeathKopSurat($section);
-
         $romans = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
-        $monthNum = (int)($death->death_date ? $death->death_date->format('n') : date('n'));
+        $monthNum = (int) ($death->death_date ? $death->death_date->format('n') : date('n'));
         $monthRoman = $romans[$monthNum] ?? 'IX';
         $letterYear = $death->death_date ? $death->death_date->format('Y') : date('Y');
-        $letterNumberSeq = (int)substr($death->registration_no, -4) ?: '82';
+        $letterNumberSeq = (int) substr($death->registration_no, -4) ?: '82';
 
-        // Judul Dokumen
-        $section->addText('SURAT KETERANGAN KEMATIAN', [
-            'name' => 'Times New Roman', 'size' => 14, 'bold' => true,
-        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 20]);
-
-        $section->addText("No. 474.3/ {$letterNumberSeq} /{$monthRoman}/{$letterYear}", [
-            'name' => 'Times New Roman', 'size' => 10.5, 'bold' => true,
-        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 140]);
-
-        // Data Kepala Keluarga & Nomor KK
-        $borderlessTableStyle = [
-            'borderColor' => 'FFFFFF',
-            'borderSize'  => 0,
-            'cellMargin'  => 20,
-        ];
-        $phpWord->addTableStyle('BorderlessKK', $borderlessTableStyle);
-        $kkTable = $section->addTable('BorderlessKK');
-
-        $kkTable->addRow();
-        $kkTable->addCell(3400)->addText('Nama Kepala Keluarga', ['size' => 10, 'name' => 'Times New Roman']);
-        $kkTable->addCell(200)->addText(':', ['size' => 10, 'name' => 'Times New Roman']);
-        $kkTable->addCell(5400)->addText(strtoupper($death->head_of_family_name ?: '-'), ['size' => 10, 'name' => 'Times New Roman']);
-
-        $kkTable->addRow();
-        $kkTable->addCell(3400)->addText('Nomor Kartu Keluarga', ['size' => 10, 'name' => 'Times New Roman']);
-        $kkTable->addCell(200)->addText(':', ['size' => 10, 'name' => 'Times New Roman']);
-        $kkTable->addCell(5400)->addText($death->family_card_no ?: '-', ['size' => 10, 'name' => 'Times New Roman']);
-
-        // Hitung Umur Jenazah
         $deceasedAge = null;
         if ($death->birth_date && $death->death_date) {
-            $deceasedAge = $death->birth_date->diffInYears($death->death_date);
+            $deceasedAge = (int) $death->birth_date->diffInYears($death->death_date);
         } elseif ($death->birth_date) {
-            $deceasedAge = $death->birth_date->diffInYears(now());
+            $deceasedAge = (int) $death->birth_date->diffInYears(now());
         }
 
-        // Hitung Umur Ibu & Ayah
-        $motherAge = $death->mother_birth_date ? $death->mother_birth_date->diffInYears($death->death_date ?? now()) : null;
-        $fatherAge = $death->father_birth_date ? $death->father_birth_date->diffInYears($death->death_date ?? now()) : null;
+        $motherAge = $death->mother_birth_date ? (int) $death->mother_birth_date->diffInYears($death->death_date ?? now()) : null;
+        $fatherAge = $death->father_birth_date ? (int) $death->father_birth_date->diffInYears($death->death_date ?? now()) : null;
 
         $genderText = $death->gender === 'L' ? 'LAKI - LAKI' : ($death->gender === 'P' ? 'PEREMPUAN' : '-');
-        $deceasedFullAddress = $death->deceased_address ?: ('Padukuhan ' . $death->padukuhan . ', RT ' . $death->rt . ' / RW ' . $death->rw . ', Purwobinangun, Pakem, Sleman');
-        $reportDateFormatted = $death->report_date ? \Carbon\Carbon::parse($death->report_date)->translatedFormat('d F Y') : ($death->created_at ? $death->created_at->translatedFormat('d F Y') : \Carbon\Carbon::now()->translatedFormat('d F Y'));
+        $deceasedFullAddress = $death->deceased_address ?: (
+            ($death->padukuhan ? $death->padukuhan . ', ' : '') .
+            (($death->rt || $death->rw) ? 'RT ' . ($death->rt ?: '-') . ' / RW ' . ($death->rw ?: '-') . ', ' : '') .
+            'Purwobinangun, Pakem, Sleman'
+        );
+        $reportDateFormatted = $death->report_date
+            ? Carbon::parse($death->report_date)->translatedFormat('d F Y')
+            : ($death->created_at ? $death->created_at->translatedFormat('d F Y') : Carbon::now()->translatedFormat('d F Y'));
         $officerName = $death->officer_name ?: 'Teguh Kurniawan, S.Pi.';
+        $dotsPlaceholder = '...............................................................................';
 
-        $formatBirthAndAge = function($place, $date, $age) {
+        $formatBirthAndAge = function ($place, $date, $age) {
             $parts = [];
-            if ($place) $parts[] = strtoupper($place);
-            if ($date) $parts[] = $date->format('d - m - Y');
+            if ($place) {
+                $parts[] = strtoupper($place);
+            }
+            if ($date) {
+                $parts[] = $date->format('d-m-Y');
+            }
             $base = implode(', ', $parts);
             if ($age) {
                 $base .= ($base ? '   Umur ' : 'Umur ') . $age . ' th';
@@ -450,73 +587,167 @@ class CertificateExportService
         $witness1Birth = $formatBirthAndAge($death->witness1_birth_place, $death->witness1_birth_date, $death->witness1_age);
         $witness2Birth = $formatBirthAndAge($death->witness2_birth_place, $death->witness2_birth_date, $death->witness2_age);
 
+        $witness1Nik = $death->witness1_nik ?: ($death->witness_nik ?: '');
+        $witness1Name = $death->witness1_name ?: ($death->witness_name ?: '');
+
+        /* ---------------------------------------------------------------------
+         * BAGIAN 1: FORMULIR DATA ISIAN PENGAJUAN AKTA KEMATIAN
+         * --------------------------------------------------------------------- */
+        $this->addDocxPurwobinangunKopSurat($section, 'desapurwobinangun@slemankab.go.id');
+
+        $section->addText('FORMULIR PELAPORAN & PERMOHONAN AKTA KEMATIAN', [
+            'name' => 'Times New Roman', 'size' => 12, 'bold' => true, 'underline' => 'single',
+        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 40]);
+
+        $section->addText('Nomor Registrasi: ' . $death->registration_no . '  |  Tanggal Lapor: ' . $reportDateFormatted, [
+            'name' => 'Times New Roman', 'size' => 9.5,
+        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 120]);
+
+        $formTableStyle = [
+            'borderColor' => '334155',
+            'borderSize'  => 4,
+            'cellMargin'  => 55,
+        ];
+        $phpWord->addTableStyle('DeathFormTable', $formTableStyle);
+        $formTable = $section->addTable('DeathFormTable');
+
+        $formRows = [
+            ['I. DATA KELUARGA & PENDAFTARAN', '', true],
+            ['Nomor Registrasi', $death->registration_no],
+            ['Nomor Kartu Keluarga (KK)', $death->family_card_no ?: '-'],
+            ['Nama Kepala Keluarga', strtoupper($death->head_of_family_name ?: '-')],
+
+            ['II. BIODATA LENGKAP JENAZAH', '', true],
+            ['NIK Jenazah', $death->deceased_nik ?: '-'],
+            ['Nama Lengkap Jenazah', strtoupper($death->deceased_name ?: '-')],
+            ['Jenis Kelamin / Anak Ke', $genderText . ($death->deceased_child_order ? ' / Anak ke-' . $death->deceased_child_order : '')],
+            ['Tempat, Tanggal Lahir / Umur', strtoupper($death->deceased_birth_place ?: 'SLEMAN') . ', ' . ($death->birth_date ? $death->birth_date->translatedFormat('d F Y') : '-') . ($deceasedAge !== null ? " ({$deceasedAge} Tahun)" : '')],
+            ['Agama & Pekerjaan', strtoupper($death->religion ?: '-') . ' — ' . strtoupper($death->deceased_job ?: '-')],
+            ['Alamat Lengkap Jenazah', strtoupper($deceasedFullAddress)],
+
+            ['III. RINCIAN PERISTIWA KEMATIAN', '', true],
+            ['Hari, Tanggal & Pukul Kematian', ($death->death_day ? strtoupper($death->death_day) . ', ' : '') . ($death->death_date ? $death->death_date->translatedFormat('d F Y') : '-') . ($death->death_time ? ' — Pukul ' . $death->death_time . ' WIB' : '')],
+            ['Tempat Kematian', strtoupper($death->death_place ?: '-') . ($death->death_location_detail ? ' (' . strtoupper($death->death_location_detail) . ')' : '')],
+            ['Sebab Kematian & Yang Menerangkan', strtoupper($death->cause_of_death ?: '-') . ' — ' . strtoupper($death->reported_by_title ?: 'LAINNYA')],
+
+            ['IV. DATA ORANG TUA KANDUNG JENAZAH', '', true],
+            ['Ibu Kandung (Nama / NIK)', strtoupper($death->mother_name ?: '-') . ' (' . ($death->mother_nik ?: '-') . ')'],
+            ['TTL / Pekerjaan / Alamat Ibu', ($motherBirth ?: '-') . ' — ' . ($death->mother_job ?: '-') . ' — ' . ($death->mother_address ?: '-')],
+            ['Ayah Kandung (Nama / NIK)', strtoupper($death->father_name ?: '-') . ' (' . ($death->father_nik ?: '-') . ')'],
+            ['TTL / Pekerjaan / Alamat Ayah', ($fatherBirth ?: '-') . ' — ' . ($death->father_job ?: '-') . ' — ' . ($death->father_address ?: '-')],
+
+            ['V. DATA PELAPOR (AHLI WARIS) & SAKSI', '', true],
+            ['Pelapor (Nama / NIK / Hubungan)', strtoupper($death->applicant_name ?: '-') . ' / ' . ($death->applicant_nik ?: '-') . ' (' . ($death->applicant_relation ?: 'Ahli Waris / Keluarga') . ')' . ($death->applicant_phone ? ' | Telp: ' . $death->applicant_phone : '')],
+            ['TTL / Pekerjaan / Alamat Pelapor', ($applicantBirth ?: '-') . ' — ' . ($death->applicant_job ?: '-') . ' — ' . ($death->applicant_address ?: '-')],
+            ['Saksi I (Nama / NIK / TTL / Alamat)', strtoupper($witness1Name ?: '-') . ' / ' . ($witness1Nik ?: '-') . ($witness1Birth ? ' / ' . $witness1Birth : '') . ' — Alamat: ' . ($death->witness1_address ?: '-')],
+            ['Saksi II (Nama / NIK / TTL / Alamat)', strtoupper($death->witness2_name ?: '-') . ' / ' . ($death->witness2_nik ?: '-') . ($witness2Birth ? ' / ' . $witness2Birth : '') . ' — Alamat: ' . ($death->witness2_address ?: '-')],
+        ];
+
+        foreach ($formRows as $item) {
+            $formTable->addRow();
+            if (!empty($item[2])) {
+                $cell = $formTable->addCell(9200, ['gridSpan' => 2, 'bgColor' => 'E2E8F0']);
+                $cell->addText($item[0], ['bold' => true, 'color' => '0F172A', 'size' => 9, 'name' => 'Times New Roman'], ['spaceAfter' => 0]);
+            } else {
+                $c1 = $formTable->addCell(3200);
+                $c1->addText($item[0], ['size' => 9, 'name' => 'Times New Roman'], ['spaceAfter' => 0]);
+                $c2 = $formTable->addCell(6000);
+                $c2->addText($item[1], ['size' => 9, 'bold' => true, 'name' => 'Times New Roman'], ['spaceAfter' => 0]);
+            }
+        }
+
+        $section->addTextBreak(1);
+        $this->addDocxFormSignature($section, $reportDateFormatted, strtoupper($death->applicant_name ?: '-'), $death->processed_by);
+
+        /* ---------------------------------------------------------------------
+         * BAGIAN TERAKHIR: SURAT KETERANGAN KEMATIAN RESMI PURWOBINANGUN
+         * --------------------------------------------------------------------- */
+        $section->addPageBreak();
+
+        $this->addDocxPurwobinangunKopSurat($section, 'desapurwobinangun@slemankab.go.id');
+
+        $section->addText('SURAT KETERANGAN KEMATIAN', [
+            'name' => 'Times New Roman', 'size' => 14, 'bold' => true,
+        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 20]);
+
+        $section->addText("No. 474.3/{$letterNumberSeq}/{$monthRoman}/{$letterYear}", [
+            'name' => 'Times New Roman', 'size' => 10.5, 'bold' => true,
+        ], ['alignment' => Jc::CENTER, 'spaceAfter' => 140]);
+
+        $borderlessTableStyle = [
+            'borderColor' => 'FFFFFF',
+            'borderSize'  => 0,
+            'cellMargin'  => 20,
+        ];
+        $phpWord->addTableStyle('BorderlessKK', $borderlessTableStyle);
+        $kkTable = $section->addTable('BorderlessKK');
+
+        $kkTable->addRow();
+        $kkTable->addCell(3450)->addText('Nama Kepala Keluarga', ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
+        $kkTable->addCell(200)->addText(':', ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
+        $kkTable->addCell(5550)->addText(strtoupper($death->head_of_family_name ?: '-'), ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
+
+        $kkTable->addRow();
+        $kkTable->addCell(3450)->addText('Nomor Kartu Keluarga', ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
+        $kkTable->addCell(200)->addText(':', ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
+        $kkTable->addCell(5550)->addText($death->family_card_no ?: '-', ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
+
         // Section JENAZAH
         $section->addText('JENAZAH', ['size' => 10.5, 'bold' => true, 'name' => 'Times New Roman'], ['spaceBefore' => 100, 'spaceAfter' => 40]);
 
         $phpWord->addTableStyle('BorderlessJenazah', $borderlessTableStyle);
         $jTable = $section->addTable('BorderlessJenazah');
 
-        $addDocxRow = function($table, $num, $label, $val, $valRight = null) {
+        $addDocxRow = function ($table, string $num, $label, string $val, ?string $valRight = null) {
             $table->addRow();
-            $table->addCell(350)->addText($num, ['size' => 10, 'name' => 'Times New Roman']);
-            $table->addCell(3050)->addText($label, ['size' => 10, 'name' => 'Times New Roman']);
-            $table->addCell(200)->addText(':', ['size' => 10, 'name' => 'Times New Roman']);
+            $table->addCell(400)->addText($num, ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
+            $labelCell = $table->addCell(3050);
+            foreach ((is_array($label) ? $label : [$label]) as $line) {
+                $labelCell->addText($line, ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 10]);
+            }
+            $table->addCell(200)->addText(':', ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
             if ($valRight !== null) {
-                $table->addCell(3400)->addText($val, ['size' => 10, 'name' => 'Times New Roman']);
-                $table->addCell(2000)->addText($valRight, ['size' => 10, 'name' => 'Times New Roman'], ['alignment' => Jc::RIGHT]);
+                $table->addCell(3550)->addText($val, ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
+                $table->addCell(2000)->addText($valRight, ['size' => 10, 'name' => 'Times New Roman'], ['alignment' => Jc::RIGHT, 'spaceAfter' => 15]);
             } else {
-                $table->addCell(5400, ['gridSpan' => 2])->addText($val, ['size' => 10, 'name' => 'Times New Roman']);
+                $table->addCell(5550, ['gridSpan' => 2])->addText($val, ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 15]);
             }
         };
 
         $addDocxRow($jTable, '1', 'NIK', $death->deceased_nik ?: '-');
         $addDocxRow($jTable, '2', 'Nama Lengkap', strtoupper($death->deceased_name ?: '-'));
-        $addDocxRow($jTable, '3', 'Jenis Kelamin / Anak ke', $genderText, 'Anak ke   ' . ($death->deceased_child_order ?: '-'));
-        $deceasedBirthStr = strtoupper($death->deceased_birth_place ?: 'SLEMAN') . ', ' . ($death->birth_date ? $death->birth_date->format('d - m - Y') : '-');
-        $addDocxRow($jTable, '4', "Tempat dan Tanggal Lahir /\nUmur", $deceasedBirthStr, 'Umur ' . ($deceasedAge !== null ? $deceasedAge . ' th' : '-'));
+        $addDocxRow($jTable, '3', 'Jenis Kelamin / Anak ke', $genderText, 'Anak ke ' . ($death->deceased_child_order ?: ''));
+        $deceasedBirthStr = strtoupper($death->deceased_birth_place ?: 'SLEMAN') . ', ' . ($death->birth_date ? $death->birth_date->format('d-m-Y') : '-');
+        $addDocxRow($jTable, '4', ['Tempat dan Tanggal Lahir /', 'Umur'], $deceasedBirthStr, 'Umur ' . ($deceasedAge !== null ? $deceasedAge . ' th' : '-'));
         $addDocxRow($jTable, '5', 'Agama', strtoupper($death->religion ?: '-'));
         $addDocxRow($jTable, '6', 'Pekerjaan', strtoupper($death->deceased_job ?: '-'));
         $addDocxRow($jTable, '7', 'Alamat', strtoupper($deceasedFullAddress));
-        $deathDateStr = $death->death_date ? $death->death_date->format('d - m - Y') : '-';
-        $deathTimeStr = 'Jam: ' . ($death->death_time ? $death->death_time . ' WIB' : '-');
+        $deathDateStr = $death->death_date ? $death->death_date->format('d-m-Y') : '-';
+        $deathTimeStr = 'Jam: ' . ($death->death_time ? str_replace(':', '.', $death->death_time) . ' WIB' : '-');
         $addDocxRow($jTable, '8', 'Tanggal dan Jam Kematian', $deathDateStr, $deathTimeStr);
         $addDocxRow($jTable, '9', 'Sebab Kematian', strtoupper($death->cause_of_death ?: '-'));
         $deathPlaceStr = strtoupper($death->death_place ?: '-') . ($death->death_location_detail ? ' (' . strtoupper($death->death_location_detail) . ')' : '');
         $addDocxRow($jTable, '10', 'Tempat Kematian', $deathPlaceStr);
         $addDocxRow($jTable, '11', 'Yang Menerangkan', strtoupper($death->reported_by_title ?: 'LAINNYA'));
 
-        // ========================
-        // HALAMAN 2
-        // ========================
+        // Lanjutan Surat Keterangan Kematian: IBU, AYAH, PELAPOR, SAKSI 1, SAKSI 2 & TANDA TANGAN
         $section->addPageBreak();
 
-        $addSectionBlock = function($title, $nik, $name, $birth, $address, $spaceBefore = 80) use ($section, $addDocxRow, $borderlessTableStyle) {
+        $addSectionBlock = function ($title, $nik, $name, $birth, $address, $spaceBefore = 80) use ($section, $addDocxRow, $dotsPlaceholder) {
             $section->addText($title, ['size' => 10.5, 'bold' => true, 'name' => 'Times New Roman'], ['spaceBefore' => $spaceBefore, 'spaceAfter' => 40]);
             $table = $section->addTable(['borderColor' => 'FFFFFF', 'borderSize' => 0, 'cellMargin' => 20]);
-            $addDocxRow($table, '1', 'NIK', $nik ?: '');
-            $addDocxRow($table, '2', 'Nama Lengkap', strtoupper($name ?: ''));
-            $addDocxRow($table, '3', "Tempat dan Tanggal Lahir /\nUmur", strtoupper($birth ?: ''));
-            $addDocxRow($table, '4', 'Alamat', strtoupper($address ?: ''));
+            $addDocxRow($table, '1', 'NIK', $nik ?: $dotsPlaceholder);
+            $addDocxRow($table, '2', 'Nama Lengkap', $name ? strtoupper($name) : $dotsPlaceholder);
+            $addDocxRow($table, '3', ['Tempat dan Tanggal Lahir /', 'Umur'], $birth ? strtoupper($birth) : $dotsPlaceholder);
+            $addDocxRow($table, '4', 'Alamat', $address ? strtoupper($address) : $dotsPlaceholder);
         };
 
-        // IBU
         $addSectionBlock('IBU', $death->mother_nik, $death->mother_name, $motherBirth, $death->mother_address, 0);
-
-        // AYAH
         $addSectionBlock('AYAH', $death->father_nik, $death->father_name, $fatherBirth, $death->father_address);
-
-        // PELAPOR
         $addSectionBlock('PELAPOR', $death->applicant_nik, $death->applicant_name, $applicantBirth, $death->applicant_address);
-
-        // SAKSI 1
-        $witness1Nik = $death->witness1_nik ?: ($death->witness_nik ?: '');
-        $witness1Name = $death->witness1_name ?: ($death->witness_name ?: '');
         $addSectionBlock('SAKSI 1', $witness1Nik, $witness1Name, $witness1Birth, $death->witness1_address);
-
-        // SAKSI 2
         $addSectionBlock('SAKSI 2', $death->witness2_nik, $death->witness2_name, $witness2Birth, $death->witness2_address);
 
-        // Tanda Tangan
         $section->addTextBreak(1);
         $this->addDocxDeathSignature($section, $reportDateFormatted, $officerName);
 
@@ -578,13 +809,13 @@ class CertificateExportService
 
         $deceasedAge = null;
         if ($death->birth_date && $death->death_date) {
-            $deceasedAge = $death->birth_date->diffInYears($death->death_date);
+            $deceasedAge = (int) $death->birth_date->diffInYears($death->death_date);
         } elseif ($death->birth_date) {
-            $deceasedAge = $death->birth_date->diffInYears(now());
+            $deceasedAge = (int) $death->birth_date->diffInYears(now());
         }
 
-        $motherAge = $death->mother_birth_date ? $death->mother_birth_date->diffInYears($death->death_date ?? now()) : null;
-        $fatherAge = $death->father_birth_date ? $death->father_birth_date->diffInYears($death->death_date ?? now()) : null;
+        $motherAge = $death->mother_birth_date ? (int) $death->mother_birth_date->diffInYears($death->death_date ?? now()) : null;
+        $fatherAge = $death->father_birth_date ? (int) $death->father_birth_date->diffInYears($death->death_date ?? now()) : null;
 
         $deathDateFormatted = $death->death_date ? ($death->death_day ? strtoupper($death->death_day) . ', ' : '') . $death->death_date->translatedFormat('d F Y') : '-';
         $deceasedFullAddress = $death->deceased_address ?: ('Padukuhan ' . ($death->padukuhan ?: '-') . ', RT ' . ($death->rt ?: '-') . ' / RW ' . ($death->rw ?: '-') . ', Purwobinangun, Pakem, Sleman');
@@ -728,48 +959,23 @@ class CertificateExportService
         return '';
     }
 
-    private function addDocxKopSurat($section): void
+    private function getApplicantSignatureBase64(?string $signature): string
     {
-        $logoPath = public_path('images/logo-sleman.png');
-        $kopTable = $section->addTable(['borderColor' => 'FFFFFF', 'borderSize' => 0, 'cellMargin' => 40]);
-        $kopTable->addRow();
-
-        if (file_exists($logoPath)) {
-            $c1 = $kopTable->addCell(1500);
-            $c1->addImage($logoPath, ['width' => 55, 'height' => 70, 'alignment' => Jc::CENTER]);
-            $c2 = $kopTable->addCell(7500);
-        } else {
-            $c2 = $kopTable->addCell(9000);
+        if (!$signature) {
+            return '';
         }
-
-        $c2->addText('PEMERINTAH KABUPATEN SLEMAN', ['size' => 11, 'bold' => true], ['alignment' => Jc::CENTER, 'spaceAfter' => 20]);
-        $c2->addText('KAPANEWON PAKEM', ['size' => 11, 'bold' => true], ['alignment' => Jc::CENTER, 'spaceAfter' => 20]);
-        $c2->addText('PEMERINTAH KALURAHAN PURWOBINANGUN', ['size' => 13, 'bold' => true], ['alignment' => Jc::CENTER, 'spaceAfter' => 30]);
-        $c2->addText('Alamat: Jl. Boyong No. 1 Purwobinangun, Pakem, Sleman, D.I. Yogyakarta 55582', ['size' => 8.5, 'italic' => true], ['alignment' => Jc::CENTER, 'spaceAfter' => 50]);
-
-        $section->addLine(['weight' => 2, 'width' => 480, 'height' => 0, 'color' => '000000']);
-        $section->addTextBreak(1);
+        if (str_starts_with($signature, 'data:image')) {
+            return $signature;
+        }
+        $storagePath = storage_path('app/public/' . ltrim($signature, '/'));
+        if (file_exists($storagePath)) {
+            $type = pathinfo($storagePath, PATHINFO_EXTENSION) ?: 'png';
+            return 'data:image/' . $type . ';base64,' . base64_encode(file_get_contents($storagePath));
+        }
+        return '';
     }
 
-    private function addDocxSignature($section, string $dateFormatted): void
-    {
-        $sigTable = $section->addTable(['borderColor' => 'FFFFFF', 'borderSize' => 0]);
-        $sigTable->addRow();
-
-        $c1 = $sigTable->addCell(4500);
-        $c1->addText('Mengetahui / Memeriksa:', ['size' => 9.5]);
-        $c1->addText('Petugas Registrasi Kalurahan,', ['size' => 9.5, 'bold' => true]);
-        $c1->addTextBreak(3);
-        $c1->addText('( ................................................... )', ['size' => 9.5, 'underline' => 'single']);
-
-        $c2 = $sigTable->addCell(4500);
-        $c2->addText('Purwobinangun, ' . $dateFormatted, ['size' => 9.5], ['alignment' => Jc::RIGHT]);
-        $c2->addText('Lurah Purwobinangun,', ['size' => 9.5, 'bold' => true], ['alignment' => Jc::RIGHT]);
-        $c2->addTextBreak(3);
-        $c2->addText('( R. HADI PURWANTO )', ['size' => 9.5, 'bold' => true, 'underline' => 'single'], ['alignment' => Jc::RIGHT]);
-    }
-
-    private function addDocxDeathKopSurat($section): void
+    private function addDocxPurwobinangunKopSurat($section, string $email): void
     {
         $logoPath = public_path('images/logo-sleman.png');
         $aksaraPath = public_path('images/aksara-purwobinangun.jpg');
@@ -777,11 +983,11 @@ class CertificateExportService
         $kopTable->addRow();
 
         if (file_exists($logoPath)) {
-            $c1 = $kopTable->addCell(1300);
-            $c1->addImage($logoPath, ['width' => 52, 'height' => 65, 'alignment' => Jc::CENTER]);
-            $c2 = $kopTable->addCell(7700);
+            $c1 = $kopTable->addCell(1350);
+            $c1->addImage($logoPath, ['width' => 52, 'height' => 64, 'alignment' => Jc::CENTER]);
+            $c2 = $kopTable->addCell(7850);
         } else {
-            $c2 = $kopTable->addCell(9000);
+            $c2 = $kopTable->addCell(9200);
         }
 
         $c2->addText('PEMERINTAH KABUPATEN SLEMAN', ['size' => 10.5, 'bold' => true, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceAfter' => 10]);
@@ -792,11 +998,29 @@ class CertificateExportService
             $c2->addImage($aksaraPath, ['height' => 12, 'width' => 170, 'alignment' => Jc::CENTER]);
         }
 
-        $c2->addText('Alamat : Jl. Pakem - Turi Km.04 Watuadeg Purwobinangun Pakem Sleman Yogyakarta. 55582', ['size' => 8, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceAfter' => 10]);
-        $c2->addText('Laman : www.purwobinangun.slemankab.go.id    Surel : desapurwobinangun@slemankab.go.id', ['size' => 8, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceAfter' => 30]);
+        $c2->addText('Alamat : Jl. Pakem-Turi Km.04 Watuadeg Purwobinangun Pakem Sleman Yogyakarta. 55582', ['size' => 8, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceAfter' => 10]);
+        $c2->addText('Laman : www.purwobinangun.slemankab.go.id   Surel : ' . $email, ['size' => 8, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceAfter' => 30]);
 
-        $section->addLine(['weight' => 2, 'width' => 480, 'height' => 0, 'color' => '000000']);
+        $section->addLine(['weight' => 2.5, 'width' => 460, 'height' => 0, 'color' => '000000']);
         $section->addTextBreak(1);
+    }
+
+    private function addDocxFormSignature($section, string $dateFormatted, string $applicantName, ?string $processedBy = null): void
+    {
+        $sigTable = $section->addTable(['borderColor' => 'FFFFFF', 'borderSize' => 0]);
+        $sigTable->addRow();
+
+        $c1 = $sigTable->addCell(4600);
+        $c1->addText('Sleman, ' . $dateFormatted, ['size' => 9.5, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceAfter' => 10]);
+        $c1->addText('Petugas Penerima Berkas,', ['size' => 9.5, 'bold' => true, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceAfter' => 10]);
+        $c1->addTextBreak(2);
+        $c1->addText('( ' . ($processedBy ?: '...................................................') . ' )', ['size' => 9.5, 'underline' => 'single', 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER]);
+
+        $c2 = $sigTable->addCell(4600);
+        $c2->addText('Sleman, ' . $dateFormatted, ['size' => 9.5, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceAfter' => 10]);
+        $c2->addText('Pemohon / Pelapor,', ['size' => 9.5, 'bold' => true, 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER, 'spaceAfter' => 10]);
+        $c2->addTextBreak(2);
+        $c2->addText('( ' . $applicantName . ' )', ['size' => 9.5, 'bold' => true, 'underline' => 'single', 'name' => 'Times New Roman'], ['alignment' => Jc::CENTER]);
     }
 
     private function addDocxDeathSignature($section, string $dateFormatted, string $officerName): void
@@ -804,8 +1028,8 @@ class CertificateExportService
         $sigTable = $section->addTable(['borderColor' => 'FFFFFF', 'borderSize' => 0]);
         $sigTable->addRow();
 
-        $c1 = $sigTable->addCell(5200);
-        $c2 = $sigTable->addCell(3800);
+        $sigTable->addCell(5300);
+        $c2 = $sigTable->addCell(3900);
         $c2->addText('Sleman, ' . $dateFormatted, ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 10]);
         $c2->addText('Mengetahui', ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 10]);
         $c2->addText('a.n Lurah', ['size' => 10, 'name' => 'Times New Roman'], ['spaceAfter' => 10]);

@@ -681,17 +681,23 @@
         </div>
 
         <!-- Judul Surat -->
+        @php
+            $romansSk = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'];
+            $skRefDate = $birth->created_at ?: now();
+            $skMonthRoman = $romansSk[(int) $skRefDate->format('n')] ?? 'I';
+            $skSeq = (int) substr($birth->registration_no, -4) ?: 1;
+        @endphp
         <div class="text-center my-5">
             <h2 class="text-[13pt] font-bold tracking-wider uppercase underline">
                 SURAT KETERANGAN
             </h2>
             <p class="text-[11pt] mt-1 tracking-wide">
-                Nomor : 474.1/ &nbsp;&nbsp;{{ substr($birth->registration_no, -4) }}&nbsp;&nbsp; / &nbsp;&nbsp;{{ $birth->created_at ? $birth->created_at->format('m') : date('m') }}&nbsp;&nbsp; / &nbsp;&nbsp;{{ $birth->created_at ? $birth->created_at->format('Y') : date('Y') }}
+                Nomor : 474.1/ &nbsp;&nbsp;{{ $skSeq }}&nbsp;&nbsp; / &nbsp;&nbsp;{{ $skMonthRoman }}&nbsp;&nbsp; / &nbsp;&nbsp;{{ $skRefDate->format('Y') }}
             </p>
         </div>
 
         <!-- Isi Surat -->
-        <div class="text-[11pt] leading-[1.65] space-y-4 text-black">
+        <div class="text-[11pt] leading-[1.6] space-y-3 text-black">
             
             <!-- Yang bertandatangan di bawah ini -->
             <div>
@@ -706,12 +712,12 @@
                     <tr>
                         <td class="w-36 align-top">Nama</td>
                         <td class="w-4 align-top">:</td>
-                        <td class="align-top font-medium">...................................................</td>
+                        <td class="align-top font-medium">R. Heri Suasana</td>
                     </tr>
                     <tr>
                         <td class="w-36 align-top">Jabatan</td>
                         <td class="w-4 align-top">:</td>
-                        <td class="align-top font-medium">...................................................</td>
+                        <td class="align-top font-medium">Lurah Purwobinangun</td>
                     </tr>
                 </table>
             </div>
@@ -729,7 +735,7 @@
                     <tr>
                         <td class="w-36 align-top">Nama Lengkap</td>
                         <td class="w-4 align-top">:</td>
-                        <td class="align-top font-bold uppercase">{{ $applicantName }}</td>
+                        <td class="align-top font-bold">{{ $applicantName }}</td>
                     </tr>
                     <tr>
                         <td class="w-36 align-top">NIK</td>
@@ -759,36 +765,36 @@
                         <td class="w-4 align-top">:</td>
                         <td class="align-top leading-snug">
                             @if($birth->padukuhan || $birth->rt)
-                                {{ $birth->padukuhan ? 'Padukuhan ' . $birth->padukuhan . ', ' : '' }}{{ $birth->rt ? 'RT ' . $birth->rt . ' / RW ' . $birth->rw : '' }}<br>
+                                {{ $birth->padukuhan ? $birth->padukuhan . ' ' : '' }}{{ $birth->rt ? 'RT ' . str_pad((string) $birth->rt, 3, '0', STR_PAD_LEFT) . ' RW ' . str_pad((string) ($birth->rw ?: '0'), 3, '0', STR_PAD_LEFT) : '' }}<br>
                             @elseif($birth->address)
                                 {{ $birth->address }}<br>
                             @endif
-                            Kalurahan Purwobinangun<br>
-                            Kapanewon Pakem<br>
-                            Kabupaten Sleman<br>
-                            Provinsi Di Yogyakarta
+                            Kalurahan {{ $birth->applicant_village ?: 'Purwobinangun' }}<br>
+                            Kapanewon {{ $birth->applicant_district ?: 'Pakem' }}<br>
+                            Kabupaten {{ $birth->applicant_city ?: 'Sleman' }}<br>
+                            Provinsi {{ $birth->applicant_province ?: 'DI Yogyakarta' }}
                         </td>
                     </tr>
                     <tr>
-                        <td class="w-36 align-top pt-2">Pergi ke</td>
-                        <td class="w-4 align-top pt-2">:</td>
-                        <td class="align-top pt-2 leading-snug">
+                        <td class="w-36 align-top pt-1.5">Pergi ke</td>
+                        <td class="w-4 align-top pt-1.5">:</td>
+                        <td class="align-top pt-1.5 leading-snug">
                             Dinas Kependudukan dan Catatan Sipil<br>
                             Sleman
                         </td>
                     </tr>
                     <tr>
-                        <td class="w-36 align-top pt-2">Kaperluan</td>
-                        <td class="w-4 align-top pt-2">:</td>
-                        <td class="align-top pt-2">
-                            Mohon Akta Kelahiran untuk {{ strtoupper($birth->child_name) }}
+                        <td class="w-36 align-top pt-1.5">Keperluan</td>
+                        <td class="w-4 align-top pt-1.5">:</td>
+                        <td class="align-top pt-1.5">
+                            Mohon Akta Kelahiran untuk <strong>{{ strtoupper($birth->child_name) }}</strong>
                         </td>
                     </tr>
                 </table>
             </div>
 
             <!-- Paragraf Penutup -->
-            <div class="pt-2 space-y-3 text-justify" style="text-indent: 2.5rem;">
+            <div class="pt-1 space-y-2.5 text-justify" style="text-indent: 2.5rem;">
                 <p>
                     Sehubungan dengan maksud yang bersangkutan, mohon yang berwenang memberikan bantuan serta fasilitas seperlunya.
                 </p>
@@ -798,17 +804,20 @@
             </div>
 
             <!-- Tanda Tangan Pengesahan -->
-            <div class="pt-6 flex justify-end">
+            <div class="pt-4 flex justify-end">
                 <div class="text-left w-72 pr-2">
                     <p>
                         Purwobinangun, {{ $reportDate }}
                     </p>
+                    <p class="pl-6 mt-0.5">
+                        Lurah Purwobinangun
+                    </p>
                     
                     <!-- Ruang tanda tangan & cap stempel -->
-                    <div class="h-24"></div>
+                    <div class="h-20"></div>
 
-                    <p class="font-medium">
-                        ( .................................................... )
+                    <p class="font-bold pl-9">
+                        R. Heri Suasana
                     </p>
                 </div>
             </div>

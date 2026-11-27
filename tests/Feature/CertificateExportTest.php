@@ -233,4 +233,72 @@ class CertificateExportTest extends TestCase
         $delDeath->assertRedirect(route('admin.archive.index', ['tab' => 'death']));
         $this->assertDatabaseMissing('death_certificates', ['id' => $this->death->id]);
     }
+
+    public function test_pdf_and_docx_exports_include_form_data_and_last_page_surat_keterangan(): void
+    {
+        // Render Birth & Death PDF Blade templates directly to verify structure & content
+        $birthHtml = view('exports.pdf.birth', [
+            'birth' => $this->birth,
+            'logoBase64' => '',
+            'aksaraBase64' => '',
+            'signatureBase64' => '',
+        ])->render();
+
+        $this->assertStringContainsString('FORMULIR PELAPORAN &amp; PERMOHONAN AKTA KELAHIRAN', $birthHtml);
+        $this->assertStringContainsString('Ananda Rizky Purwobinangun', $birthHtml);
+        $this->assertStringContainsString('SURAT KETERANGAN', $birthHtml);
+        $this->assertStringContainsString('Nomor : 474.1/', $birthHtml);
+        $this->assertStringContainsString('Dinas Kependudukan dan Catatan Sipil', $birthHtml);
+        $this->assertStringContainsString('Mohon Akta Kelahiran untuk', $birthHtml);
+        $this->assertStringContainsString('ANANDA RIZKY PURWOBINANGUN', $birthHtml);
+
+        $deathHtml = view('exports.pdf.death', [
+            'death' => $this->death,
+            'logoBase64' => '',
+            'aksaraBase64' => '',
+        ])->render();
+
+        $this->assertStringContainsString('FORMULIR PELAPORAN &amp; PERMOHONAN AKTA KEMATIAN', $deathHtml);
+        $this->assertStringContainsString('Mbah Mulyo Santoso', $deathHtml);
+        $this->assertStringContainsString('SURAT KETERANGAN KEMATIAN', $deathHtml);
+        $this->assertStringContainsString('No. 474.3/', $deathHtml);
+        $this->assertStringContainsString('Kaur Tata Laksana', $deathHtml);
+        $this->assertStringContainsString('Teguh Kurniawan, S.Pi.', $deathHtml);
+
+        // Verify Birth DOCX XML contains both Form Data and Surat Keterangan
+        $birthDocxResp = $this->actingAs($this->admin)
+            ->get(route('admin.birth.export', ['birth' => $this->birth, 'format' => 'docx']));
+        $birthDocxResp->assertStatus(200);
+        $tmpBirthDocx = tempnam(sys_get_temp_dir(), 'birth_docx_');
+        file_put_contents($tmpBirthDocx, $birthDocxResp->streamedContent());
+        $zipBirth = new \ZipArchive();
+        $this->assertTrue($zipBirth->open($tmpBirthDocx) === true);
+        $birthDocXml = $zipBirth->getFromName('word/document.xml');
+        $zipBirth->close();
+        @unlink($tmpBirthDocx);
+
+        $this->assertStringContainsString('FORMULIR PELAPORAN &amp; PERMOHONAN AKTA KELAHIRAN', $birthDocXml);
+        $this->assertStringContainsString('SURAT KETERANGAN', $birthDocXml);
+        $this->assertStringContainsString('474.1/', $birthDocXml);
+        $this->assertStringContainsString('Mohon Akta Kelahiran untuk ANANDA RIZKY PURWOBINANGUN', $birthDocXml);
+
+        // Verify Death DOCX XML contains both Form Data and Surat Keterangan Kematian
+        $deathDocxResp = $this->actingAs($this->admin)
+            ->get(route('admin.death.export', ['death' => $this->death, 'format' => 'docx']));
+        $deathDocxResp->assertStatus(200);
+        $tmpDeathDocx = tempnam(sys_get_temp_dir(), 'death_docx_');
+        file_put_contents($tmpDeathDocx, $deathDocxResp->streamedContent());
+        $zipDeath = new \ZipArchive();
+        $this->assertTrue($zipDeath->open($tmpDeathDocx) === true);
+        $deathDocXml = $zipDeath->getFromName('word/document.xml');
+        $zipDeath->close();
+        @unlink($tmpDeathDocx);
+
+        $this->assertStringContainsString('FORMULIR PELAPORAN &amp; PERMOHONAN AKTA KEMATIAN', $deathDocXml);
+        $this->assertStringContainsString('SURAT KETERANGAN KEMATIAN', $deathDocXml);
+        $this->assertStringContainsString('474.3/', $deathDocXml);
+        $this->assertStringContainsString('MBAH MULYO SANTOSO', $deathDocXml);
+        $this->assertStringContainsString('Umur 81 th', $deathDocXml);
+        $this->assertStringContainsString('Teguh Kurniawan, S.Pi', $deathDocXml);
+    }
 }
