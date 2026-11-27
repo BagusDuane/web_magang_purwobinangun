@@ -69,9 +69,9 @@
                             </div>
                         </div>
 
-                        @if($result->rejection_note && $result->status === 'rejected')
-                            <div class="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800">
-                                <p class="font-bold mb-0.5"><i class="fa-solid fa-circle-exclamation mr-1"></i> Catatan Perbaikan dari Petugas:</p>
+                        @if($result->rejection_note && in_array($result->status, ['rejected', 'revision'], true))
+                            <div class="p-3 {{ $result->status === 'revision' ? 'bg-orange-50 border-orange-200 text-orange-800' : 'bg-rose-50 border-rose-200 text-rose-800' }} border rounded-lg text-xs">
+                                <p class="font-bold mb-0.5"><i class="fa-solid fa-circle-exclamation mr-1"></i> {{ $result->status === 'revision' ? 'Catatan Revisi Berkas dari Petugas:' : 'Catatan Perbaikan dari Petugas:' }}</p>
                                 <p>{{ $result->rejection_note }}</p>
                             </div>
                         @endif
@@ -80,9 +80,15 @@
                             <a href="{{ route('tracking.show', ['type' => $type, 'registrationNo' => $result->registration_no]) }}" class="text-xs font-bold text-[#0b7c89] hover:text-[#065b65] flex items-center gap-1">
                                 Lihat Timeline Lengkap <i class="fa-solid fa-arrow-right"></i>
                             </a>
-                            <a href="{{ route('tracking.print_receipt', ['type' => $type, 'registrationNo' => $result->registration_no]) }}" target="_blank" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5">
-                                <i class="fa-solid fa-print"></i> Cetak Tanda Terima
-                            </a>
+                            @if(in_array($result->status, ['revision', 'rejected'], true))
+                                <button type="button" disabled title="{{ $result->status === 'rejected' ? 'Tanda terima tidak dapat dicetak karena permohonan dibatalkan' : 'Tanda terima tidak dapat dicetak selama status revisi berkas' }}" class="bg-slate-200 text-slate-400 cursor-not-allowed font-semibold text-xs px-3.5 py-1.5 rounded-lg border border-slate-300 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-print"></i> Cetak Tanda Terima
+                                </button>
+                            @else
+                                <a href="{{ route('tracking.print_receipt', ['type' => $type, 'registrationNo' => $result->registration_no]) }}" target="_blank" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs px-3.5 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                                    <i class="fa-solid fa-print"></i> Cetak Tanda Terima
+                                </a>
+                            @endif
                         </div>
                     </div>
                 @else

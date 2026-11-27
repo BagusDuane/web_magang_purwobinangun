@@ -117,37 +117,37 @@ class CitizenNotificationService
                     $iconClass = 'fa-solid fa-circle-check text-emerald-600';
                     $iconBg = 'bg-emerald-50 border border-emerald-200';
                     $title = 'Akte Kelahiran Siap Diambil';
-                    $message = "Akte Kelahiran an. {$birth->child_name} siap diambil.";
+                    $message = "Akte Kelahiran an. " . e($birth->child_name) . " siap diambil.";
                 } elseif ($status === 'rejected') {
                     $iconClass = 'fa-solid fa-circle-xmark text-rose-600';
                     $iconBg = 'bg-rose-50 border border-rose-200';
                     $title = 'Akte Kelahiran Ditolak';
-                    $message = "Pengajuan Akte Kelahiran an. {$birth->child_name} ditolak.";
+                    $message = "Pengajuan Akte Kelahiran an. " . e($birth->child_name) . " ditolak.";
                 } elseif ($status === 'revision') {
                     $iconClass = 'fa-solid fa-triangle-exclamation text-amber-600';
                     $iconBg = 'bg-amber-50 border border-amber-200';
                     $title = 'Revisi Akte Kelahiran';
-                    $message = "Pengajuan Akte Kelahiran an. {$birth->child_name} perlu revisi berkas.";
+                    $message = "Pengajuan Akte Kelahiran an. " . e($birth->child_name) . " perlu revisi berkas.";
                 } elseif (in_array($status, ['in_process', 'verified'])) {
                     $iconClass = 'fa-solid fa-arrows-rotate text-blue-600';
                     $iconBg = 'bg-blue-50 border border-blue-200';
                     $title = 'Akte Kelahiran Diproses';
-                    $message = "Pengajuan Akte Kelahiran an. {$birth->child_name} sedang diproses.";
+                    $message = "Pengajuan Akte Kelahiran an. " . e($birth->child_name) . " sedang diproses.";
                 } elseif ($status === 'picked_up') {
                     $iconClass = 'fa-solid fa-clipboard-check text-teal-600';
                     $iconBg = 'bg-teal-50 border border-teal-200';
                     $title = 'Akte Kelahiran Diambil';
-                    $message = "Akte Kelahiran an. {$birth->child_name} sudah diambil.";
+                    $message = "Akte Kelahiran an. " . e($birth->child_name) . " sudah diambil.";
                 } elseif ($status === 'archived') {
                     $iconClass = 'fa-solid fa-box-archive text-slate-600';
                     $iconBg = 'bg-slate-100 border border-slate-200';
                     $title = 'Akte Kelahiran Diarsipkan';
-                    $message = "Pengajuan Akte Kelahiran an. {$birth->child_name} diarsipkan.";
+                    $message = "Pengajuan Akte Kelahiran an. " . e($birth->child_name) . " diarsipkan.";
                 } else {
                     $iconClass = 'fa-solid fa-clock text-amber-600';
                     $iconBg = 'bg-amber-50 border border-amber-200';
                     $title = 'Akte Kelahiran Terkirim';
-                    $message = "Pengajuan Akte Kelahiran an. {$birth->child_name} menunggu verifikasi.";
+                    $message = "Pengajuan Akte Kelahiran an. " . e($birth->child_name) . " menunggu verifikasi.";
                 }
 
                 $notifications->push([
@@ -196,37 +196,37 @@ class CitizenNotificationService
                     $iconClass = 'fa-solid fa-circle-check text-emerald-600';
                     $iconBg = 'bg-emerald-50 border border-emerald-200';
                     $title = 'Surat Kematian Siap Diambil';
-                    $message = "Surat Kematian an. {$death->deceased_name} siap diambil.";
+                    $message = "Surat Kematian an. " . e($death->deceased_name) . " siap diambil.";
                 } elseif ($status === 'rejected') {
                     $iconClass = 'fa-solid fa-circle-xmark text-rose-600';
                     $iconBg = 'bg-rose-50 border border-rose-200';
                     $title = 'Surat Kematian Ditolak';
-                    $message = "Pengajuan Surat Kematian an. {$death->deceased_name} ditolak.";
+                    $message = "Pengajuan Surat Kematian an. " . e($death->deceased_name) . " ditolak.";
                 } elseif ($status === 'revision') {
                     $iconClass = 'fa-solid fa-triangle-exclamation text-amber-600';
                     $iconBg = 'bg-amber-50 border border-amber-200';
                     $title = 'Revisi Surat Kematian';
-                    $message = "Pengajuan Surat Kematian an. {$death->deceased_name} perlu revisi berkas.";
+                    $message = "Pengajuan Surat Kematian an. " . e($death->deceased_name) . " perlu revisi berkas.";
                 } elseif (in_array($status, ['in_process', 'verified'])) {
                     $iconClass = 'fa-solid fa-arrows-rotate text-blue-600';
                     $iconBg = 'bg-blue-50 border border-blue-200';
                     $title = 'Surat Kematian Diproses';
-                    $message = "Pengajuan Surat Kematian an. {$death->deceased_name} sedang diproses.";
+                    $message = "Pengajuan Surat Kematian an. " . e($death->deceased_name) . " sedang diproses.";
                 } elseif ($status === 'picked_up') {
                     $iconClass = 'fa-solid fa-clipboard-check text-teal-600';
                     $iconBg = 'bg-teal-50 border border-teal-200';
                     $title = 'Surat Kematian Diambil';
-                    $message = "Surat Kematian an. {$death->deceased_name} sudah diambil.";
+                    $message = "Surat Kematian an. " . e($death->deceased_name) . " sudah diambil.";
                 } elseif ($status === 'archived') {
                     $iconClass = 'fa-solid fa-box-archive text-slate-600';
                     $iconBg = 'bg-slate-100 border border-slate-200';
                     $title = 'Surat Kematian Diarsipkan';
-                    $message = "Pengajuan Surat Kematian an. {$death->deceased_name} diarsipkan.";
+                    $message = "Pengajuan Surat Kematian an. " . e($death->deceased_name) . " diarsipkan.";
                 } else {
                     $iconClass = 'fa-solid fa-clock text-amber-600';
                     $iconBg = 'bg-amber-50 border border-amber-200';
                     $title = 'Surat Kematian Terkirim';
-                    $message = "Pengajuan Surat Kematian an. {$death->deceased_name} menunggu verifikasi.";
+                    $message = "Pengajuan Surat Kematian an. " . e($death->deceased_name) . " menunggu verifikasi.";
                 }
 
                 $notifications->push([

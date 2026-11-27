@@ -679,7 +679,7 @@
                     Alamat : Jl. Pakem-Turi Km.04 Watuadeg Purwobinangun Pakem Sleman Yogyakarta. 55582
                 </p>
                 <p class="text-[9pt] leading-tight mt-0.5">
-                    Laman : www.purwobinangun.slemankab.go.id Surel : puwobinangun@slemankab.go.id
+                    Laman : www.purwobinangun.slemankab.go.id Surel : purwobinangun@slemankab.go.id
                 </p>
             </div>
 
@@ -794,7 +794,7 @@
                         <td class="w-36 align-top pt-1.5">Keperluan</td>
                         <td class="w-4 align-top pt-1.5">:</td>
                         <td class="align-top pt-1.5">
-                            Mohon Akta Kelahiran untuk <strong>{{ strtoupper($birth->child_name) }}</strong>
+                            Mohon Akta Kelahiran untuk {{ strtoupper($birth->child_name) }}
                         </td>
                     </tr>
                 </table>

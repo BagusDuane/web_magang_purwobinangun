@@ -10,17 +10,16 @@ class HomeController extends Controller
 {
     public function index()
     {
+        $completedStatuses = ['ready_for_pickup', 'completed', 'picked_up', 'archived'];
+
         $stats = [
             'birth_total' => BirthCertificate::count(),
-            'birth_completed' => BirthCertificate::where('status', 'completed')->count(),
+            'birth_completed' => BirthCertificate::whereIn('status', $completedStatuses)->count(),
             'death_total' => DeathCertificate::count(),
-            'death_completed' => DeathCertificate::where('status', 'completed')->count(),
+            'death_completed' => DeathCertificate::whereIn('status', $completedStatuses)->count(),
         ];
 
-        $recentBirths = BirthCertificate::latest()->take(3)->get();
-        $recentDeaths = DeathCertificate::latest()->take(3)->get();
-
-        return view('home', compact('stats', 'recentBirths', 'recentDeaths'));
+        return view('home', compact('stats'));
     }
 
     public function guidelines()

@@ -81,6 +81,7 @@ Route::middleware('auth.warga')->group(function () {
         Route::get('/buat', [DeathCertificateController::class, 'create'])->name('create');
         Route::post('/buat', [DeathCertificateController::class, 'store'])->name('store');
         Route::get('/sukses', [DeathCertificateController::class, 'success'])->name('success');
+        Route::get('/{death}/cetak-surat', [DeathCertificateController::class, 'printLetter'])->name('print_letter');
         Route::get('/{death}/export/{format}', [DeathCertificateController::class, 'export'])->name('export');
         Route::get('/daftar-pengajuan', function () {
             return redirect()->route('submissions.index', array_merge(['type' => 'death'], request()->query()));

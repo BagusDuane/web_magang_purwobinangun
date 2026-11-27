@@ -238,7 +238,7 @@
                     </button>
                 </form>
 
-                @if($death->status === 'rejected' || $death->status === 'picked_up' || $death->status === 'archived')
+                @if(($death->status === 'rejected' && !$death->is_archived) || $death->status === 'picked_up')
                     <form action="{{ route('admin.archive.death.archive', $death) }}" method="POST" class="mt-3">
                         @csrf
                         <button type="submit" onclick="return confirm('Apakah Anda yakin ingin MENGARSIPKAN pengajuan akte kematian ini secara manual?');" class="btn-archive w-full bg-slate-700 hover:bg-slate-800 text-white font-bold text-xs py-2.5 rounded-lg shadow-xs transition flex items-center justify-center gap-1.5" style="background-color: #334155; color: #ffffff;">
@@ -269,6 +269,7 @@
                 <div><span class="text-slate-400 block text-[11px]">Alamat KTP:</span> <span>{{ $death->applicant_address ?: '-' }}</span></div>
                 <div><span class="text-slate-400 block text-[11px]">Hubungan:</span> <span class="font-semibold text-rose-700">{{ $death->applicant_relation }}</span></div>
                 <div><span class="text-slate-400 block text-[11px]">Tgl Lapor:</span> <span>{{ $death->report_date ? $death->report_date->translatedFormat('d F Y') : '-' }}</span></div>
+                <div><span class="text-slate-400 block text-[11px]">Email Warga:</span> <span class="font-medium text-slate-800">{{ $death->applicant_email ?: '-' }}</span></div>
                 <div><span class="text-slate-400 block text-[11px]">No. HP / Telepon:</span> <span class="font-bold text-slate-800">{{ $death->applicant_phone }}</span></div>
 
                 <!-- Saksi I & Saksi II -->

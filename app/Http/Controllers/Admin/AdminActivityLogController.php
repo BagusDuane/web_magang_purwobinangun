@@ -42,6 +42,8 @@ class AdminActivityLogController extends Controller
                 $query->whereIn('module', ['citizen', 'auth']);
             } elseif ($module === 'perubahan_profil' || $module === 'profile_update') {
                 $query->where('module', 'profile_update');
+            } elseif ($module === 'petugas' || $module === 'staff') {
+                $query->where('module', 'staff');
             } else {
                 $query->where('module', $module);
             }
@@ -138,6 +140,8 @@ class AdminActivityLogController extends Controller
                 $query->whereIn('module', ['citizen', 'auth']);
             } elseif ($module === 'perubahan_profil' || $module === 'profile_update') {
                 $query->where('module', 'profile_update');
+            } elseif ($module === 'petugas' || $module === 'staff') {
+                $query->where('module', 'staff');
             } else {
                 $query->where('module', $module);
             }

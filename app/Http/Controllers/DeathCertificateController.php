@@ -75,6 +75,10 @@ class DeathCertificateController extends Controller
                     abort(403, 'Akses Ditolak: Anda tidak berhak merevisi permohonan dari Kartu Keluarga lain.');
                 }
             }
+            if ($revisionDeath && $revisionDeath->status !== 'revision') {
+                return redirect()->route('tracking.show', ['type' => 'death', 'registrationNo' => $revisionDeath->registration_no])
+                    ->with('error', 'Permohonan ini tidak sedang dalam status revisi berkas.');
+            }
         }
 
         return view('death.create', compact('padukuhanList', 'pekerjaanList', 'user', 'revisionDeath'));
@@ -84,18 +88,33 @@ class DeathCertificateController extends Controller
     {
         $user = Auth::user();
 
-        $registrationNoInput = $request->input('registration_no');
+        $registrationNoInput = $request->input('registration_no') ?: $request->input('revision_registration_no');
         $isRevision = false;
         $existingDeath = null;
 
         if ($registrationNoInput) {
             $existingDeath = DeathCertificate::where('registration_no', $registrationNoInput)->first();
-            if ($existingDeath && $existingDeath->status === 'revision') {
-                if ($user && $user->isWarga() && $existingDeath->family_card_no && $existingDeath->family_card_no !== $user->family_card_no && $existingDeath->user_id !== $user->id) {
+            if (!$existingDeath) {
+                abort(404, 'Data permohonan untuk revisi tidak ditemukan.');
+            }
+            if ($user && $user->isWarga()) {
+                $isSameKK = $existingDeath->family_card_no && $existingDeath->family_card_no === $user->family_card_no;
+                $isSameUser = $existingDeath->user_id && $existingDeath->user_id === $user->id;
+                if (!$isSameKK && !$isSameUser) {
                     abort(403, 'Akses Ditolak: Anda tidak memiliki hak akses untuk merevisi permohonan ini.');
                 }
-                $isRevision = true;
             }
+            if ($existingDeath->status !== 'revision') {
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Permohonan ini tidak dalam status revisi berkas sehingga tidak dapat ditimpa.',
+                    ], 422);
+                }
+                return redirect()->route('tracking.show', ['type' => 'death', 'registrationNo' => $existingDeath->registration_no])
+                    ->with('error', 'Permohonan ini tidak dalam status revisi berkas sehingga tidak dapat ditimpa.');
+            }
+            $isRevision = true;
         }
 
         $validated = $request->validate([
@@ -154,16 +173,23 @@ class DeathCertificateController extends Controller
             'applicant_phone' => 'required|string|max:20',
             'applicant_relation' => 'required|string|max:50',
 
-            // 4. Data Saksi I & Saksi II
+            // 4. Data Saksi I & Saksi II & Petugas
             'witness1_nik' => 'nullable|digits:16',
             'witness1_name' => 'nullable|string|max:255',
+            'witness1_birth_place' => 'nullable|string|max:100',
+            'witness1_birth_date' => 'nullable|date',
             'witness1_age' => 'nullable|integer|min:1|max:150',
             'witness1_address' => 'nullable|string|max:255',
 
             'witness2_nik' => 'nullable|digits:16',
             'witness2_name' => 'nullable|string|max:255',
+            'witness2_birth_place' => 'nullable|string|max:100',
+            'witness2_birth_date' => 'nullable|date',
             'witness2_age' => 'nullable|integer|min:1|max:150',
             'witness2_address' => 'nullable|string|max:255',
+
+            'officer_registration_type' => 'nullable|string|max:100',
+            'officer_name' => 'nullable|string|max:255',
 
             // 5. Berkas Unggahan Persyaratan
             'doc_death_statement' => ($isRevision && $existingDeath?->doc_death_statement) ? 'nullable|file|mimes:jpg,jpeg,png,pdf|max:3072' : 'required|file|mimes:jpg,jpeg,png,pdf|max:3072',
@@ -185,14 +211,18 @@ class DeathCertificateController extends Controller
         if ($isRevision && $existingDeath) {
             $data['registration_no'] = $existingDeath->registration_no;
             $data['status'] = 'pending';
+            $data['is_archived'] = false;
+            $data['rejection_note'] = null;
+            $data['processed_by'] = null;
         } else {
             $data['registration_no'] = DeathCertificate::generateRegistrationNo();
             $data['status'] = 'pending';
+            $data['is_archived'] = false;
         }
 
         // Bind data KK dan Akun Warga yang login (Penegakan Isolasi KK)
         $data['user_id'] = $user ? $user->id : null;
-        $data['family_card_no'] = $user ? $user->family_card_no : ($request->input('family_card_no') ?? null);
+        $data['family_card_no'] = $user ? ($user->family_card_no ?: ($request->input('family_card_no') ?? null)) : ($request->input('family_card_no') ?? null);
 
         // Backward compatibility mappings
         $data['witness_nik'] = $data['witness1_nik'] ?? null;
@@ -211,6 +241,12 @@ class DeathCertificateController extends Controller
 
         foreach ($fileFields as $field) {
             if ($request->hasFile($field)) {
+                if ($isRevision && $existingDeath && !empty($existingDeath->$field)) {
+                    $oldPath = ltrim(preg_replace('#^(public/|storage/)#', '', $existingDeath->$field), '/\\');
+                    if (Storage::disk('public')->exists($oldPath)) {
+                        Storage::disk('public')->delete($oldPath);
+                    }
+                }
                 $path = $request->file($field)->store('uploads/death_certs', 'public');
                 $data[$field] = $path;
             } elseif ($isRevision && $existingDeath && !empty($existingDeath->$field)) {
@@ -229,12 +265,13 @@ class DeathCertificateController extends Controller
 
         // Catat aktivitas log pengajuan / revisi akte kematian oleh warga
         \App\Models\ActivityLog::record([
-            'actor_id' => $user?->id,
-            'actor_name' => $user ? $user->name : $death->applicant_name,
-            'actor_role' => 'warga',
+            'user_id' => $user?->id,
+            'user_name' => $user ? $user->name : $death->applicant_name,
+            'user_role' => 'warga',
             'actor_nik' => $user?->nik ?? $death->applicant_nik,
-            'module' => 'akte_kematian',
-            'action' => $isRevision ? 'revisi' : 'pengajuan',
+            'module' => 'death_certificate',
+            'action_type' => $isRevision ? 'update' : 'create',
+            'title' => $isRevision ? 'Pengiriman Revisi Akte Kematian' : 'Pengajuan Akte Kematian Baru',
             'description' => $isRevision
                 ? "Pengiriman revisi berkas permohonan Akte Kematian (Almarhum/ah: {$death->deceased_name})."
                 : "Pengajuan permohonan Akte Kematian baru (Almarhum/ah: {$death->deceased_name}).",
@@ -242,12 +279,12 @@ class DeathCertificateController extends Controller
             'subject_id' => $death->id,
             'reference_no' => $death->registration_no,
             'ip_address' => $request->ip(),
-            'user_agent' => $request->userAgent(),
-            'metadata' => [
+            'properties' => [
                 'deceased_name' => $death->deceased_name,
                 'deceased_nik' => $death->deceased_nik,
                 'applicant_name' => $death->applicant_name,
                 'death_date' => $death->death_date,
+                'user_agent' => $request->userAgent(),
             ],
         ]);
 
@@ -289,12 +326,26 @@ class DeathCertificateController extends Controller
 
         // Otorisasi: Warga hanya boleh melihat sukses dari KK miliknya
         if (Auth::check() && Auth::user()->isWarga()) {
-            if ($death->family_card_no && $death->family_card_no !== Auth::user()->family_card_no) {
+            $user = Auth::user();
+            $isSameKK = $death->family_card_no && $death->family_card_no === $user->family_card_no;
+            $isSameUser = $death->user_id && $death->user_id === $user->id;
+            if (!$isSameKK && !$isSameUser) {
                 abort(403, 'Anda tidak memiliki hak akses ke data permohonan ini.');
             }
+        } elseif (!Auth::check() || !Auth::user()->isActiveAdmin()) {
+            abort(403, 'Anda tidak memiliki hak akses ke data permohonan ini.');
         }
 
         return view('death.success', compact('death'));
+    }
+
+    public function printLetter(DeathCertificate $death)
+    {
+        if (!Auth::check() || !Auth::user()->isActiveAdmin()) {
+            abort(403, 'Akses Ditolak: Hanya Admin / Petugas Kalurahan yang berhak mencetak Surat Keterangan.');
+        }
+
+        return view('admin.death.print-letter', compact('death'));
     }
 
     public function export(DeathCertificate $death, string $format, CertificateExportService $exportService)
@@ -310,7 +361,7 @@ class DeathCertificateController extends Controller
             if (!$isSameKK && !$isSameUser) {
                 abort(403, 'Akses Ditolak: Anda hanya berhak mengunduh berkas dari Kartu Keluarga (KK) Anda sendiri.');
             }
-        } elseif (!$user->isAdmin()) {
+        } elseif (!$user->isActiveAdmin()) {
             abort(403, 'Akses Ditolak: Hanya Warga terkait atau Petugas Kalurahan yang berhak mengunduh.');
         }
 

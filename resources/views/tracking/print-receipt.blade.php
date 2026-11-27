@@ -40,7 +40,7 @@
             <h4 class="text-xs uppercase tracking-widest font-bold text-slate-600">PEMERINTAH KABUPATEN SLEMAN</h4>
             <h4 class="text-xs uppercase tracking-wider font-bold text-slate-700">KAPANEWON PAKEM</h4>
             <h2 class="text-lg font-extrabold text-slate-900">PEMERINTAH KALURAHAN PURWOBINANGUN</h2>
-            <p class="text-[10px] text-slate-500 mt-0.5">Alamat: Jl. Boyong, Purwobinangun, Pakem, Sleman, D.I. Yogyakarta 55582</p>
+            <p class="text-[10px] text-slate-500 mt-0.5">Alamat: Jl. Pakem-Turi Km.04 Watuadeg, Purwobinangun, Pakem, Sleman, D.I. Yogyakarta 55582</p>
         </div>
 
         <div class="text-center my-5">

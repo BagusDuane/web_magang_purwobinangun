@@ -14,6 +14,9 @@ class AdminArchiveController extends Controller
     public function index(Request $request)
     {
         $tab = $request->input('tab', 'citizens');
+        if (!in_array($tab, ['citizens', 'birth', 'death'], true)) {
+            $tab = 'citizens';
+        }
         $search = $request->input('search');
 
         // Statistik Total Arsip / Ditolak
@@ -89,6 +92,10 @@ class AdminArchiveController extends Controller
     {
         if (!$citizen->isWarga()) {
             abort(404);
+        }
+
+        if ($citizen->hasActiveApplications()) {
+            return back()->with('error', 'Akun warga (' . $citizen->name . ') tidak dapat diarsipkan karena masih memiliki permohonan akta atau perubahan data yang sedang aktif/berjalan.');
         }
 
         $admin = Auth::user();
@@ -181,6 +188,7 @@ class AdminArchiveController extends Controller
 
         $birth->is_archived = false;
         $birth->status = 'pending';
+        $birth->rejection_note = null;
         $birth->processed_by = $admin->name;
         $birth->save();
 
@@ -235,6 +243,7 @@ class AdminArchiveController extends Controller
 
         $death->is_archived = false;
         $death->status = 'pending';
+        $death->rejection_note = null;
         $death->processed_by = $admin->name;
         $death->save();
 

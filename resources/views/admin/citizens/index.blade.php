@@ -90,6 +90,7 @@
                 <table class="w-full text-left text-xs">
                     <thead class="bg-slate-50 text-slate-700 uppercase font-bold text-[11px] border-b border-slate-200">
                         <tr>
+                            <th class="px-3 py-3.5 text-center w-12">No</th>
                             <th class="px-4 py-3.5">Identitas (NIK & KK)</th>
                             <th class="px-4 py-3.5">Nama & Jenis Kelamin</th>
                             <th class="px-4 py-3.5">Alamat / Wilayah</th>
@@ -102,6 +103,9 @@
                     <tbody class="divide-y divide-slate-200 bg-white">
                         @foreach($citizens as $citizen)
                             <tr class="hover:bg-slate-50/80 transition">
+                                <td class="px-3 py-3.5 text-center font-medium text-slate-600">
+                                    {{ $citizens->firstItem() ? $citizens->firstItem() + $loop->index : $loop->iteration }}
+                                </td>
                                 <td class="px-4 py-3.5">
                                     <p class="font-mono font-bold text-slate-900">{{ $citizen->nik }}</p>
                                     <span class="text-[10px] text-teal-800 bg-teal-50 px-1.5 py-0.5 rounded border border-teal-200 font-mono">

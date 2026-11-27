@@ -275,6 +275,34 @@
                         @endif
                     </div>
 
+                    <!-- Pengajuan Akte Kematian dari KK Ini -->
+                    <div class="pt-3 border-t border-slate-100">
+                        <h4 class="font-bold text-slate-800 mb-2">Pengajuan Akte Kematian (KK Ini):</h4>
+                        @if($deathSubmissions->count() > 0)
+                            <div class="space-y-2">
+                                @foreach($deathSubmissions as $d)
+                                    <div class="flex items-center justify-between p-2.5 bg-rose-50/50 rounded-lg border border-rose-200/60">
+                                        <div>
+                                            <span class="font-extrabold text-rose-700 font-mono">{{ $d->registration_no }}</span>
+                                            <p class="font-bold text-slate-800">{{ $d->deceased_name }}</p>
+                                            <span class="text-[10px] text-slate-500">Pelapor: {{ $d->applicant_name }}</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-full border {{ $d->status_badge_class }} mb-1">
+                                                {{ $d->status_label }}
+                                            </span>
+                                            <a href="{{ route('admin.death.show', $d) }}" class="block text-[11px] text-rose-700 font-bold hover:underline">
+                                                Buka Berkas &rarr;
+                                            </a>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="text-slate-400 italic">Belum ada pengajuan akte kematian dari KK ini.</p>
+                        @endif
+                    </div>
+
                 </div>
             </div>
 

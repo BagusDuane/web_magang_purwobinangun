@@ -99,12 +99,6 @@ class WargaProfileController extends Controller
             'doc_family_card.max' => 'Ukuran berkas Kartu Keluarga maksimal 3MB.',
         ]);
 
-        // Simpan File Dokumen KK jika diunggah baru
-        $docFamilyCardPath = null;
-        if ($request->hasFile('doc_family_card')) {
-            $docFamilyCardPath = $request->file('doc_family_card')->store('uploads/warga_docs', 'public');
-        }
-
         // Siapkan array anggota keluarga yang bersih
         $familyMembersData = [];
         if (!empty($request->family_members) && is_array($request->family_members)) {
@@ -160,6 +154,7 @@ class WargaProfileController extends Controller
                 $propBirthDate = !empty($prop['birth_date']) ? date('Y-m-d', strtotime($prop['birth_date'])) : '';
 
                 if (
+                    trim((string) ($cur->family_card_no ?: '')) !== trim((string) ($prop['family_card_no'] ?? '')) ||
                     trim((string) ($cur->nik ?: '')) !== trim((string) ($prop['nik'] ?? '')) ||
                     trim(strtolower((string) $cur->name)) !== trim(strtolower((string) ($prop['name'] ?? ''))) ||
                     trim(strtolower((string) ($cur->birth_place ?: ''))) !== trim(strtolower((string) ($prop['birth_place'] ?? ''))) ||
@@ -176,6 +171,12 @@ class WargaProfileController extends Controller
         if (!$isAccountChanged && !$isFamilyChanged) {
             return redirect()->route('profile.index')
                 ->with('error', 'Tidak ada data yang berubah dari sebelumnya. Silakan perbarui data pada formulir terlebih dahulu sebelum mengirim permohonan ke admin.');
+        }
+
+        // Simpan File Dokumen KK jika diunggah baru
+        $docFamilyCardPath = null;
+        if ($request->hasFile('doc_family_card')) {
+            $docFamilyCardPath = $request->file('doc_family_card')->store('uploads/warga_docs', 'public');
         }
 
         // Cek apakah sudah ada permohonan pending sebelumnya

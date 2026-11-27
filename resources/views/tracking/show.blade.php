@@ -175,8 +175,8 @@
                             <i class="fa-solid fa-file-lines"></i> Cetak Surat Keterangan (A4)
                         </a>
                     @endif
-                    @if($data->status === 'revision')
-                        <button type="button" disabled title="Tanda terima permohonan tidak dapat dicetak selama permohonan dalam status revisi berkas" class="bg-slate-200 text-slate-400 cursor-not-allowed font-bold text-xs px-5 py-2.5 rounded-lg border border-slate-300 transition flex items-center gap-2">
+                    @if(in_array($data->status, ['revision', 'rejected'], true))
+                        <button type="button" disabled title="{{ $data->status === 'rejected' ? 'Tanda terima tidak dapat dicetak karena permohonan dibatalkan' : 'Tanda terima permohonan tidak dapat dicetak selama permohonan dalam status revisi berkas' }}" class="bg-slate-200 text-slate-400 cursor-not-allowed font-bold text-xs px-5 py-2.5 rounded-lg border border-slate-300 transition flex items-center gap-2">
                             <i class="fa-solid fa-print"></i> Cetak Tanda Terima Permohonan
                         </button>
                     @else

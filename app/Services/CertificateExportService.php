@@ -223,7 +223,7 @@ class CertificateExportService
             ['DATA PELAPOR', '', true],
             ['1', 'NIK', $birth->applicant_nik ?: '-'],
             ['2', 'Nama Lengkap', strtoupper($birth->applicant_name ?: '-')],
-            ['3', 'Alamat (Sesuai KTP)', $birth->applicant_address ?: $applicantFullAddr],
+            ['3', 'Alamat (Sesuai KTP)', $birth->address ?: $applicantFullAddr],
             ['4', 'Nomor HP/Telepon', $birth->applicant_phone ?: '-'],
             ['5', 'Tanggal Lapor', $reportDateFormatted],
             ['6', 'Hubungan dengan Bayi', $birth->applicant_relation ? ucfirst($birth->applicant_relation) : 'Orang Tua / Pemohon'],
@@ -336,7 +336,7 @@ class CertificateExportService
             ['1', 'NIK', $birth->applicant_nik ?: '-'],
             ['2', 'Nama Lengkap', strtoupper($birth->applicant_name ?: '-')],
             ['3', 'Umur / Pekerjaan', ($applicantAge ? "{$applicantAge} Tahun" : '-') . ' | ' . ($birth->applicant_job ?: '-')],
-            ['4', 'Alamat (Sesuai KTP)', $birth->applicant_address ?: $applicantFullAddr],
+            ['4', 'Alamat (Sesuai KTP)', $birth->address ?: $applicantFullAddr],
             ['5', 'Tanggal Lapor', $reportDateFormatted],
         ];
 

@@ -77,9 +77,28 @@ class AdminProfileRequestController extends Controller
         $verifierName = Auth::user()->name;
 
         if ($validated['action'] === 'approve') {
-            DB::transaction(function () use ($profileRequest, $verifierName) {
-                /** @var User $user */
-                $user = $profileRequest->user;
+            /** @var User $targetUser */
+            $targetUser = $profileRequest->user;
+            if (!$targetUser) {
+                return redirect()->route('admin.profile_requests.show', $profileRequest)
+                    ->with('error', 'Akun warga pemohon tidak ditemukan.');
+            }
+
+            $targetNik = $profileRequest->nik ?: $targetUser->nik;
+            $targetEmail = $profileRequest->email ?: $targetUser->email;
+
+            if ($targetNik && User::where('id', '!=', $targetUser->id)->where('nik', $targetNik)->exists()) {
+                return redirect()->route('admin.profile_requests.show', $profileRequest)
+                    ->with('error', 'Tidak dapat menyetujui permohonan: NIK ' . $targetNik . ' sudah digunakan oleh akun lain.');
+            }
+            if ($targetEmail && User::where('id', '!=', $targetUser->id)->where('email', $targetEmail)->exists()) {
+                return redirect()->route('admin.profile_requests.show', $profileRequest)
+                    ->with('error', 'Tidak dapat menyetujui permohonan: Email ' . $targetEmail . ' sudah digunakan oleh akun lain.');
+            }
+
+            DB::transaction(function () use ($profileRequest, $verifierName, $targetUser) {
+                $user = $targetUser;
+                $oldNik = $user->nik;
 
                 // Update data akun warga
                 $updateData = [
@@ -124,19 +143,27 @@ class AdminProfileRequestController extends Controller
                     }
                 }
 
-                // Sinkronisasi data permohonan akta terkait
-                BirthCertificate::where(function ($q) use ($user) {
-                    $q->where('user_id', $user->id)
-                      ->orWhere('applicant_nik', $user->nik);
+                // Sinkronisasi data permohonan akta terkait (termasuk No. KK & NIK pelapor)
+                BirthCertificate::where(function ($q) use ($user, $oldNik) {
+                    $q->where('user_id', $user->id);
+                    if ($oldNik) {
+                        $q->orWhere('applicant_nik', $oldNik);
+                    }
                 })->update([
+                    'family_card_no' => $user->family_card_no,
+                    'applicant_nik' => $user->nik,
                     'applicant_phone' => $user->phone,
                     'applicant_name' => $user->name,
                 ]);
 
-                DeathCertificate::where(function ($q) use ($user) {
-                    $q->where('user_id', $user->id)
-                      ->orWhere('applicant_nik', $user->nik);
+                DeathCertificate::where(function ($q) use ($user, $oldNik) {
+                    $q->where('user_id', $user->id);
+                    if ($oldNik) {
+                        $q->orWhere('applicant_nik', $oldNik);
+                    }
                 })->update([
+                    'family_card_no' => $user->family_card_no,
+                    'applicant_nik' => $user->nik,
                     'applicant_phone' => $user->phone,
                     'applicant_name' => $user->name,
                 ]);

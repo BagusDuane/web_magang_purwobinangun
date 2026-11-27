@@ -185,18 +185,9 @@
                                         </div>
                                     </div>
                                 @empty
-                                    <div class="p-8 text-center" id="warga-notif-empty">
-                                        <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2.5 text-lg">
-                                            <i class="fa-regular fa-bell-slash"></i>
-                                        </div>
-                                        <h4 class="text-xs font-bold text-slate-700">Belum Ada Notifikasi</h4>
-                                        <p class="text-[11px] text-slate-500 mt-1 max-w-xs mx-auto">
-                                            Status pengajuan akta, verifikasi akun, dan perubahan data kependudukan akan tampil di sini.
-                                        </p>
-                                    </div>
                                 @endforelse
 
-                                <div class="p-8 text-center hidden" id="warga-notif-empty">
+                                <div class="p-8 text-center {{ $totalNotifCount > 0 ? 'hidden' : '' }}" id="warga-notif-empty">
                                     <div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto mb-2.5 text-lg">
                                         <i class="fa-regular fa-bell-slash"></i>
                                     </div>

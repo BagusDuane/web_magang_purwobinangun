@@ -695,7 +695,7 @@
                         </div>
                     @endif
                     <p>Alamat : Jl. Pakem-Turi Km.04 Watuadeg Purwobinangun Pakem Sleman Yogyakarta. 55582</p>
-                    <p>Laman : www.purwobinangun.slemankab.go.id &nbsp; Surel : puwobinangun@slemankab.go.id</p>
+                    <p>Laman : www.purwobinangun.slemankab.go.id &nbsp; Surel : purwobinangun@slemankab.go.id</p>
                 </td>
             </tr>
         </table>

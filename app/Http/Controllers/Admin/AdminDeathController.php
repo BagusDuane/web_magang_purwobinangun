@@ -123,6 +123,17 @@ class AdminDeathController extends Controller
             'doc_applicant_ktp',
         ];
 
+        \Illuminate\Support\Facades\DB::transaction(function () use ($death) {
+            ActivityLog::where('subject_type', DeathCertificate::class)
+                ->where('subject_id', $death->id)
+                ->update([
+                    'subject_type' => null,
+                    'subject_id' => null,
+                ]);
+
+            $death->delete();
+        });
+
         foreach ($attachmentFields as $field) {
             $path = $death->$field;
             if ($path && !str_starts_with($path, 'data:image')) {
@@ -132,15 +143,6 @@ class AdminDeathController extends Controller
                 }
             }
         }
-
-        ActivityLog::where('subject_type', DeathCertificate::class)
-            ->where('subject_id', $death->id)
-            ->update([
-                'subject_type' => null,
-                'subject_id' => null,
-            ]);
-
-        $death->delete();
 
         ActivityLog::record([
             'user_id' => Auth::id(),

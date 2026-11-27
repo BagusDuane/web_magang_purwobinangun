@@ -60,11 +60,13 @@
                                 <span class="font-bold text-rose-950 block mb-0.5"><i class="fa-solid fa-note-sticky text-rose-600"></i> Alasan / Catatan Petugas:</span>
                                 <p class="text-rose-800 italic leading-relaxed">{{ session('rejected_notice')['reason'] }}</p>
                             </div>
-                            <div class="mt-3">
-                                <a href="{{ route('warga.register', ['reapply_nik' => session('rejected_notice')['nik']]) }}" class="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg transition shadow-2xs">
-                                    <i class="fa-solid fa-pen-to-square"></i> Perbaiki Data & Ajukan Ulang
-                                </a>
-                            </div>
+                            @if(session('rejected_notice')['can_reapply'] ?? true)
+                                <div class="mt-3">
+                                    <a href="{{ route('warga.register', ['reapply_nik' => session('rejected_notice')['nik']]) }}" class="inline-flex items-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg transition shadow-2xs">
+                                        <i class="fa-solid fa-pen-to-square"></i> Perbaiki Data & Ajukan Ulang
+                                    </a>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>

@@ -61,6 +61,7 @@ class WargaAuthController extends Controller
                 'nik' => $user->nik,
                 'reason' => $user->rejection_reason ?: 'Data tidak sesuai atau persyaratan belum terpenuhi.',
                 'message' => 'Pendaftaran akun Anda ditolak oleh petugas kelurahan.',
+                'can_reapply' => true,
             ])->onlyInput('nik');
         }
 
@@ -70,6 +71,7 @@ class WargaAuthController extends Controller
                 'nik' => $user->nik,
                 'reason' => $user->rejection_reason ?: 'Akun telah dinonaktifkan atau diarsipkan oleh petugas kelurahan.',
                 'message' => 'Akun warga Anda saat ini berstatus diarsipkan / dinonaktifkan oleh petugas.',
+                'can_reapply' => false,
             ])->onlyInput('nik');
         }
 
@@ -101,7 +103,10 @@ class WargaAuthController extends Controller
 
         $prefill = null;
         if ($request->filled('reapply_nik')) {
-            $prefill = User::with('familyMembers')->where('nik', $request->query('reapply_nik'))->whereIn('status', ['rejected', 'archived'])->first();
+            // Hanya izinkan info minimal prefill untuk akun yang ditolak (bukan diarsipkan/nonaktif)
+            $prefill = User::where('nik', $request->query('reapply_nik'))
+                ->where('status', 'rejected')
+                ->first(['id', 'nik', 'name', 'family_relationship']);
         }
 
         return view('warga.auth.register', compact('prefill'));
@@ -109,8 +114,22 @@ class WargaAuthController extends Controller
 
     public function register(Request $request)
     {
-        // Cek apakah ini pendaftaran ulang akun yang sebelumnya ditolak atau diarsipkan
-        $existingRejected = User::where('nik', $request->nik)->whereIn('status', ['rejected', 'archived'])->first();
+        // Hanya izinkan daftar ulang untuk akun yang sebelumnya ditolak (status 'rejected'),
+        // bukan akun 'archived' yang dinonaktifkan petugas. Verifikasi kecocokan No. KK & tanggal lahir.
+        $existingRejected = User::where('nik', $request->nik)
+            ->where('status', 'rejected')
+            ->first();
+
+        if ($existingRejected) {
+            $matchesIdentity = $existingRejected->family_card_no === $request->input('family_card_no')
+                && ($existingRejected->birth_date ? $existingRejected->birth_date->format('Y-m-d') === $request->input('birth_date') : true);
+
+            if (!$matchesIdentity) {
+                return back()->withErrors([
+                    'nik' => 'NIK sudah terdaftar sebagai akun ditolak. Untuk daftar ulang, Nomor KK dan Tanggal Lahir harus sesuai dengan data pendaftaran sebelumnya.',
+                ])->withInput();
+            }
+        }
 
         $rules = [
             'nik' => [

@@ -66,6 +66,7 @@
                         <option value="akte_kelahiran" {{ ($filters['module'] ?? '') === 'akte_kelahiran' ? 'selected' : '' }}>Akte Kelahiran</option>
                         <option value="akte_kematian" {{ ($filters['module'] ?? '') === 'akte_kematian' ? 'selected' : '' }}>Akte Kematian</option>
                         <option value="akun_warga" {{ ($filters['module'] ?? '') === 'akun_warga' ? 'selected' : '' }}>Akun Warga</option>
+                        <option value="staff" {{ ($filters['module'] ?? '') === 'staff' ? 'selected' : '' }}>Akun Petugas</option>
                         <option value="perubahan_profil" {{ ($filters['module'] ?? '') === 'perubahan_profil' ? 'selected' : '' }}>Perubahan Data Profil</option>
                     </select>
                 </div>
@@ -263,9 +264,15 @@
                                             <i class="fa-solid fa-eye text-[11px]"></i> Lihat
                                         </a>
                                     @elseif($log->subject_type === \App\Models\User::class && $log->subject)
-                                        <a href="{{ route('admin.citizens.show', $log->subject_id) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 hover:bg-teal-100 text-[#0b7c89] border border-teal-200 transition" title="Buka Detail Akun Warga">
-                                            <i class="fa-solid fa-eye text-[11px]"></i> Lihat
-                                        </a>
+                                        @if($log->subject->isWarga())
+                                            <a href="{{ route('admin.citizens.show', $log->subject_id) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 hover:bg-teal-100 text-[#0b7c89] border border-teal-200 transition" title="Buka Detail Akun Warga">
+                                                <i class="fa-solid fa-eye text-[11px]"></i> Lihat
+                                            </a>
+                                        @elseif($log->subject->isAdmin())
+                                            <a href="{{ route('admin.staff.index') }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 hover:bg-teal-100 text-[#0b7c89] border border-teal-200 transition" title="Buka Kelola Petugas">
+                                                <i class="fa-solid fa-eye text-[11px]"></i> Lihat
+                                            </a>
+                                        @endif
                                     @elseif($log->subject_type === \App\Models\ProfileUpdateRequest::class && $log->subject)
                                         <a href="{{ route('admin.profile_requests.show', $log->subject_id) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 hover:bg-teal-100 text-[#0b7c89] border border-teal-200 transition" title="Buka Permohonan Perubahan Profil">
                                             <i class="fa-solid fa-eye text-[11px]"></i> Lihat

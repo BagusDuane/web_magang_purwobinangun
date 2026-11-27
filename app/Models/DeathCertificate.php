@@ -106,19 +106,22 @@ class DeathCertificate extends Model
 
     public static function generateRegistrationNo(): string
     {
-        $prefix = 'AKM-' . date('Ymd');
-        $lastRecord = self::where('registration_no', 'like', $prefix . '%')
-            ->orderBy('id', 'desc')
-            ->first();
+        return \Illuminate\Support\Facades\DB::transaction(function () {
+            $prefix = 'AKM-' . date('Ymd');
+            $lastRecord = self::where('registration_no', 'like', $prefix . '-%')
+                ->orderBy('registration_no', 'desc')
+                ->lockForUpdate()
+                ->first();
 
-        if ($lastRecord) {
-            $lastNumber = (int) substr($lastRecord->registration_no, -4);
-            $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
-        } else {
-            $newNumber = '0001';
-        }
+            if ($lastRecord) {
+                $lastNumber = (int) substr($lastRecord->registration_no, -4);
+                $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+            } else {
+                $newNumber = '0001';
+            }
 
-        return $prefix . '-' . $newNumber;
+            return $prefix . '-' . $newNumber;
+        });
     }
 
     public function getStatusLabelAttribute(): string

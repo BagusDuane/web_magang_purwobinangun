@@ -67,7 +67,7 @@
                         <i class="fa-solid fa-circle-check"></i>
                     </div>
                     <p class="text-xl font-extrabold text-emerald-700">{{ $readyCount + $pickedUpCount }}</p>
-                    <span class="text-[10px] text-emerald-600/80 mt-1 block">Dapat diambil di kantor</span>
+                    <span class="text-[10px] text-emerald-600/80 mt-1 block">{{ $readyCount }} siap diambil • {{ $pickedUpCount }} selesai</span>
                 </div>
             </div>
         </div>

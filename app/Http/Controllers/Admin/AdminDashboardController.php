@@ -16,7 +16,7 @@ class AdminDashboardController extends Controller
             'total' => BirthCertificate::count(),
             'pending' => BirthCertificate::where('status', 'pending')->count(),
             'in_process' => BirthCertificate::whereIn('status', ['verified', 'in_process'])->count(),
-            'completed' => BirthCertificate::where('status', 'completed')->count(),
+            'completed' => BirthCertificate::whereIn('status', ['ready_for_pickup', 'completed', 'picked_up', 'archived'])->count(),
             'rejected' => BirthCertificate::where('status', 'rejected')->count(),
         ];
 
@@ -24,7 +24,7 @@ class AdminDashboardController extends Controller
             'total' => DeathCertificate::count(),
             'pending' => DeathCertificate::where('status', 'pending')->count(),
             'in_process' => DeathCertificate::whereIn('status', ['verified', 'in_process'])->count(),
-            'completed' => DeathCertificate::whereIn('status', ['ready_for_pickup', 'completed', 'picked_up'])->count(),
+            'completed' => DeathCertificate::whereIn('status', ['ready_for_pickup', 'completed', 'picked_up', 'archived'])->count(),
             'rejected' => DeathCertificate::where('status', 'rejected')->count(),
         ];
 
@@ -37,8 +37,8 @@ class AdminDashboardController extends Controller
 
         $totalPending = $birthStats['pending'] + $deathStats['pending'] + $citizenStats['pending'];
 
-        $latestBirths = BirthCertificate::latest()->take(4)->get();
-        $latestDeaths = DeathCertificate::latest()->take(4)->get();
+        $latestBirths = BirthCertificate::where('is_archived', false)->whereNotIn('status', ['picked_up', 'archived'])->latest()->take(4)->get();
+        $latestDeaths = DeathCertificate::where('is_archived', false)->whereNotIn('status', ['picked_up', 'archived'])->latest()->take(4)->get();
         $latestCitizens = User::where('role', 'warga')->where('status', '!=', 'archived')->latest()->take(4)->get();
         $pendingCitizens = User::where('role', 'warga')->where('status', 'pending')->latest()->take(4)->get();
 

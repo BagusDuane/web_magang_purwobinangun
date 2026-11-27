@@ -18,17 +18,24 @@ class TrackingController extends Controller
         $user = Auth::user();
 
         if (!empty($keyword)) {
-            // Cek di Akte Kelahiran
-            $birthQuery = BirthCertificate::where(function ($q) use ($keyword) {
-                $q->where('registration_no', $keyword)
-                  ->orWhere('applicant_nik', $keyword)
-                  ->orWhere('father_nik', $keyword)
-                  ->orWhere('mother_nik', $keyword);
+            $isWargaOrAdmin = $user && ($user->isWarga() || $user->isActiveAdmin());
+
+            // Cek di Akte Kelahiran (Guest hanya boleh melacak dengan Nomor Registrasi)
+            $birthQuery = BirthCertificate::where(function ($q) use ($keyword, $isWargaOrAdmin) {
+                $q->where('registration_no', $keyword);
+                if ($isWargaOrAdmin) {
+                    $q->orWhere('applicant_nik', $keyword)
+                      ->orWhere('father_nik', $keyword)
+                      ->orWhere('mother_nik', $keyword);
+                }
             });
 
             // Jika Warga sedang login, batasi hanya KK miliknya
             if ($user && $user->isWarga()) {
-                $birthQuery->where('family_card_no', $user->family_card_no);
+                $birthQuery->where(function ($q) use ($user) {
+                    $q->where('family_card_no', $user->family_card_no)
+                      ->orWhere('user_id', $user->id);
+                });
             }
 
             $birth = $birthQuery->latest()->first();
@@ -37,15 +44,20 @@ class TrackingController extends Controller
                 $result = $birth;
                 $type = 'birth';
             } else {
-                // Cek di Akte Kematian
-                $deathQuery = DeathCertificate::where(function ($q) use ($keyword) {
-                    $q->where('registration_no', $keyword)
-                      ->orWhere('deceased_nik', $keyword)
-                      ->orWhere('applicant_nik', $keyword);
+                // Cek di Akte Kematian (Guest hanya boleh melacak dengan Nomor Registrasi)
+                $deathQuery = DeathCertificate::where(function ($q) use ($keyword, $isWargaOrAdmin) {
+                    $q->where('registration_no', $keyword);
+                    if ($isWargaOrAdmin) {
+                        $q->orWhere('deceased_nik', $keyword)
+                          ->orWhere('applicant_nik', $keyword);
+                    }
                 });
 
                 if ($user && $user->isWarga()) {
-                    $deathQuery->where('family_card_no', $user->family_card_no);
+                    $deathQuery->where(function ($q) use ($user) {
+                        $q->where('family_card_no', $user->family_card_no)
+                          ->orWhere('user_id', $user->id);
+                    });
                 }
 
                 $death = $deathQuery->latest()->first();
@@ -64,8 +76,10 @@ class TrackingController extends Controller
     {
         if ($type === 'birth') {
             $data = BirthCertificate::where('registration_no', $registrationNo)->firstOrFail();
-        } else {
+        } elseif ($type === 'death') {
             $data = DeathCertificate::where('registration_no', $registrationNo)->firstOrFail();
+        } else {
+            abort(404, 'Jenis permohonan tidak valid.');
         }
 
         // Keamanan Akses Data Sensitif Berbasis KK
@@ -90,14 +104,20 @@ class TrackingController extends Controller
     {
         if ($type === 'birth') {
             $data = BirthCertificate::where('registration_no', $registrationNo)->firstOrFail();
-        } else {
+        } elseif ($type === 'death') {
             $data = DeathCertificate::where('registration_no', $registrationNo)->firstOrFail();
+        } else {
+            abort(404, 'Jenis permohonan tidak valid.');
         }
 
-        // Tidak dapat mencetak tanda terima saat status permohonan dalam revisi
-        if ($data->status === 'revision') {
+        // Tidak dapat mencetak tanda terima saat status permohonan dalam revisi atau dibatalkan
+        if (in_array($data->status, ['revision', 'rejected'], true)) {
+            $reasonMsg = $data->status === 'rejected'
+                ? 'Tanda terima permohonan tidak dapat dicetak karena permohonan telah dibatalkan/ditolak.'
+                : 'Tanda terima permohonan tidak dapat dicetak selama permohonan dalam status revisi berkas.';
+
             return redirect()->route('tracking.show', ['type' => $type, 'registrationNo' => $registrationNo])
-                ->with('error', 'Tanda terima permohonan tidak dapat dicetak selama permohonan dalam status revisi berkas.');
+                ->with('error', $reasonMsg);
         }
 
         // Keamanan Akses Data Sensitif Berbasis KK
@@ -126,7 +146,7 @@ class TrackingController extends Controller
         }
 
         $user = Auth::user();
-        if (!$user->isAdmin()) {
+        if (!$user->isActiveAdmin()) {
             abort(403, 'Akses Ditolak: Hanya Admin / Petugas Kalurahan yang berhak mencetak Surat Keterangan.');
         }
 
@@ -150,6 +170,9 @@ class TrackingController extends Controller
 
         $user = Auth::user();
         if ($user->isWarga()) {
+            if (!in_array($type, ['birth', 'death'], true)) {
+                abort(404, 'Jenis permohonan tidak valid.');
+            }
             $model = $type === 'birth'
                 ? BirthCertificate::where('registration_no', $registrationNo)->firstOrFail()
                 : DeathCertificate::where('registration_no', $registrationNo)->firstOrFail();
@@ -162,7 +185,7 @@ class TrackingController extends Controller
             return $exportService->export($type, $model, $format);
         }
 
-        if (!$user->isAdmin()) {
+        if (!$user->isActiveAdmin()) {
             abort(403, 'Akses Ditolak: Anda tidak memiliki wewenang untuk mengunduh berkas ini.');
         }
 

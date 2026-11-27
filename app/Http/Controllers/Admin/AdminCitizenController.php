@@ -160,62 +160,81 @@ class AdminCitizenController extends Controller
         }
 
         DB::transaction(function () use ($citizen, $updateData, $validated, $adminName) {
+            $oldNik = $citizen->nik;
             $citizen->update($updateData);
 
+            // Sinkronkan No. KK pada anggota keluarga milik warga tersebut
+            $citizen->familyMembers()->update([
+                'family_card_no' => $citizen->family_card_no,
+            ]);
+
             // Selesaikan/setujui permohonan perubahan data yang masih pending sebelumnya jika ada
-            ProfileUpdateRequest::where('user_id', $citizen->id)
-                ->where('status', 'pending')
-                ->update([
+            $pendingQuery = ProfileUpdateRequest::where('user_id', $citizen->id)
+                ->where('status', 'pending');
+
+            $hadPending = (clone $pendingQuery)->exists();
+
+            if ($hadPending) {
+                $pendingQuery->update([
                     'status' => 'approved',
-                    'admin_notes' => $validated['admin_note'],
+                    'admin_notes' => 'Pembaruan data resmi langsung oleh Administrator: ' . $validated['admin_note'],
                     'processed_by' => $adminName,
                     'processed_at' => now(),
                 ]);
+            } else {
+                // Buat catatan riwayat perubahan data resmi oleh admin agar notifikasi langsung tampil di profil warga
+                ProfileUpdateRequest::create([
+                    'user_id' => $citizen->id,
+                    'nik' => $validated['nik'],
+                    'family_card_no' => $validated['family_card_no'],
+                    'name' => $validated['name'],
+                    'birth_place' => $validated['birth_place'],
+                    'birth_date' => $validated['birth_date'],
+                    'gender' => $validated['gender'],
+                    'family_relationship' => $updateData['family_relationship'],
+                    'doc_family_card' => $citizen->doc_family_card,
+                    'address' => $validated['address'],
+                    'rt' => $validated['rt'],
+                    'rw' => $validated['rw'],
+                    'phone' => $validated['phone'],
+                    'email' => $validated['email'],
+                    'family_members_data' => $citizen->familyMembers ? $citizen->familyMembers->map(fn($m) => [
+                        'family_card_no' => $m->family_card_no,
+                        'nik' => $m->nik,
+                        'name' => $m->name,
+                        'birth_place' => $m->birth_place,
+                        'birth_date' => $m->birth_date ? $m->birth_date->format('Y-m-d') : null,
+                        'gender' => $m->gender,
+                        'family_relationship' => $m->family_relationship,
+                    ])->toArray() : null,
+                    'status' => 'approved',
+                    'admin_notes' => 'Pembaruan data resmi langsung oleh Administrator: ' . $validated['admin_note'],
+                    'processed_by' => $adminName,
+                    'processed_at' => now(),
+                ]);
+            }
 
-            // Buat catatan riwayat perubahan data resmi oleh admin agar notifikasi langsung tampil di profil warga
-            ProfileUpdateRequest::create([
-                'user_id' => $citizen->id,
-                'nik' => $validated['nik'],
-                'family_card_no' => $validated['family_card_no'],
-                'name' => $validated['name'],
-                'birth_place' => $validated['birth_place'],
-                'birth_date' => $validated['birth_date'],
-                'gender' => $validated['gender'],
-                'family_relationship' => $updateData['family_relationship'],
-                'doc_family_card' => $citizen->doc_family_card,
-                'address' => $validated['address'],
-                'rt' => $validated['rt'],
-                'rw' => $validated['rw'],
-                'phone' => $validated['phone'],
-                'email' => $validated['email'],
-                'family_members_data' => $citizen->familyMembers ? $citizen->familyMembers->map(fn($m) => [
-                    'family_card_no' => $m->family_card_no,
-                    'nik' => $m->nik,
-                    'name' => $m->name,
-                    'birth_place' => $m->birth_place,
-                    'birth_date' => $m->birth_date ? $m->birth_date->format('Y-m-d') : null,
-                    'gender' => $m->gender,
-                    'family_relationship' => $m->family_relationship,
-                ])->toArray() : null,
-                'status' => 'approved',
-                'admin_notes' => $validated['admin_note'],
-                'processed_by' => $adminName,
-                'processed_at' => now(),
-            ]);
-
-            // Sinkronisasi nama & kontak pemohon pada pengajuan akte terkait
-            BirthCertificate::where(function ($q) use ($citizen) {
-                $q->where('user_id', $citizen->id)
-                  ->orWhere('applicant_nik', $citizen->nik);
+            // Sinkronisasi nama, NIK, No. KK & kontak pemohon pada pengajuan akte terkait
+            BirthCertificate::where(function ($q) use ($citizen, $oldNik) {
+                $q->where('user_id', $citizen->id);
+                if ($oldNik) {
+                    $q->orWhere('applicant_nik', $oldNik);
+                }
             })->update([
+                'family_card_no' => $citizen->family_card_no,
+                'applicant_nik' => $citizen->nik,
                 'applicant_phone' => $citizen->phone,
                 'applicant_name' => $citizen->name,
             ]);
 
-            DeathCertificate::where(function ($q) use ($citizen) {
-                $q->where('user_id', $citizen->id)
-                  ->orWhere('applicant_nik', $citizen->nik);
+            DeathCertificate::where(function ($q) use ($citizen, $oldNik) {
+                $q->where('user_id', $citizen->id);
+                if ($oldNik) {
+                    $q->orWhere('applicant_nik', $oldNik);
+                }
             })->update([
+                'family_card_no' => $citizen->family_card_no,
+                'applicant_nik' => $citizen->nik,
                 'applicant_phone' => $citizen->phone,
                 'applicant_name' => $citizen->name,
             ]);
@@ -286,6 +305,10 @@ class AdminCitizenController extends Controller
             return redirect()->route('admin.citizens.show', $citizen)
                 ->with('success', $message);
         } elseif ($validated['action'] === 'archive') {
+            if ($citizen->hasActiveApplications()) {
+                return back()->with('error', 'Akun warga (' . $citizen->name . ') tidak dapat diarsipkan karena masih memiliki permohonan akta atau perubahan data yang sedang aktif/berjalan.');
+            }
+
             $citizen->status = 'archived';
             $citizen->verified_at = now();
             $citizen->verified_by = $verifierName;
@@ -385,15 +408,23 @@ class AdminCitizenController extends Controller
         $citizenNik = $citizen->nik;
 
         DB::transaction(function () use ($citizen) {
-            // Hapus file dokumen kartu keluarga fisik jika tersimpan di disk
-            if ($citizen->doc_family_card && Storage::disk('public')->exists($citizen->doc_family_card)) {
-                Storage::disk('public')->delete($citizen->doc_family_card);
-            }
+            $citizenDoc = $citizen->doc_family_card;
 
             // Hapus berkas pendukung pada permohonan perubahan data jika ada
             foreach ($citizen->profileUpdateRequests as $req) {
-                if ($req->doc_family_card && Storage::disk('public')->exists($req->doc_family_card)) {
-                    Storage::disk('public')->delete($req->doc_family_card);
+                if ($req->doc_family_card && $req->doc_family_card !== $citizenDoc) {
+                    $reqDocPath = ltrim(preg_replace('#^(public/|storage/)#', '', $req->doc_family_card), '/\\');
+                    if (Storage::disk('public')->exists($reqDocPath)) {
+                        Storage::disk('public')->delete($reqDocPath);
+                    }
+                }
+            }
+
+            // Hapus file dokumen kartu keluarga fisik jika tersimpan di disk
+            if ($citizenDoc) {
+                $cleanDocPath = ltrim(preg_replace('#^(public/|storage/)#', '', $citizenDoc), '/\\');
+                if (Storage::disk('public')->exists($cleanDocPath)) {
+                    Storage::disk('public')->delete($cleanDocPath);
                 }
             }
 

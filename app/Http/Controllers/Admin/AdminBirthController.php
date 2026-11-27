@@ -122,6 +122,17 @@ class AdminBirthController extends Controller
             'applicant_signature',
         ];
 
+        \Illuminate\Support\Facades\DB::transaction(function () use ($birth) {
+            ActivityLog::where('subject_type', BirthCertificate::class)
+                ->where('subject_id', $birth->id)
+                ->update([
+                    'subject_type' => null,
+                    'subject_id' => null,
+                ]);
+
+            $birth->delete();
+        });
+
         foreach ($attachmentFields as $field) {
             $path = $birth->$field;
             if ($path && !str_starts_with($path, 'data:image')) {
@@ -131,15 +142,6 @@ class AdminBirthController extends Controller
                 }
             }
         }
-
-        ActivityLog::where('subject_type', BirthCertificate::class)
-            ->where('subject_id', $birth->id)
-            ->update([
-                'subject_type' => null,
-                'subject_id' => null,
-            ]);
-
-        $birth->delete();
 
         ActivityLog::record([
             'user_id' => Auth::id(),

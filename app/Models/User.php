@@ -71,6 +71,11 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    public function isActiveAdmin(): bool
+    {
+        return $this->isAdmin() && !in_array($this->status, ['rejected', 'archived', 'inactive'], true);
+    }
+
     public function isWarga(): bool
     {
         return $this->role === 'warga';
@@ -148,7 +153,9 @@ class User extends Authenticatable
         $hasActiveBirth = BirthCertificate::where(function ($q) {
             $q->where('user_id', $this->id)
               ->orWhere('applicant_nik', $this->nik);
-        })->whereNotIn('status', ['picked_up', 'archived', 'rejected'])->exists();
+        })->where('is_archived', false)
+          ->whereNotIn('status', ['picked_up', 'archived', 'rejected'])
+          ->exists();
 
         if ($hasActiveBirth) {
             return true;
@@ -157,7 +164,9 @@ class User extends Authenticatable
         $hasActiveDeath = DeathCertificate::where(function ($q) {
             $q->where('user_id', $this->id)
               ->orWhere('applicant_nik', $this->nik);
-        })->whereNotIn('status', ['picked_up', 'archived', 'rejected'])->exists();
+        })->where('is_archived', false)
+          ->whereNotIn('status', ['picked_up', 'archived', 'rejected'])
+          ->exists();
 
         if ($hasActiveDeath) {
             return true;
@@ -171,12 +180,16 @@ class User extends Authenticatable
         $birthCount = BirthCertificate::where(function ($q) {
             $q->where('user_id', $this->id)
               ->orWhere('applicant_nik', $this->nik);
-        })->whereNotIn('status', ['picked_up', 'archived', 'rejected'])->count();
+        })->where('is_archived', false)
+          ->whereNotIn('status', ['picked_up', 'archived', 'rejected'])
+          ->count();
 
         $deathCount = DeathCertificate::where(function ($q) {
             $q->where('user_id', $this->id)
               ->orWhere('applicant_nik', $this->nik);
-        })->whereNotIn('status', ['picked_up', 'archived', 'rejected'])->count();
+        })->where('is_archived', false)
+          ->whereNotIn('status', ['picked_up', 'archived', 'rejected'])
+          ->count();
 
         $profileCount = $this->profileUpdateRequests()->where('status', 'pending')->count();
 

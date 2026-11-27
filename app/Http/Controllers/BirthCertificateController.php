@@ -96,6 +96,10 @@ class BirthCertificateController extends Controller
                     abort(403, 'Akses Ditolak: Anda tidak berhak merevisi permohonan dari Kartu Keluarga lain.');
                 }
             }
+            if ($revisionBirth && $revisionBirth->status !== 'revision') {
+                return redirect()->route('tracking.show', ['type' => 'birth', 'registrationNo' => $revisionBirth->registration_no])
+                    ->with('error', 'Permohonan ini tidak sedang dalam status revisi berkas.');
+            }
         }
 
         $defaultFather = null;
@@ -392,10 +396,25 @@ class BirthCertificateController extends Controller
 
         if ($isRevision) {
             $existingBirth = BirthCertificate::where('registration_no', $request->input('revision_registration_no'))->first();
-            if ($existingBirth && $user && $user->isWarga()) {
-                if ($existingBirth->family_card_no && $existingBirth->family_card_no !== $user->family_card_no && $existingBirth->user_id !== $user->id) {
+            if (!$existingBirth) {
+                abort(404, 'Data permohonan untuk revisi tidak ditemukan.');
+            }
+            if ($user && $user->isWarga()) {
+                $isSameKK = $existingBirth->family_card_no && $existingBirth->family_card_no === $user->family_card_no;
+                $isSameUser = $existingBirth->user_id && $existingBirth->user_id === $user->id;
+                if (!$isSameKK && !$isSameUser) {
                     abort(403, 'Akses Ditolak: Anda tidak berhak merevisi permohonan ini.');
                 }
+            }
+            if ($existingBirth->status !== 'revision') {
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Permohonan ini tidak dalam status revisi berkas sehingga tidak dapat ditimpa.',
+                    ], 422);
+                }
+                return redirect()->route('tracking.show', ['type' => 'birth', 'registrationNo' => $existingBirth->registration_no])
+                    ->with('error', 'Permohonan ini tidak dalam status revisi berkas sehingga tidak dapat ditimpa.');
             }
         }
 
@@ -570,9 +589,13 @@ class BirthCertificateController extends Controller
         if ($isRevision && $existingBirth) {
             $data['registration_no'] = $existingBirth->registration_no;
             $data['status'] = 'pending';
+            $data['is_archived'] = false;
+            $data['rejection_note'] = null;
+            $data['processed_by'] = null;
         } else {
             $data['registration_no'] = BirthCertificate::generateRegistrationNo();
             $data['status'] = 'pending';
+            $data['is_archived'] = false;
         }
 
         if (empty($data['applicant_age']) && !empty($data['applicant_birth_date'])) {
@@ -586,12 +609,12 @@ class BirthCertificateController extends Controller
             $data['applicant_relation'] = 'Pelapor';
         }
         if (empty($data['padukuhan'])) {
-            $data['padukuhan'] = $user ? ($user->sub_village ?? 'Purwobinangun') : 'Purwobinangun';
+            $data['padukuhan'] = 'Purwobinangun';
         }
 
         // Bind data KK dan Akun Warga yang login
         $data['user_id'] = $user ? $user->id : null;
-        $data['family_card_no'] = $user ? $user->family_card_no : ($request->input('family_card_no') ?? null);
+        $data['family_card_no'] = $user ? ($user->family_card_no ?: ($request->input('family_card_no') ?? null)) : ($request->input('family_card_no') ?? null);
 
         // Jika Jenis Kelahiran kustom diisi
         if ($request->filled('birth_type_custom') && $request->input('birth_type') === 'Input Jumlah') {
@@ -678,6 +701,12 @@ class BirthCertificateController extends Controller
         $fileFields = ['doc_birth_cert', 'doc_family_card', 'doc_marriage_cert', 'doc_parents_ktp', 'doc_witness_ktp'];
         foreach ($fileFields as $field) {
             if ($request->hasFile($field)) {
+                if ($isRevision && $existingBirth && !empty($existingBirth->$field)) {
+                    $oldPath = ltrim(preg_replace('#^(public/|storage/)#', '', $existingBirth->$field), '/\\');
+                    if (Storage::disk('public')->exists($oldPath)) {
+                        Storage::disk('public')->delete($oldPath);
+                    }
+                }
                 $path = $request->file($field)->store('uploads/birth_certs', 'public');
                 $data[$field] = $path;
             } elseif ($isRevision && $existingBirth && !empty($existingBirth->$field)) {
@@ -686,9 +715,15 @@ class BirthCertificateController extends Controller
         }
 
         // Simpan Tanda Tangan Digital Pemohon (Base64 PNG atau File)
-        if ($request->filled('applicant_signature')) {
+        if ($request->filled('applicant_signature') || $request->hasFile('applicant_signature')) {
+            if ($isRevision && $existingBirth && !empty($existingBirth->applicant_signature) && !str_starts_with($existingBirth->applicant_signature, 'data:image')) {
+                $oldSigPath = ltrim(preg_replace('#^(public/|storage/)#', '', $existingBirth->applicant_signature), '/\\');
+                if (Storage::disk('public')->exists($oldSigPath)) {
+                    Storage::disk('public')->delete($oldSigPath);
+                }
+            }
             $sigInput = $request->input('applicant_signature');
-            if (str_starts_with($sigInput, 'data:image')) {
+            if ($sigInput && str_starts_with($sigInput, 'data:image')) {
                 try {
                     $imageParts = explode(';base64,', $sigInput);
                     if (count($imageParts) === 2) {
@@ -696,7 +731,7 @@ class BirthCertificateController extends Controller
                         $imageType = $imageTypeAux[1] ?? 'png';
                         $imageBase64 = base64_decode($imageParts[1]);
                         $fileName = 'signatures/birth_' . $data['registration_no'] . '_' . time() . '.' . $imageType;
-                        \Illuminate\Support\Facades\Storage::disk('public')->put($fileName, $imageBase64);
+                        Storage::disk('public')->put($fileName, $imageBase64);
                         $data['applicant_signature'] = $fileName;
                     }
                 } catch (\Exception $e) {
@@ -768,9 +803,14 @@ class BirthCertificateController extends Controller
 
         // Otorisasi: Warga hanya boleh melihat sukses dari KK miliknya
         if (Auth::check() && Auth::user()->isWarga()) {
-            if ($birth->family_card_no && $birth->family_card_no !== Auth::user()->family_card_no) {
+            $user = Auth::user();
+            $isSameKK = $birth->family_card_no && $birth->family_card_no === $user->family_card_no;
+            $isSameUser = $birth->user_id && $birth->user_id === $user->id;
+            if (!$isSameKK && !$isSameUser) {
                 abort(403, 'Anda tidak memiliki hak akses ke data permohonan ini.');
             }
+        } elseif (!Auth::check() || !Auth::user()->isActiveAdmin()) {
+            abort(403, 'Anda tidak memiliki hak akses ke data permohonan ini.');
         }
 
         return view('birth.success', compact('birth'));
@@ -792,10 +832,21 @@ class BirthCertificateController extends Controller
             }
         }
 
-        // 1. Query Akte Kelahiran (STRICT SCOPING: KK Warga yang Login)
+        // 1. Query Akte Kelahiran (STRICT SCOPING: KK Warga yang Login atau user_id miliknya)
+        $applyWargaScope = function ($query) use ($user) {
+            $query->where(function ($q) use ($user) {
+                if (!empty($user->family_card_no)) {
+                    $q->where('family_card_no', $user->family_card_no)
+                      ->orWhere('user_id', $user->id);
+                } else {
+                    $q->where('user_id', $user->id);
+                }
+            });
+        };
+
         $birthQuery = BirthCertificate::query();
         if ($user && $user->isWarga()) {
-            $birthQuery->where('family_card_no', $user->family_card_no);
+            $applyWargaScope($birthQuery);
         }
 
         if ($search) {
@@ -820,10 +871,10 @@ class BirthCertificateController extends Controller
             }
         }
 
-        // 2. Query Akte Kematian (STRICT SCOPING: KK Warga yang Login)
+        // 2. Query Akte Kematian (STRICT SCOPING: KK Warga yang Login atau user_id miliknya)
         $deathQuery = DeathCertificate::query();
         if ($user && $user->isWarga()) {
-            $deathQuery->where('family_card_no', $user->family_card_no);
+            $applyWargaScope($deathQuery);
         }
 
         if ($search) {
@@ -876,8 +927,8 @@ class BirthCertificateController extends Controller
         $baseBirthStats = BirthCertificate::query();
         $baseDeathStats = DeathCertificate::query();
         if ($user && $user->isWarga()) {
-            $baseBirthStats->where('family_card_no', $user->family_card_no);
-            $baseDeathStats->where('family_card_no', $user->family_card_no);
+            $applyWargaScope($baseBirthStats);
+            $applyWargaScope($baseDeathStats);
         }
 
         $birthCount = (clone $baseBirthStats)->count();
@@ -914,7 +965,7 @@ class BirthCertificateController extends Controller
 
     public function printLetter(BirthCertificate $birth)
     {
-        if (!Auth::check() || !Auth::user()->isAdmin()) {
+        if (!Auth::check() || !Auth::user()->isActiveAdmin()) {
             abort(403, 'Akses Ditolak: Hanya Admin / Petugas Kalurahan yang berhak mencetak Surat Keterangan.');
         }
 
@@ -934,7 +985,7 @@ class BirthCertificateController extends Controller
             if (!$isSameKK && !$isSameUser) {
                 abort(403, 'Akses Ditolak: Anda hanya berhak mengunduh berkas dari Kartu Keluarga (KK) Anda sendiri.');
             }
-        } elseif (!$user->isAdmin()) {
+        } elseif (!$user->isActiveAdmin()) {
             abort(403, 'Akses Ditolak: Hanya Warga terkait atau Petugas Kalurahan yang berhak mengunduh.');
         }
 
