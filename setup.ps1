@@ -135,15 +135,19 @@ php artisan optimize:clear --ansi
 
 # 7. Node / NPM Assets (Opsional jika node tersedia)
 Write-Host "`n=== [6/6] Memeriksa Asset Frontend (Node/NPM) ===" -ForegroundColor Cyan
-$npmCmd = Get-Command npm -ErrorAction SilentlyContinue
+$npmCmd = Get-Command npm.cmd -ErrorAction SilentlyContinue
+if (-not $npmCmd) {
+    $npmCmd = Get-Command npm -ErrorAction SilentlyContinue
+}
 if ($npmCmd) {
+    $npmExe = $npmCmd.Source
     if (-not (Test-Path "node_modules")) {
         Write-Host "Menginstal dependensi npm..." -ForegroundColor Gray
-        npm install
+        & $npmExe install
     }
     if (-not (Test-Path "public/build")) {
         Write-Host "Mengompilasi asset frontend (npm run build)..." -ForegroundColor Gray
-        npm run build
+        & $npmExe run build
     }
     Write-Host "[OK] Asset frontend siap." -ForegroundColor Green
 } else {
