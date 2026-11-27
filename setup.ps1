@@ -95,6 +95,10 @@ Write-Host "`n=== [4/6] Menginstal Dependensi PHP (Composer) ===" -ForegroundCol
 Write-Host "Menjalankan composer install..." -ForegroundColor Gray
 composer install --no-interaction
 if ($LASTEXITCODE -ne 0) {
+    Write-Host "[WARN] Mencoba composer install dengan toleransi versi PHP platform..." -ForegroundColor Yellow
+    composer install --no-interaction --ignore-platform-req=php+
+}
+if ($LASTEXITCODE -ne 0) {
     Write-Host "[ERROR] Composer install mengalami kegagalan!" -ForegroundColor Red
     Write-Host "Jika terdapat masalah ekstensi, pastikan php.ini sudah menyimpan perubahan dan coba lagi." -ForegroundColor Yellow
     exit 1
