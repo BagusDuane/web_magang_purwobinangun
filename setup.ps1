@@ -29,7 +29,7 @@ if (-not $phpIni -or -not (Test-Path $phpIni)) {
     Write-Host "[WARN] File php.ini tidak terdeteksi otomatis oleh PHP CLI." -ForegroundColor Yellow
 } else {
     Write-Host "Lokasi php.ini: $phpIni" -ForegroundColor Gray
-    $requiredExts = @('zip', 'gd', 'fileinfo', 'pdo_mysql', 'mbstring', 'curl')
+    $requiredExts = @('zip', 'gd', 'fileinfo', 'pdo_mysql', 'pdo_sqlite', 'sqlite3', 'mbstring', 'curl')
     $activeExts = (php -m) | ForEach-Object { $_.Trim().ToLower() }
     
     $needsEdit = $false
@@ -73,7 +73,7 @@ if (-not $phpIni -or -not (Test-Path $phpIni)) {
             Write-Host "  extension=zip`n  extension=gd`n  extension=fileinfo`n  extension=pdo_mysql" -ForegroundColor Gray
         }
     } else {
-        Write-Host "[OK] Semua ekstensi wajib (zip, gd, fileinfo, pdo_mysql, mbstring) sudah aktif!" -ForegroundColor Green
+        Write-Host "[OK] Semua ekstensi wajib (zip, gd, fileinfo, pdo_mysql, pdo_sqlite, sqlite3, mbstring) sudah aktif!" -ForegroundColor Green
     }
 }
 
@@ -127,6 +127,9 @@ if ($envContent -match "DB_CONNECTION=sqlite" -or (-not (Test-Path "database/dat
 Write-Host "Menjalankan migrasi database (php artisan migrate)..." -ForegroundColor Gray
 php artisan migrate --force --ansi
 
+Write-Host "Mengisi data awal akun admin & warga contoh (php artisan db:seed)..." -ForegroundColor Gray
+php artisan db:seed --force --ansi
+
 Write-Host "Menghubungkan storage (php artisan storage:link)..." -ForegroundColor Gray
 php artisan storage:link --ansi
 
@@ -157,8 +160,9 @@ if ($npmCmd) {
 Write-Host "`n==========================================================" -ForegroundColor Green
 Write-Host " SETUP SELESAI! APLIKASI PURWOBINANGUN SIAP DIJALANKAN " -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Green
-Write-Host "Untuk menjalankan server lokal:" -ForegroundColor White
-Write-Host "  1. Pastikan database MySQL aktif dan sesuai dengan .env" -ForegroundColor Gray
-Write-Host "  2. Jalankan: php artisan serve" -ForegroundColor Yellow
-Write-Host "  3. Jika ada migrasi database: php artisan migrate" -ForegroundColor Gray
-Write-Host "  4. Jangan lupa RESTART Apache / XAMPP jika sebelumnya baru mengaktifkan php.ini`n" -ForegroundColor Yellow
+Write-Host "Langkah berikutnya:" -ForegroundColor White
+Write-Host "  1. Jalankan server: php artisan serve" -ForegroundColor Yellow
+Write-Host "  2. Buka di browser: http://127.0.0.1:8000" -ForegroundColor Cyan
+Write-Host "`nAkun Default Siap Pakai:" -ForegroundColor White
+Write-Host "  * Admin : purwo34041601@gmail.com / Password123" -ForegroundColor Gray
+Write-Host "  * Warga : 3404051205900001 / password123`n" -ForegroundColor Gray
