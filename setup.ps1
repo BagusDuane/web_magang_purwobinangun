@@ -77,7 +77,7 @@ if (-not $phpIni -or -not (Test-Path $phpIni)) {
     }
 }
 
-# 4. Memeriksa file .env
+# 4. Memeriksa file .env & set otomatis ke SQLite
 Write-Host "`n=== [3/6] Konfigurasi Environment (.env) ===" -ForegroundColor Cyan
 if (-not (Test-Path ".env")) {
     if (Test-Path ".env.example") {
@@ -86,8 +86,26 @@ if (-not (Test-Path ".env")) {
     } else {
         Write-Host "[WARN] .env.example tidak ditemukan. Pastikan file .env dikonfigurasi manual." -ForegroundColor Yellow
     }
-} else {
-    Write-Host "[OK] File .env sudah ada." -ForegroundColor Green
+}
+
+# Otomatis pastikan konfigurasi database di .env menggunakan SQLite agar plug-and-play tanpa perlu MySQL/XAMPP
+if (Test-Path ".env") {
+    $envContent = Get-Content ".env" -Raw
+    $newEnvContent = $envContent
+    
+    $newEnvContent = [regex]::Replace($newEnvContent, '(?m)^DB_CONNECTION=.*$', 'DB_CONNECTION=sqlite')
+    $newEnvContent = [regex]::Replace($newEnvContent, '(?m)^DB_HOST=(?!#).*$', '# DB_HOST=127.0.0.1')
+    $newEnvContent = [regex]::Replace($newEnvContent, '(?m)^DB_PORT=(?!#).*$', '# DB_PORT=3306')
+    $newEnvContent = [regex]::Replace($newEnvContent, '(?m)^DB_DATABASE=(?!#).*$', '# DB_DATABASE=web_magang_purwobinangun')
+    $newEnvContent = [regex]::Replace($newEnvContent, '(?m)^DB_USERNAME=(?!#).*$', '# DB_USERNAME=root')
+    $newEnvContent = [regex]::Replace($newEnvContent, '(?m)^DB_PASSWORD=(?!#).*$', '# DB_PASSWORD=')
+    
+    if ($newEnvContent -ne $envContent) {
+        Set-Content -Path ".env" -Value $newEnvContent -Encoding UTF8
+        Write-Host "[OK] Konfigurasi database di .env diset otomatis ke SQLite (Plug & Play)." -ForegroundColor Green
+    } else {
+        Write-Host "[OK] File .env sudah menggunakan SQLite (Plug & Play)." -ForegroundColor Green
+    }
 }
 
 # 5. Composer Install & Vendor Check
@@ -116,22 +134,26 @@ if ($envContent -notmatch "APP_KEY=base64:") {
     Write-Host "[OK] APP_KEY sudah tersedia." -ForegroundColor Green
 }
 
-# Pastikan file database.sqlite tersedia jika menggunakan koneksi SQLite
-if ($envContent -match "DB_CONNECTION=sqlite" -or (-not (Test-Path "database/database.sqlite"))) {
-    if (-not (Test-Path "database/database.sqlite")) {
-        New-Item -ItemType File -Path "database/database.sqlite" -Force | Out-Null
-        Write-Host "[OK] File database/database.sqlite berhasil dibuat." -ForegroundColor Green
-    }
+# Pastikan file database.sqlite tersedia untuk koneksi SQLite
+if (-not (Test-Path "database")) {
+    New-Item -ItemType Directory -Path "database" -Force | Out-Null
+}
+if (-not (Test-Path "database/database.sqlite")) {
+    New-Item -ItemType File -Path "database/database.sqlite" -Force | Out-Null
+    Write-Host "[OK] File database/database.sqlite berhasil dibuat." -ForegroundColor Green
+} else {
+    Write-Host "[OK] File database/database.sqlite siap digunakan." -ForegroundColor Green
 }
 
-Write-Host "Menjalankan migrasi database (php artisan migrate)..." -ForegroundColor Gray
-php artisan migrate --force --ansi
-
-Write-Host "Mengisi data awal akun admin & warga contoh (php artisan db:seed)..." -ForegroundColor Gray
-php artisan db:seed --force --ansi
+Write-Host "Mereset dan menjalankan migrasi database lengkap (php artisan migrate:fresh --seed)..." -ForegroundColor Gray
+php artisan migrate:fresh --seed --force --ansi
 
 Write-Host "Menghubungkan storage (php artisan storage:link)..." -ForegroundColor Gray
-php artisan storage:link --ansi
+if (-not (Test-Path "public/storage")) {
+    php artisan storage:link --ansi
+} else {
+    Write-Host "[OK] Symlink storage sudah terhubung (public/storage)." -ForegroundColor Green
+}
 
 Write-Host "Membersihkan cache sistem..." -ForegroundColor Gray
 php artisan optimize:clear --ansi
