@@ -10,9 +10,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    
-    <!-- html2pdf for direct A4 PDF download -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -105,7 +102,7 @@
 <body class="p-4 md:p-8 antialiased">
 
     <!-- Action Toolbar (No Print) -->
-    <div class="max-w-[210mm] mx-auto mb-4 no-print flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-xl shadow-xs border border-slate-200">
+    <div class="max-w-[210mm] mx-auto mb-4 no-print relative z-30 pointer-events-auto flex flex-wrap items-center justify-between gap-3 bg-white p-3.5 rounded-xl shadow-xs border border-slate-200">
         <div class="flex items-center gap-2">
             @if(auth()->check() && auth()->user()->isAdmin())
                 <a href="{{ route('admin.death.show', $death) }}" class="font-sans-ui text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition">
@@ -129,10 +126,7 @@
             <a href="{{ auth()->check() && auth()->user()->isAdmin() ? route('admin.death.export', [$death, 'xlsx']) : route('death.export', [$death, 'xlsx']) }}" class="font-sans-ui bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3 py-2 rounded-lg shadow-xs transition flex items-center gap-1.5">
                 <i class="fa-solid fa-file-excel"></i> Excel (.xlsx)
             </a>
-            <button onclick="downloadPDF()" id="btn-download-pdf" class="font-sans-ui bg-teal-700 hover:bg-teal-800 text-white font-bold text-xs px-3 py-2 rounded-lg shadow-xs transition flex items-center gap-1.5 cursor-pointer">
-                <i class="fa-solid fa-download"></i> Unduh Langsung
-            </button>
-            <button onclick="window.print()" class="font-sans-ui bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs px-3.5 py-2 rounded-lg shadow-xs transition flex items-center gap-1.5 cursor-pointer">
+            <button type="button" id="btn-print-a4" onclick="window.focus(); window.print();" class="font-sans-ui relative z-10 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs px-3.5 py-2 rounded-lg shadow-xs transition flex items-center gap-1.5 cursor-pointer">
                 <i class="fa-solid fa-print"></i> Cetak (A4)
             </button>
         </div>
@@ -673,40 +667,6 @@
         </div>
 
     </div>
-
-    <!-- Script Download PDF menggunakan html2pdf -->
-    <script>
-        function downloadPDF() {
-            const btn = document.getElementById('btn-download-pdf');
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyiapkan PDF...';
-
-            const element = document.getElementById('letter-content');
-            const safeName = "{{ preg_replace('/[^A-Za-z0-9]/', '_', $death->deceased_name ?: 'Jenazah') }}";
-            const regNo = "{{ $death->registration_no }}";
-
-            const opt = {
-                margin: [0, 0, 0, 0],
-                filename: `Surat_Keterangan_Kematian_${safeName}_${regNo}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2, useCORS: true, letterRendering: true, scrollY: 0 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-                pagebreak: { mode: ['css', 'legacy'] }
-            };
-
-            html2pdf().set(opt).from(element).save().then(function() {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            }).catch(function(err) {
-                console.error(err);
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-                alert('Gagal membuat PDF otomatis. Mengalihkan ke opsi cetak/simpan PDF browser...');
-                window.print();
-            });
-        }
-    </script>
 
 </body>
 </html>
