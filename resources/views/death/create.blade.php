@@ -1878,19 +1878,43 @@
             btnSubmitForm.disabled = true;
         }
 
-        const formData = new FormData(deathForm);
-        const csrfToken = deathForm.querySelector('input[name="_token"]')?.value || '';
-
-        fetch(deathForm.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
+        async function refreshDeathCsrfToken() {
+            if (typeof window.refreshAppCsrfToken === 'function') {
+                return await window.refreshAppCsrfToken();
             }
-        })
+            return null;
+        }
+
+        function sendDeathFormRequest(formData, token) {
+            return fetch(deathForm.action, {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token
+                }
+            });
+        }
+
+        const formData = new FormData(deathForm);
+        let csrfToken = deathForm.querySelector('input[name="_token"]')?.value || '';
+
+        sendDeathFormRequest(formData, csrfToken)
         .then(async response => {
+            if (response.status === 419) {
+                const refreshed = await refreshDeathCsrfToken();
+                if (refreshed && refreshed.authenticated === false) {
+                    return Promise.reject({ status: 401, data: { message: 'Sesi masuk Anda telah berakhir. Data isian formulir sudah disimpan sebagai draft. Silakan masuk kembali.' } });
+                }
+                if (refreshed && refreshed.csrf_token) {
+                    csrfToken = refreshed.csrf_token;
+                    formData.set('_token', csrfToken);
+                    response = await sendDeathFormRequest(formData, csrfToken);
+                }
+            }
+
             const contentType = response.headers.get('content-type') || '';
             let data = null;
             if (contentType.includes('application/json')) {
@@ -1945,8 +1969,17 @@
                 btnSubmitForm.disabled = false;
             }
 
+            if (err.status === 401) {
+                saveFormDraft();
+                closeConfirmModal();
+                alert(err.data?.message || 'Sesi masuk Anda telah berakhir. Data isian formulir sudah disimpan sebagai draft. Silakan masuk kembali.');
+                window.location.href = err.data?.redirect || '{{ route("warga.login") }}';
+                return;
+            }
+
             if (err.status === 419) {
-                alert('Sesi pengajuan Anda telah berakhir. Halaman akan dimuat ulang agar sesi dapat diperbarui.');
+                saveFormDraft();
+                alert('Token keamanan formulir telah kedaluwarsa. Halaman akan dimuat ulang agar token dapat diperbarui (isian teks Anda tetap tersimpan).');
                 window.location.reload();
                 return;
             }

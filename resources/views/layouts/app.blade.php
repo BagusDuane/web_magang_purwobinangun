@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Pencatatan Akte Kelahiran & Kematian') - Kalurahan Purwobinangun</title>
     
     <!-- Favicon -->
@@ -559,6 +560,52 @@
         }
         setInterval(updateClock, 1000);
         updateClock();
+
+        // Global CSRF token sync & session keep-alive agar form panjang tidak terkena 419
+        window.refreshAppCsrfToken = async function () {
+            try {
+                const res = await fetch('{{ route("session.csrf") }}', {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    cache: 'no-store',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                if (!res.ok) return null;
+                const data = await res.json();
+                if (data && data.csrf_token) {
+                    const meta = document.querySelector('meta[name="csrf-token"]');
+                    if (meta) meta.setAttribute('content', data.csrf_token);
+                    document.querySelectorAll('input[name="_token"]').forEach(el => {
+                        el.value = data.csrf_token;
+                    });
+                }
+                return data;
+            } catch (e) {
+                return null;
+            }
+        };
+
+        window.addEventListener('pageshow', function (event) {
+            if (event.persisted) {
+                window.refreshAppCsrfToken();
+            }
+        });
+
+        @if(Auth::check())
+        document.addEventListener('visibilitychange', function () {
+            if (!document.hidden) {
+                window.refreshAppCsrfToken();
+            }
+        });
+        setInterval(function () {
+            if (!document.hidden) {
+                window.refreshAppCsrfToken();
+            }
+        }, 5 * 60 * 1000);
+        @endif
     </script>
 
     @stack('scripts')

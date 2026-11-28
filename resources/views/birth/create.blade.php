@@ -4163,19 +4163,43 @@ document.addEventListener('DOMContentLoaded', function () {
             btnConfirmSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs text-teal-200"></i><span>Mengirimkan...</span>';
         }
 
-        const formData = new FormData(form);
-        const csrfToken = form.querySelector('input[name="_token"]')?.value || '';
-
-        fetch(form.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
+        async function refreshBirthCsrfToken() {
+            if (typeof window.refreshAppCsrfToken === 'function') {
+                return await window.refreshAppCsrfToken();
             }
-        })
+            return null;
+        }
+
+        function sendBirthFormRequest(formData, token) {
+            return fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': token
+                }
+            });
+        }
+
+        const formData = new FormData(form);
+        let csrfToken = form.querySelector('input[name="_token"]')?.value || '';
+
+        sendBirthFormRequest(formData, csrfToken)
         .then(async response => {
+            if (response.status === 419) {
+                const refreshed = await refreshBirthCsrfToken();
+                if (refreshed && refreshed.authenticated === false) {
+                    return Promise.reject({ status: 401, data: { message: 'Sesi masuk Anda telah berakhir. Data isian formulir sudah disimpan sebagai draft. Silakan masuk kembali.' } });
+                }
+                if (refreshed && refreshed.csrf_token) {
+                    csrfToken = refreshed.csrf_token;
+                    formData.set('_token', csrfToken);
+                    response = await sendBirthFormRequest(formData, csrfToken);
+                }
+            }
+
             const contentType = response.headers.get('content-type') || '';
             let data = null;
             if (contentType.includes('application/json')) {
@@ -4251,8 +4275,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 btnConfirmSubmit.innerHTML = '<i class="fa-solid fa-paper-plane text-xs text-teal-200"></i><span>Konfirmasi & Kirim Permohonan</span>';
             }
 
+            if (err.status === 401) {
+                saveFormDraft();
+                alert(err.data?.message || 'Sesi masuk Anda telah berakhir. Data isian formulir sudah disimpan sebagai draft. Silakan masuk kembali.');
+                window.location.href = err.data?.redirect || '{{ route("warga.login") }}';
+                return;
+            }
+
             if (err.status === 419) {
-                alert('Sesi pengajuan Anda telah berakhir. Halaman akan dimuat ulang agar sesi dapat diperbarui.');
+                saveFormDraft();
+                alert('Token keamanan formulir telah kedaluwarsa. Halaman akan dimuat ulang agar token dapat diperbarui (isian teks Anda tetap tersimpan).');
                 window.location.reload();
                 return;
             }

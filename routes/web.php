@@ -40,6 +40,19 @@ Route::prefix('warga')->name('warga.')->group(function () {
 Route::get('/login', [WargaAuthController::class, 'showLoginForm'])->name('login');
 Route::get('/daftar', [WargaAuthController::class, 'showRegisterForm'])->name('register');
 
+// Keep-alive & refresh CSRF token untuk form multi-langkah agar sesi tidak kadaluarsa saat pengisian
+Route::get('/session/csrf-token', function (\Illuminate\Http\Request $request) {
+    $request->session()->put('_keep_alive', now()->timestamp);
+
+    $user = \Illuminate\Support\Facades\Auth::user();
+
+    return response()->json([
+        'csrf_token' => csrf_token(),
+        'authenticated' => (bool) $user,
+        'is_warga' => $user ? ($user->isWarga() && $user->isActive()) : false,
+    ]);
+})->name('session.csrf');
+
 // Lacak Permohonan Akta (Publik & Detail Berbasis Hak Akses KK)
 Route::prefix('lacak')->name('tracking.')->group(function () {
     Route::get('/', [TrackingController::class, 'index'])->name('index');
