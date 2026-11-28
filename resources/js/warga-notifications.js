@@ -301,6 +301,7 @@ function setupNotificationPanel(options) {
     // Periodic feed polling for background real-time updates
     if (feedUrl) {
         let isPolling = false;
+        let feedIntervalId = null;
 
         async function checkNotificationFeed() {
             if (isPolling) return;
@@ -308,11 +309,21 @@ function setupNotificationPanel(options) {
 
             try {
                 const response = await fetch(feedUrl, {
+                    credentials: 'same-origin',
                     headers: {
                         'Accept': 'application/json',
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
+
+                if (response.status === 401 || response.status === 403 || response.redirected) {
+                    if (feedIntervalId) {
+                        clearInterval(feedIntervalId);
+                        feedIntervalId = null;
+                    }
+                    isPolling = false;
+                    return;
+                }
 
                 if (!response.ok) {
                     isPolling = false;
@@ -351,10 +362,10 @@ function setupNotificationPanel(options) {
             }
         }
 
-        window.setInterval(checkNotificationFeed, 10000);
+        feedIntervalId = window.setInterval(checkNotificationFeed, 10000);
 
         document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
+            if (!document.hidden && feedIntervalId) {
                 checkNotificationFeed();
             }
         });

@@ -18,10 +18,22 @@ class EnsureAdminAuthenticated
     {
         if (!Auth::check() || !Auth::user()->isAdmin() || in_array(Auth::user()->status, ['rejected', 'archived', 'inactive'], true)) {
             $isInactiveAdmin = Auth::check() && Auth::user()->isAdmin() && in_array(Auth::user()->status, ['rejected', 'archived', 'inactive'], true);
-            if (Auth::check()) {
+
+            // Hanya invalidate sesi jika akun petugas memang dinonaktifkan; jangan hapus sesi warga aktif dari tab lain/polling.
+            if ($isInactiveAdmin) {
                 Auth::logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
+            }
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $isInactiveAdmin
+                        ? 'Akun petugas Anda telah dinonaktifkan (pindah tugas / pensiun).'
+                        : 'Silakan masuk ke panel admin petugas terlebih dahulu.',
+                    'redirect' => route('admin.login'),
+                ], 401);
             }
 
             return redirect()->guest(route('admin.login'))

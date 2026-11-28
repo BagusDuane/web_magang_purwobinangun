@@ -1905,7 +1905,7 @@
         .then(async response => {
             if (response.status === 419) {
                 const refreshed = await refreshDeathCsrfToken();
-                if (refreshed && refreshed.authenticated === false) {
+                if (refreshed && (!refreshed.authenticated || !refreshed.is_warga)) {
                     return Promise.reject({ status: 401, data: { message: 'Sesi masuk Anda telah berakhir. Data isian formulir sudah disimpan sebagai draft. Silakan masuk kembali.' } });
                 }
                 if (refreshed && refreshed.csrf_token) {
